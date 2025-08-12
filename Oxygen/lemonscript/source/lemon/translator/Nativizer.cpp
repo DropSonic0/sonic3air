@@ -13,6 +13,7 @@
 #include "lemon/program/Module.h"
 #include "lemon/program/OpcodeHelper.h"
 #include "lemon/runtime/OpcodeProcessor.h"
+#include <sstream>
 
 
 namespace lemon
@@ -253,7 +254,9 @@ namespace lemon
 				const size_t chunks = (bytes + 0x7fff) / 0x8000;
 				for (size_t i = 0; i < chunks; ++i)
 				{
-					const std::string identifier = "emptyEntries" + std::to_string(i);
+                    std::stringstream identifier_ss;
+                    identifier_ss << "emptyEntries" << i;
+                    const std::string identifier = identifier_ss.str();
 					const size_t restBytes = std::min<size_t>(bytes - i * 0x8000, 0x8000);
 					writeBinaryBlob(writer, identifier, &data[i * 0x8000], restBytes);
 					writer.writeLine("dict.addEmptyEntries(reinterpret_cast<const uint64*>(" + identifier + "), " + rmx::hexString(restBytes / 8, 2) + ");");

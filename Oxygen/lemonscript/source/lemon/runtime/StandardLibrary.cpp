@@ -90,15 +90,15 @@ namespace lemon
 		template<typename T> T Math_radiansToDegrees(T radians)		{ return radians * ((T)180 / Math_PI<T>()); }
 		template<typename T> T Math_u8ToDegrees(uint8 angle)		{ return (T)angle * ((T)360 / (T)256); }
 		template<typename T> T Math_u8ToRadians(uint8 angle)		{ return (T)angle * (Math_PI<T>() / (T)128); }
-		template<typename T> uint8 Math_u8FromDegrees(T degrees)	{ return (uint8)std::round(degrees * ((T)256 / (T)360)); }
-		template<typename T> uint8 Math_u8FromRadians(T radians)	{ return (uint8)std::round(radians * ((T)128 / Math_PI<T>())); }
+		template<typename T> uint8 Math_u8FromDegrees(T degrees)    { return (uint8)round(degrees * ((T)256 / (T)360)); }
+		template<typename T> uint8 Math_u8FromRadians(T radians)    { return (uint8)round(radians * ((T)128 / Math_PI<T>())); }
 
 		template<typename T> T Math_floor(T value)				{ return std::floor(value); }
 		template<typename T> int64 Math_floorToInt(T value)		{ return (int64)std::floor(value); }
 		template<typename T> T Math_ceil(T value)				{ return std::ceil(value); }
 		template<typename T> int64 Math_ceilToInt(T value)		{ return (int64)std::ceil(value); }
-		template<typename T> T Math_round(T value)				{ return std::round(value); }
-		template<typename T> int64 Math_roundToInt(T value)		{ return (int64)std::round(value); }
+		template<typename T> T Math_round(T value)              { return round(value); }
+		template<typename T> int64 Math_roundToInt(T value)     { return (int64)round(value); }
 		template<typename T> T Math_frac(T value)				{ return value - std::floor(value); }
 
 		template<typename T> bool Math_isNumber(T value)		{ return std::isnormal(value) || (value == (T)0); }

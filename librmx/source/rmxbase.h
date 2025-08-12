@@ -14,7 +14,11 @@
 // General includes
 #include <cmath>
 #include <float.h>
+#ifdef __PS3__
+#include <sys/memory.h>
+#else
 #include <memory.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

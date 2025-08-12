@@ -56,6 +56,10 @@
 	#define PLATFORM_VITA
 	#define USE_UTF8_PATHS
 
+#elif defined(__PS3__)
+	#define PLATFORM_PS3
+	#define USE_UTF8_PATHS
+
 #else
 	#error "Unsupported platform"
 #endif

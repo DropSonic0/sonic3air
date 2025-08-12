@@ -8,6 +8,7 @@
 
 #include "oxygen_netcore/pch.h"
 #include "oxygen_netcore/network/Sockets.h"
+#include "Portability.h"
 
 #ifdef _WIN32
 	#define WIN32_LEAN_AND_MEAN
@@ -18,6 +19,13 @@
 	#pragma comment (lib, "Ws2_32.lib")
 	#pragma comment (lib, "Mswsock.lib")
 	#pragma comment (lib, "AdvApi32.lib")
+
+#elif defined(PLATFORM_PS3)
+	#include <net/net.h> // Main header for PSL1GHT networking
+
+	#define SOCKET int
+	#define INVALID_SOCKET -1
+	#define SOMAXCONN 128
 
 #else
 	// Use POSIX sockets
@@ -158,11 +166,11 @@ std::string SocketAddress::toLoggedString() const
 	if (mPreventIPLogging)
 	{
 		// Do not log the IP itself
-		return "[IP]:" + std::to_string(mPort);
+		return "[IP]:" + to_string_ps3(mPort);
 	}
 	else
 	{
-		return mIP + ':' + std::to_string(mPort);
+		return mIP + ':' + to_string_ps3(mPort);
 	}
 }
 
@@ -316,7 +324,7 @@ bool TCPSocket::setupServer(uint16 serverPort, Sockets::ProtocolFamily protocolF
 	hints.ai_flags = AI_PASSIVE;
 
 	addrinfo* addr = nullptr;
-	const std::string portAsString = std::to_string(serverPort);
+	const std::string portAsString = to_string_ps3(serverPort);
 	int result = ::getaddrinfo(nullptr, portAsString.c_str(), &hints, &addr);
 	if (result != 0)
 	{
@@ -450,7 +458,7 @@ bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort, S
 		hints.ai_socktype = SOCK_STREAM;	// Needed for TCP
 		hints.ai_protocol = IPPROTO_TCP;	// Use TCP
 
-		const int result = getaddrinfo(serverAddress.c_str(), std::to_string(serverPort).c_str(), &hints, &addressInfos);
+		const int result = getaddrinfo(serverAddress.c_str(), to_string_ps3(serverPort).c_str(), &hints, &addressInfos);
 		RMX_CHECK(result == 0, "getaddrinfo failed with error: " << result, return false);
 	}
 
@@ -658,7 +666,7 @@ bool UDPSocket::bindToPort(uint16 port, Sockets::ProtocolFamily protocolFamily)
 
 	// Resolve the server address and port
 	addrinfo* addressInfo = nullptr;
-	int result = ::getaddrinfo(nullptr, std::to_string(port).c_str(), &hints, &addressInfo);
+	int result = ::getaddrinfo(nullptr, to_string_ps3(port).c_str(), &hints, &addressInfo);
 	if (result != 0)
 	{
 		RMX_ERROR("getaddrinfo failed with error: " << result, );

@@ -10,6 +10,7 @@
 #include "oxygen/rendering/Renderer.h"
 #include "oxygen/rendering/Geometry.h"
 #include "oxygen/simulation/LogDisplay.h"
+#include "Portability.h"
 
 
 bool Renderer::isUsingSpriteMask(const std::vector<Geometry*>& geometries) const
@@ -41,7 +42,7 @@ bool Renderer::progressRendering()
 		{
 			if (!mLoggedLimitWarning)
 			{
-				LogDisplay::instance().setLogDisplay("Warning: Exceeded the render time limit of "  + std::to_string(LIMIT_MILLISECONDS) + " ms, further render items will be ignored");
+				LogDisplay::instance().setLogDisplay("Warning: Exceeded the render time limit of "  + to_string_ps3(LIMIT_MILLISECONDS) + " ms, further render items will be ignored");
 				mLoggedLimitWarning = true;
 			}
 			return false;

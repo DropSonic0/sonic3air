@@ -36,7 +36,7 @@
 #include "oxygen/simulation/LogDisplay.h"
 #include "oxygen/simulation/PersistentData.h"
 #include "oxygen/simulation/Simulation.h"
-
+#include "Portability.h"
 
 static const float MOUSE_HIDE_TIME = 1.0f;	// Seconds until mouse cursor gets hidden after last movement
 
@@ -413,7 +413,7 @@ void Application::keyboard(const rmx::KeyboardEvent& ev)
 						height = 224;
 
 						videoOut.setScreenSize(width, height);
-						LogDisplay::instance().setLogDisplay("Changed render resolution to " + std::to_string(width) + " x " + std::to_string(height) + " pixels");
+						LogDisplay::instance().setLogDisplay("Changed render resolution to " + to_string_ps3(width) + " x " + to_string_ps3(height) + " pixels");
 					}
 					break;
 				}

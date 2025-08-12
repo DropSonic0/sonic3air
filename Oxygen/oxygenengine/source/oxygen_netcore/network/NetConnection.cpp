@@ -14,6 +14,7 @@
 #include "oxygen_netcore/network/LowLevelPackets.h"
 #include "oxygen_netcore/network/HighLevelPacketBase.h"
 #include "oxygen_netcore/network/RequestBase.h"
+#include "Portability.h"
 
 
 uint64 NetConnection::buildSenderKey(const SocketAddress& remoteAddress, uint16 remoteConnectionID)
@@ -584,7 +585,7 @@ bool NetConnection::sendHighLevelPacket(lowlevel::HighLevelPacket& lowLevelPacke
 
 void NetConnection::handleHighLevelPacket(const ReceivedPacket& receivedPacket, const lowlevel::HighLevelPacket& highLevelPacket, VectorBinarySerializer& serializer, uint32 uniqueResponseID)
 {
-	const std::string signatureString = "HighLevel_" + std::to_string(highLevelPacket.mPacketType);
+	const std::string signatureString = "HighLevel_" + to_string_ps3(highLevelPacket.mPacketType);
 	LAG_STOPWATCH(signatureString.c_str(), 1000);
 
 	// Is this a tracked packet at all?

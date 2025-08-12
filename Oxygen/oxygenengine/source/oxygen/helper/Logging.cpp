@@ -10,6 +10,7 @@
 #include "oxygen/helper/Logging.h"
 #include "oxygen/platform/PlatformFunctions.h"
 #include "oxygen/simulation/LemonScriptRuntime.h"
+#include "Portability.h"
 
 
 namespace
@@ -53,7 +54,7 @@ namespace
 				std::string moduleName;
 				if (LemonScriptRuntime::getCurrentScriptFunction(&functionName, &fileName, &lineNumber, &moduleName))
 				{
-					text += "\n\nCaused during script execution in function '" + std::string(functionName) + "' at line " + std::to_string(lineNumber) + " of file '" + WString(fileName).toStdString() + "' in module '" + moduleName + "'.";
+					text += "\n\nCaused during script execution in function '" + std::string(functionName) + "' at line " + to_string_ps3(lineNumber) + " of file '" + WString(fileName).toStdString() + "' in module '" + moduleName + "'.";
 				}
 			}
 

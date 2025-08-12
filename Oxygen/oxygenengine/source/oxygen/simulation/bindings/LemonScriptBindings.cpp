@@ -38,6 +38,7 @@
 #include <rmxmedia.h>
 
 #include <iomanip>
+#include "Portability.h"
 
 
 namespace
@@ -955,7 +956,7 @@ namespace
 				const uint8* src = emulatorInterface.getMemoryPointer(startAddress, false, bytes);
 				FTX::FileSystem->saveFile(outputFilename, src, (size_t)bytes);
 
-				LogDisplay::instance().setLogDisplay("Dumped " + std::to_string(bytes) + " bytes of data into file: " + WString(outputFilename).toStdString(), 10.0f);
+				LogDisplay::instance().setLogDisplay("Dumped " + to_string_ps3(bytes) + " bytes of data into file: " + WString(outputFilename).toStdString(), 10.0f);
 			}
 		}
 	}
@@ -1393,7 +1394,7 @@ void LemonScriptBindings::registerBindings(lemon::Module& module)
 		// Debug keys
 		for (int i = 0; i < 10; ++i)
 		{
-			lemon::UserDefinedVariable& var = module.addUserDefinedVariable("Key" + std::to_string(i), &lemon::PredefinedDataTypes::UINT_8);
+			lemon::UserDefinedVariable& var = module.addUserDefinedVariable("Key" + to_string_ps3(i), &lemon::PredefinedDataTypes::UINT_8);
 			var.mGetter = std::bind(debugKeyGetter, std::placeholders::_1, i);
 		}
 

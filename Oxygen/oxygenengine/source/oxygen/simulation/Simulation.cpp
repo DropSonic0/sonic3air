@@ -25,6 +25,7 @@
 #include "oxygen/network/netplay/NetplayManager.h"
 #include "oxygen/platform/PlatformFunctions.h"
 #include "oxygen/rendering/parts/RenderParts.h"
+#include "Portability.h"
 
 
 namespace
@@ -389,7 +390,7 @@ bool Simulation::generateFrame()
 		if (mGameRecorder.getFrameData(mFrameNumber + 1, result))
 		{
 			if (mGameRecorder.isPlaying())
-				LogDisplay::instance().setModeDisplay("Game recorder playback at frame: " + std::to_string(mFrameNumber + 1));
+				LogDisplay::instance().setModeDisplay("Game recorder playback at frame: " + to_string_ps3(mFrameNumber + 1));
 
 			if (nullptr != result.mData && !Configuration::instance().mGameRecorder.mPlaybackIgnoreKeys)
 			{

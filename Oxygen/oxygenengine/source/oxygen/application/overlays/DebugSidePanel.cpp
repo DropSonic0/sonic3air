@@ -22,6 +22,7 @@
 #include "oxygen/simulation/Simulation.h"
 
 #include <lemon/program/Function.h>
+#include "Portability.h"
 
 
 namespace
@@ -559,7 +560,7 @@ void DebugSidePanel::buildInternalCategoryContent(DebugSidePanelCategory& catego
 						Color color = Color::WHITE;
 						if (showOpcodesExecuted)
 						{
-							postfix += " <" + std::to_string(callFrame.mSteps) + ">";
+							postfix += " <" + to_string_ps3(callFrame.mSteps) + ">";
 							const float log = log10f((float)clamp((int)callFrame.mSteps, 100, 1000000));
 							color.setFromHSL(Vec3f((0.75f - log / 6.0f) * 360.0f, 1.0f, 0.5f));
 						}

@@ -26,6 +26,7 @@
 #include "oxygen/simulation/EmulatorInterface.h"
 #include "oxygen/simulation/LogDisplay.h"
 #include "oxygen/simulation/Simulation.h"
+#include "Portability.h"
 
 
 namespace
@@ -242,7 +243,7 @@ void GameView::keyboard(const rmx::KeyboardEvent& ev)
 					{
 						int& effect = Configuration::instance().mBackgroundBlur;
 						effect = (effect + 1) % 5;
-						setLogDisplay("Background Blur: " + std::to_string(effect * 25) + "%");
+						setLogDisplay("Background Blur: " + to_string_ps3(effect * 25) + "%");
 						break;
 					}
 

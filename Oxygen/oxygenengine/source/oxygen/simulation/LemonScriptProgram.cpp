@@ -22,6 +22,7 @@
 #include <lemon/program/Program.h>
 #include <lemon/runtime/StandardLibrary.h>
 #include <lemon/utility/PragmaSplitter.h>
+#include "Portability.h"
 
 
 struct ModuleAppendedInfo : public lemon::Module::AppendedInfo
@@ -469,7 +470,7 @@ LemonScriptProgram::LoadingResult LemonScriptProgram::loadScriptModule(lemon::Mo
 	if (nullptr == error.mSourceFileInfo ||error.mSourceFileInfo->mFilename.empty())
 		text += "Caused in module " + module.getModuleName() + ".";
 	else
-		text += "Caused in file '" + WString(error.mSourceFileInfo->mFilename).toStdString() + "', line " + std::to_string(error.mError.mLineNumber) + ", of module '" + module.getModuleName() + "'.";
+		text += "Caused in file '" + WString(error.mSourceFileInfo->mFilename).toStdString() + "', line " + to_string_ps3(error.mError.mLineNumber) + ", of module '" + module.getModuleName() + "'.";
 
 	// Clear module to get rid of invalid content built during the compilation attempt
 	//  -> This is particularly relevant if the user choses to retry the script compilation

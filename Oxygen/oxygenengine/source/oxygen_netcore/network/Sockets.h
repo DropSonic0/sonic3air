@@ -9,7 +9,7 @@
 #pragma once
 
 #include <rmxbase.h>
-
+#include "Portability.h"
 
 class Sockets
 {
@@ -59,7 +59,7 @@ public:
 
 	inline const std::string& getIP() const	 { assureIpPort();  return mIP; }
 	inline uint16 getPort() const			 { assureIpPort();  return mPort; }
-	inline std::string toString() const		 { assureIpPort();  return mIP + ':' + std::to_string(mPort); }
+	inline std::string toString() const		 { assureIpPort();  return mIP + ':' + to_string_ps3(mPort); }
 	std::string toLoggedString() const;
 
 	inline bool isValid() const  { return (mHasSockAddr || mHasIpPort); }

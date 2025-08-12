@@ -35,7 +35,7 @@
 		#include <SDL/SDL.h>
 	#endif
 
-#elif defined(PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_PS3)
 	#include <SDL2/SDL.h>
 
 #else
@@ -88,6 +88,9 @@
 #elif defined(PLATFORM_VITA)
 	#include <vitaGL.h>
 	#define RMX_USE_GLES2
+
+#elif defined(PLATFORM_PS3)
+	// PS3 uses a software renderer with SDL, no OpenGL configuration needed.
 
 #else
 	#error Unsupported platform

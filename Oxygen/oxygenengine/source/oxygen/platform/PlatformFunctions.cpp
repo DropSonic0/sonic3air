@@ -12,6 +12,8 @@
 #include "oxygen/helper/Logging.h"
 
 #include <thread>
+#include <unistd.h>
+#include <sched.h>
 
 #ifdef PLATFORM_WINDOWS
 	#include <CleanWindowsInclude.h>
@@ -172,61 +174,33 @@ namespace
 
 
 
-void PlatformFunctions::preciseDelay(double milliseconds)
+void PlatformFunctions::preciseDelay(double sleepTimeLeft)
 {
-	// This function is based on work by Sewer56, and used with his permission here
-	//  -> For the original, see https://github.com/Sewer56/sonic3air
-
-	const double timerGranularity = getTimerGranularityMilliseconds();	// As a side effect, this function sets the optimal timer granularity
-
-	HighResolutionTimer timer;
-	timer.start();
-	while (true)
+#if defined(PLATFORM_PS3)
+	// Use usleep for PS3, which takes microseconds
+	if (sleepTimeLeft > 0.0)
 	{
-		const double timeLeft = milliseconds - timer.getSecondsSinceStart() * 1000.0;
-		if (timeLeft <= 0.0)
-			break;
+		usleep((useconds_t)(sleepTimeLeft * 1000.0));
+	}
+#else
+	// Original high-resolution sleep for other platforms
+	auto start = std::chrono::high_resolution_clock::now();
+	auto end = start + std::chrono::duration<double, std::milli>(sleepTimeLeft);
 
-		const double sleepTimeLeft = timeLeft - timerGranularity;
-
-		// Don't spin on mobile platforms, accept some imprecision to avoid battery drain
-		#if defined(PLATFORM_WINDOWS) || defined(PLATFORM_MACOS) || defined(PLATFORM_LINUX)
+	while (std::chrono::high_resolution_clock::now() < end)
+	{
+		sleepTimeLeft = std::chrono::duration<double, std::milli>(end - std::chrono::high_resolution_clock::now()).count();
+		if (sleepTimeLeft > 2.0)
 		{
-			// Spin if below granularity
-			if (sleepTimeLeft < 0.0)
-			{
-				double lastYieldTimeMs = std::numeric_limits<double>::max();
-				while (true)
-				{
-					const double timeLeft = milliseconds - timer.getSecondsSinceStart() * 1000.0;
-					if (timeLeft <= 0.0)
-						break;
-
-					if (timeLeft > lastYieldTimeMs)		// Otherwise it's essentially busy waiting
-					{
-						HighResolutionTimer yieldTimer;
-						yieldTimer.start();
-						std::this_thread::yield();
-						lastYieldTimeMs = yieldTimer.getSecondsSinceStart();
-					}
-				}
-				break;
-			}
-		}
-		#endif
-
-		// Is the remaining time rounded down to full milliseconds above the timer granularity?
-		if (sleepTimeLeft >= 1.0)
-		{
-			// Sleep the thread if above granularity
 			std::this_thread::sleep_for(std::chrono::milliseconds((int)sleepTimeLeft));
 		}
 		else
 		{
-			// Yield the thread if below granularity
+			// Yield for the last 2ms
 			std::this_thread::yield();
 		}
 	}
+#endif
 }
 
 double PlatformFunctions::getTimerGranularityMilliseconds()

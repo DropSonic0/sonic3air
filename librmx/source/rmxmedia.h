@@ -19,7 +19,9 @@
 
 // OpenGL support master switch
 //  -> Can be disabled for platforms where OpenGL does not work
+#if defined(PLATFORM_PS3)
 #define RMX_WITH_OPENGL_SUPPORT
+#endif
 
 
 // General includes
@@ -54,7 +56,6 @@
 	#include "rmxmedia/opengl/Painter.h"
 #endif
 #include "rmxmedia/opengl/SpriteAtlas.h"
-
 
 // Library linking via pragma
 #if defined(PLATFORM_WINDOWS) && defined(RMX_LIB)

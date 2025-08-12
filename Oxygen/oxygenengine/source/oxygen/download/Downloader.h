@@ -11,7 +11,19 @@
 #include <rmxbase.h>
 #include <atomic>
 #include <thread>
+#if defined(PLATFORM_PS3)
+namespace std {
+    class thread {
+    public:
+        // A constructor that accepts any arguments and does nothing.
+        template<typename... Args>
+        thread(Args&&... args) {}
 
+        // A join() method that does nothing.
+        void join() {}
+    };
+}
+#endif
 
 class Downloader
 {

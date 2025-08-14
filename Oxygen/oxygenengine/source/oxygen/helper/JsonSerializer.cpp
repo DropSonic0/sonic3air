@@ -8,14 +8,14 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/helper/JsonSerializer.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 bool JsonSerializer::serialize(const char* key, bool& value)
 {
 	if (mReading)
 	{
-		return JsonHelper(*mCurrentJson).tryReadBool(key, value);
+		return OxygenJsonHelper(*mCurrentJson).tryReadBool(key, value);
 	}
 	else
 	{
@@ -28,7 +28,7 @@ bool JsonSerializer::serialize(const char* key, int& value)
 {
 	if (mReading)
 	{
-		return JsonHelper(*mCurrentJson).tryReadInt(key, value);
+		return OxygenJsonHelper(*mCurrentJson).tryReadInt(key, value);
 	}
 	else
 	{
@@ -41,7 +41,7 @@ bool JsonSerializer::serialize(const char* key, float& value)
 {
 	if (mReading)
 	{
-		return JsonHelper(*mCurrentJson).tryReadFloat(key, value);
+		return OxygenJsonHelper(*mCurrentJson).tryReadFloat(key, value);
 	}
 	else
 	{
@@ -54,7 +54,7 @@ bool JsonSerializer::serialize(const char* key, std::string& value)
 {
 	if (mReading)
 	{
-		return JsonHelper(*mCurrentJson).tryReadString(key, value);
+		return OxygenJsonHelper(*mCurrentJson).tryReadString(key, value);
 	}
 	else
 	{
@@ -67,7 +67,7 @@ bool JsonSerializer::serialize(const char* key, std::wstring& value)
 {
 	if (mReading)
 	{
-		return JsonHelper(*mCurrentJson).tryReadString(key, value);
+		return OxygenJsonHelper(*mCurrentJson).tryReadString(key, value);
 	}
 	else
 	{

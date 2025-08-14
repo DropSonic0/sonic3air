@@ -13,7 +13,7 @@
 	#include "oxygen/platform/AndroidJavaInterface.h"
 	#include "oxygen/application/Configuration.h"
 	#include "oxygen/helper/FileHelper.h"
-	#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 	#include "oxygen/platform/PlatformFunctions.h"
 
 	#include <jni.h>

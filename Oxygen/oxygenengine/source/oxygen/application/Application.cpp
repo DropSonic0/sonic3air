@@ -28,7 +28,7 @@
 #include "oxygen/application/overlays/TouchControlsOverlay.h"
 #include "oxygen/application/video/VideoOut.h"
 #include "oxygen/devmode/ImGuiIntegration.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/helper/Profiling.h"
 #include "oxygen/network/EngineServerClient.h"
 #include "oxygen/platform/PlatformFunctions.h"

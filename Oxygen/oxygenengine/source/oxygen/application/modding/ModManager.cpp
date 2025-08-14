@@ -11,8 +11,8 @@
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/file/ZipFileProvider.h"
-#include "oxygen/helper/JsonHelper.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/helper/Utils.h"
 
 
@@ -33,7 +33,7 @@ void ModManager::startup()
 	//  -> Check if there's an "active-mods.json" file and read it
 	if (FTX::FileSystem->exists(mBasePath + L"active-mods.json"))
 	{
-		Json::Value json = JsonHelper::loadFile(mBasePath + L"active-mods.json");
+		Json::Value json = OxygenJsonHelper::loadFile(mBasePath + L"active-mods.json");
 
 		Json::Value activeMods = json["ActiveMods"];
 		const int numMods = activeMods.isArray() ? (int)activeMods.size() : 0;
@@ -97,7 +97,7 @@ void ModManager::saveActiveMods()
 		root["UseLegacyLoading"] = false;
 	}
 
-	JsonHelper::saveFile(mBasePath + L"active-mods.json", root);
+	OxygenJsonHelper::saveFile(mBasePath + L"active-mods.json", root);
 }
 
 void ModManager::setActiveMods(const std::vector<Mod*>& newActiveModsList)
@@ -356,7 +356,7 @@ void ModManager::scanDirectoryRecursive(std::vector<FoundMod>& outFoundMods, con
 		if (directoryName[0] != L'#')
 		{
 			// Check if this directory is itself a mod
-			Json::Value root = JsonHelper::loadFile(mBasePath + localPath + directoryName + L"/mod.json");
+			Json::Value root = OxygenJsonHelper::loadFile(mBasePath + localPath + directoryName + L"/mod.json");
 			if (root.isObject())
 			{
 				// Looks like this directory is meant to be a mod

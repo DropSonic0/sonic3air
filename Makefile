@@ -64,8 +64,12 @@ SOURCES	+=	\
 			Oxygen/oxygenengine/source/oxygen_netcore \
 			Oxygen/oxygenengine/source/oxygen_netcore/network \
 			Oxygen/oxygenengine/source/oxygen_netcore/network/internal \
+			Oxygen/oxygenengine/source/oxygen/network \
+			Oxygen/oxygenengine/source/oxygen/devmode \
+			Oxygen/oxygenengine/source/oxygen/network/netplay \
 			Oxygen/sonic3air/source/sonic3air \
 			Oxygen/sonic3air/source/sonic3air/_nativized \
+			Oxygen/sonic3air/source/sonic3air/platform \
 			Oxygen/sonic3air/source/sonic3air/audio \
 			Oxygen/sonic3air/source/sonic3air/client \
 			Oxygen/sonic3air/source/sonic3air/client/crowdcontrol \
@@ -99,11 +103,13 @@ SOURCES	+=	\
 			librmx/source/rmxmedia/threads \
 			framework/external/zlib/zlib \
 			framework/external/zlib/zlib/contrib/minizip
+
 INCLUDES  += \
 				/Oxygen/lemonscript/source \
 				/Oxygen/oxygenengine/source \
 				/Oxygen/sonic3air/source \
 				/librmx/source \
+				/librmx/source/rmxbase/_jsoncpp \
 			    /framework/external/zlib/zlib \
 			    /framework/external/zlib/zlib/contrib/minizip
 PKGFILES	:=	../pkgfiles1
@@ -148,10 +154,11 @@ export BUILDDIR	:=	$(CURDIR)/$(BUILD)
 #---------------------------------------------------------------------------------
 # automatically build a list of object files for our project
 #---------------------------------------------------------------------------------
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(subst PublicFunctions.c,,${wildcard $(dir)/*.c})))
+CFILES		:=	$(filter-out iowin32.c miniunz.c minizip.c, $(foreach dir,$(SOURCES),$(notdir $(subst PublicFunctions.c,,${wildcard $(dir)/*.c}))))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(subst xmltest.cpp,,${wildcard $(dir)/*.cpp})))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
+
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C

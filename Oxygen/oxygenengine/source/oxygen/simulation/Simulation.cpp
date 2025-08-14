@@ -21,7 +21,7 @@
 #include "oxygen/application/input/InputRecorder.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/application/video/VideoOut.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/network/netplay/NetplayManager.h"
 #include "oxygen/platform/PlatformFunctions.h"
 #include "oxygen/rendering/parts/RenderParts.h"

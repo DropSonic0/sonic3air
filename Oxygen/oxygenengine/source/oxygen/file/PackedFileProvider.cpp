@@ -9,7 +9,7 @@
 #include "oxygen/pch.h"
 #include "oxygen/file/PackedFileProvider.h"
 #include "oxygen/file/FileStructureTree.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 
 
 struct PackedFileProvDetail

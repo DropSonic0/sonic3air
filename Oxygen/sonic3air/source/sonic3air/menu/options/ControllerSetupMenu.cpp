@@ -16,6 +16,7 @@
 #include "oxygen/application/Application.h"
 #include "oxygen/helper/DrawerHelper.h"
 #include "oxygen/helper/Utils.h"
+#include "Portability.h"
 
 
 namespace
@@ -661,7 +662,7 @@ void ControllerSetupMenu::refreshGamepadList(bool forceUpdate)
 		{
 			for (int k = 0; k < Configuration::instance().mNumPlayers; ++k)
 			{
-				entry.addOption("Keyboard Player " + std::to_string(k + 1), 0xfff0 + k);
+				entry.addOption("Keyboard Player " + to_string_ps3(k + 1), 0xfff0 + k);
 			}
 		}
 

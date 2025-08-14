@@ -12,7 +12,7 @@
 #include "oxygen/resources/RawDataCollection.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/modding/ModManager.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/platform/PlatformFunctions.h"
 
 

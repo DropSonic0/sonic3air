@@ -18,7 +18,7 @@
 #include "oxygen/drawing/DrawCollection.h"
 #include "oxygen/drawing/DrawCommand.h"
 #include "oxygen/application/EngineMain.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/rendering/opengl/shaders/SimpleRectColoredShader.h"
 #include "oxygen/rendering/opengl/shaders/SimpleRectIndexedShader.h"
 #include "oxygen/rendering/opengl/shaders/SimpleRectTexturedShader.h"

@@ -9,7 +9,7 @@
 #include "oxygen/pch.h"
 #include "oxygen/simulation/analyse/ROMDataAnalyser.h"
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 ROMDataAnalyser::ROMDataAnalyser()
@@ -138,7 +138,7 @@ void ROMDataAnalyser::loadDataFromJSONs(std::wstring_view filepath)
 			continue;
 
 		const std::wstring filename = std::wstring(filepath) + fileEntry->mFilename;
-		Json::Value root = JsonHelper::loadFile(filename);
+		Json::Value root = OxygenJsonHelper::loadFile(filename);
 		if (root.isNull())
 			continue;
 
@@ -189,7 +189,7 @@ void ROMDataAnalyser::saveDataToJSONs(std::wstring_view filepath)
 
 		// Save file
 		const std::wstring filename = std::wstring(filepath) + L"romdata_" + *String(category.mName).toWString() + L".json";
-		JsonHelper::saveFile(filename, root);
+		OxygenJsonHelper::saveFile(filename, root);
 
 	#if 0
 		if (category.mName == "TableLookup")

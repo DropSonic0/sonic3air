@@ -9,7 +9,7 @@
 #include "oxygen/pch.h"
 #include "oxygen/file/ZipFileProvider.h"
 #include "oxygen/file/FileStructureTree.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 
 
 // Other platforms than Windows with Visual C++ need to the zlib library dependency into their build separately

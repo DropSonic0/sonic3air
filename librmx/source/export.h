@@ -34,6 +34,13 @@
 	// To export functions
 	#define GENERIC_FUNCTION_EXPORT	extern "C" __attribute__ ((visibility("default")))
 
+#elif defined(__PS3__)
+	// To export classes, methods and variables
+	#define GENERIC_API_EXPORT __attribute__ ((visibility("default")))
+
+	// To export functions
+	#define GENERIC_FUNCTION_EXPORT	__attribute__ ((visibility("default")))
+
 #else
 	#error "Unsupported platform"
 #endif
@@ -43,7 +50,7 @@
 	#define _USRDLL
 #endif
 
-#ifdef _USRDLL
+#if defined(_USRDLL) || defined(__PS3__)
 	// Export
 	#define API_EXPORT		GENERIC_API_EXPORT
 	#define FUNCTION_EXPORT	GENERIC_FUNCTION_EXPORT

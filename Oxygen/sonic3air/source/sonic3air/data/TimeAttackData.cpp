@@ -11,7 +11,8 @@
 #include "sonic3air/data/SharedDatabase.h"
 
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
+#include "Portability.h"
 
 
 std::map<uint32, TimeAttackData::Table> TimeAttackData::mTables;
@@ -60,7 +61,7 @@ TimeAttackData::Table& TimeAttackData::loadTable(uint16 zoneAndAct, uint8 catego
 		timeAttackTable = &createTable(zoneAndAct, category);
 
 		// Read JSON
-		Json::Value root = JsonHelper::loadFile(filename);
+		Json::Value root = OxygenJsonHelper::loadFile(filename);
 		Json::Value& records = root["Records"];
 
 		for (const Json::Value& rec : records)
@@ -94,7 +95,7 @@ void TimeAttackData::saveTable(uint16 zoneAndAct, uint8 category, const std::wst
 		rec["Time"] = TimeAttackData::getTimeString(entry.mTime);
 	}
 
-	JsonHelper::saveFile(filename, root);
+	OxygenJsonHelper::saveFile(filename, root);
 }
 
 std::wstring TimeAttackData::getSavePath(uint16 zoneAndAct, uint8 category, std::wstring* outRecBaseFilename)
@@ -103,7 +104,7 @@ std::wstring TimeAttackData::getSavePath(uint16 zoneAndAct, uint8 category, std:
 	if (nullptr == currentZone)
 		return L"";
 
-	const std::string zoneAndActName = currentZone->mShortName + std::to_string((zoneAndAct & 0x01) + 1);
+	const std::string zoneAndActName = currentZone->mShortName + to_string_ps3((zoneAndAct & 0x01) + 1);
 	const std::string characterName = REC_PATH_CHAR_NAMES.at(category);
 
 	if (nullptr != outRecBaseFilename)

@@ -1,7 +1,7 @@
 #include "engineapp/pch.h"
 #include "engineapp/ConfigurationImpl.h"
 
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 ConfigurationImpl::ConfigurationImpl()

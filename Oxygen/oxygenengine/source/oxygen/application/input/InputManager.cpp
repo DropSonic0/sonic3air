@@ -12,7 +12,7 @@
 #include "oxygen/application/overlays/TouchControlsOverlay.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/devmode/ImGuiIntegration.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/rendering/utils/RenderUtils.h"
 #include "oxygen/simulation/LogDisplay.h"
 

@@ -8,7 +8,7 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 #include "oxygen/helper/JsonSerializer.h"
 #include "oxygen/platform/PlatformFunctions.h"
 
@@ -264,7 +264,7 @@ void Configuration::initialization()
 bool Configuration::loadConfiguration(const std::wstring& filename)
 {
 	// Open file
-	Json::Value root = JsonHelper::loadFile(filename);
+	Json::Value root = OxygenJsonHelper::loadFile(filename);
 	const bool loaded = !root.isNull();		// If the config.json was not found, just silently ignore that for now, and return false in the end
 	JsonSerializer serializer(true, root);
 
@@ -310,7 +310,7 @@ bool Configuration::loadSettings(const std::wstring& filename, SettingsType sett
 	mSettingsFilenames[settingsIndex] = filename;
 
 	// Open file
-	Json::Value root = JsonHelper::loadFile(filename);
+	Json::Value root = OxygenJsonHelper::loadFile(filename);
 	if (root.isNull())
 		return false;
 	JsonSerializer serializer(true, root);
@@ -409,7 +409,7 @@ void Configuration::saveSettings()
 		saveSettingsInternal(serializer, SettingsType::STANDARD);
 
 		// Save file
-		JsonHelper::saveFile(mSettingsFilenames[settingsIndex], root);
+		OxygenJsonHelper::saveFile(mSettingsFilenames[settingsIndex], root);
 	}
 
 	// Save global settings
@@ -432,7 +432,7 @@ void Configuration::saveSettings()
 			saveSettingsInternal(serializer, SettingsType::GLOBAL);
 
 			// Save file
-			JsonHelper::saveFile(mSettingsFilenames[settingsIndex], root);
+			OxygenJsonHelper::saveFile(mSettingsFilenames[settingsIndex], root);
 		}
 	}
 

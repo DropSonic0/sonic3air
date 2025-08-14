@@ -12,6 +12,7 @@
 #include "sonic3air/audio/AudioOut.h"
 
 #include "oxygen/application/input/InputManager.h"
+#include "Portability.h"
 
 
 void GameMenuEntry::performRenderEntry(RenderContext& renderContext)
@@ -51,14 +52,14 @@ GameMenuEntry& GameMenuEntry::addOptions(const OptionsConfig::Setting& setting)
 GameMenuEntry& GameMenuEntry::addNumberOptions(int minValue, int maxValue, int step)
 {
 	for (int value = minValue; value <= maxValue; value += step)
-		addOptionRef(std::to_string(value), value);
+		addOptionRef(to_string_ps3(value), value);
 	return *this;
 }
 
 GameMenuEntry& GameMenuEntry::addPercentageOptions(int minValue, int maxValue, int step)
 {
 	for (int value = minValue; value <= maxValue; value += step)
-		addOptionRef(std::to_string(value) + '%', value);
+		addOptionRef(to_string_ps3(value) + '%', value);
 	return *this;
 }
 

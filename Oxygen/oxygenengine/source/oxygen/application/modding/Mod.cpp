@@ -8,7 +8,7 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/application/modding/Mod.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 void Mod::loadFromJson(const Json::Value& json)
@@ -16,7 +16,7 @@ void Mod::loadFromJson(const Json::Value& json)
 	Json::Value metadataJson = json["Metadata"];
 	if (metadataJson.isObject())
 	{
-		JsonHelper jsonHelper(metadataJson);
+		OxygenJsonHelper jsonHelper(metadataJson);
 		jsonHelper.tryReadString("Name", mDisplayName);			// Old property, for backward compatibility with old game versions (still recommended)
 		jsonHelper.tryReadString("DisplayName", mDisplayName);	// New property, for forward compatibility with future game versions
 		jsonHelper.tryReadString("UniqueID", mUniqueID);
@@ -51,7 +51,7 @@ void Mod::loadFromJson(const Json::Value& json)
 				std::string variableName;
 				std::string defaultValue;
 
-				JsonHelper jsonHelper(content);
+				OxygenJsonHelper jsonHelper(content);
 				jsonHelper.tryReadString("Category", categoryName);
 				jsonHelper.tryReadString("InternalName", internalName);
 				jsonHelper.tryReadString("DisplayName", displayName);
@@ -153,7 +153,7 @@ void Mod::loadFromJson(const Json::Value& json)
 			otherModInfo.mModID = iteratorOtherMods.key().asString();
 			otherModInfo.mModIDHash = rmx::getMurmur2_64(otherModInfo.mModID);
 
-			JsonHelper jsonHelper(modJson);
+			OxygenJsonHelper jsonHelper(modJson);
 			if (!jsonHelper.tryReadString("DisplayName", otherModInfo.mDisplayName))
 				otherModInfo.mDisplayName = otherModInfo.mModID;
 			jsonHelper.tryReadString("MinimumVersion", otherModInfo.mMinimumVersion);

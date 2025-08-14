@@ -8,7 +8,7 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/helper/Utils.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 
 #include <rmxmedia.h>
 

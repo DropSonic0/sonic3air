@@ -12,7 +12,7 @@
 #include "oxygen/rendering/parts/RenderParts.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/video/VideoOut.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 namespace
@@ -24,7 +24,7 @@ namespace
 void SpriteDump::load()
 {
 	// Open file
-	const Json::Value root = JsonHelper::loadFile(Configuration::instance().mAnalysisDir + L"spritedump/index.json");
+	const Json::Value root = OxygenJsonHelper::loadFile(Configuration::instance().mAnalysisDir + L"spritedump/index.json");
 	if (root.isNull())
 		return;
 
@@ -35,7 +35,7 @@ void SpriteDump::load()
 		category.mName = categoryName;
 		for (auto it2 = it->begin(); it2 != it->end(); ++it2)
 		{
-			JsonHelper rootHelper(*it2);
+			OxygenJsonHelper rootHelper(*it2);
 			const uint8 spriteNumber = (uint8)rmx::parseInteger("0x" + it2.key().asString());
 
 			Entry& entry = category.mEntries[spriteNumber];
@@ -81,7 +81,7 @@ void SpriteDump::save()
 	}
 
 	// Save file
-	JsonHelper::saveFile(Configuration::instance().mAnalysisDir + L"/spritedump/index.json", root);
+	OxygenJsonHelper::saveFile(Configuration::instance().mAnalysisDir + L"/spritedump/index.json", root);
 }
 
 void SpriteDump::addSprite(const PaletteSprite& paletteSprite, std::string_view categoryName, uint8 spriteNumber, uint8 atex)

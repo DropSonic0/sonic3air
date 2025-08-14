@@ -9,6 +9,11 @@
 #include "rmxbase.h"
 #include <fstream>
 
+#if defined(PLATFORM_PS3)
+#include <dirent.h>
+#include <sys/stat.h>
+#endif
+
 #ifdef PLATFORM_WINDOWS
 	#include <filesystem>
 	namespace std_filesystem = std::filesystem;

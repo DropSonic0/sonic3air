@@ -9,13 +9,13 @@
 #include "oxygen/pch.h"
 #include "oxygen/application/GameProfile.h"
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 bool GameProfile::loadOxygenProjectFromFile(const std::wstring& filename)
 {
 	// Open file
-	const Json::Value root = JsonHelper::loadFile(filename);
+	const Json::Value root = OxygenJsonHelper::loadFile(filename);
 	if (root.isNull())
 		return false;
 
@@ -94,7 +94,7 @@ bool GameProfile::loadOxygenProjectFromJson(const Json::Value& jsonRoot)
 		{
 			for (auto it = romCheckJson.begin(); it != romCheckJson.end(); ++it)
 			{
-				JsonHelper jsonHelper(*it);
+				OxygenJsonHelper jsonHelper(*it);
 				RomInfo& romInfo = vectorAdd(mRomInfos);
 
 				jsonHelper.tryReadString("SteamGameName", romInfo.mSteamGameName);
@@ -155,7 +155,7 @@ bool GameProfile::loadOxygenProjectFromJson(const Json::Value& jsonRoot)
 			for (auto it = dataPackagesJson.begin(); it != dataPackagesJson.end(); ++it)
 			{
 				const std::string key = it.key().asString();
-				JsonHelper jsonHelper(*it);
+				OxygenJsonHelper jsonHelper(*it);
 
 				DataPackage& dataPackage = vectorAdd(mDataPackages);
 				dataPackage.mFilename = String(key).toStdWString();

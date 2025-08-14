@@ -13,7 +13,7 @@
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 #include "oxygen/resources/FontCollection.h"
 
 

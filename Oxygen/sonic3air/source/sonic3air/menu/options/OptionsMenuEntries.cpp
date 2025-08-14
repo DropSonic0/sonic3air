@@ -21,6 +21,7 @@
 #include "oxygen/application/Application.h"
 #include "oxygen/application/modding/Mod.h"
 #include "oxygen/download/Downloader.h"
+#include "Portability.h"
 
 
 namespace
@@ -374,7 +375,7 @@ void SoundtrackDownloadMenuEntry::renderEntry(RenderContext& renderContext_)
 				break;
 
 			case RemasteredMusicDownload::State::DOWNLOAD_RUNNING:
-				text = "Downloading... " + std::to_string(download.getBytesDownloaded() / (1024*1024)) + " MB";
+				text = "Downloading... " + to_string_ps3(download.getBytesDownloaded() / (1024*1024)) + " MB";
 				mText = "Stop download";
 				break;
 

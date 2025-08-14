@@ -9,6 +9,7 @@
 #include "sonic3air/pch.h"
 #include "sonic3air/menu/options/OptionsConfig.h"
 #include "oxygen/application/Application.h"
+#include "Portability.h"
 
 
 namespace
@@ -46,7 +47,7 @@ namespace
 		{
 			OptionsConfig::Setting& setting = mOptionsTab.mCategories.back().mSettings.back();
 			for (int value = minValue; value <= maxValue; value += step)
-				setting.mOptions.emplace_back(std::to_string(value) + postfix, value);
+				setting.mOptions.emplace_back(to_string_ps3(value) + postfix, value);
 			return *this;
 		}
 

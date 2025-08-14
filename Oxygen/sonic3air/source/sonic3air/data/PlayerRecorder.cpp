@@ -14,7 +14,7 @@
 #include "sonic3air/ConfigurationImpl.h"
 
 #include "oxygen/application/input/ControlsIn.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 #include "oxygen/rendering/parts/RenderParts.h"
 #include "oxygen/rendering/parts/SpriteManager.h"
 #include "oxygen/simulation/EmulatorInterface.h"

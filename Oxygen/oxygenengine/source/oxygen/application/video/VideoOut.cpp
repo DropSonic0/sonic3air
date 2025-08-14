@@ -11,7 +11,7 @@
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/drawing/opengl/OpenGLDrawer.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/rendering/Geometry.h"
 #include "oxygen/rendering/RenderResources.h"
 #include "oxygen/rendering/opengl/OpenGLRenderer.h"

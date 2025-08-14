@@ -8,7 +8,7 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/drawing/DrawerTexture.h"

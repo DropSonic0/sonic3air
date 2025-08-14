@@ -15,7 +15,7 @@
 #include "oxygen/application/audio/AudioPlayer.h"
 #include "oxygen/application/Application.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 #include "oxygen/simulation/EmulatorInterface.h"
 
 

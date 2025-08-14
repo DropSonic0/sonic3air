@@ -8,7 +8,7 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/application/audio/AudioCollection.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 namespace
@@ -107,7 +107,7 @@ void AudioCollection::clearPackage(Package package)
 
 bool AudioCollection::loadFromJson(const std::wstring& basepath, const std::wstring& filename, Package package)
 {
-	const Json::Value jsonRoot = JsonHelper::loadFile(basepath + L'/' + filename);
+	const Json::Value jsonRoot = OxygenJsonHelper::loadFile(basepath + L'/' + filename);
 	if (jsonRoot.empty())
 		return false;
 

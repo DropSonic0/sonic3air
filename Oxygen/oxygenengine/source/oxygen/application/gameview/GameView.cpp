@@ -16,7 +16,7 @@
 #include "oxygen/drawing/DrawerTexture.h"
 #include "oxygen/helper/FileHelper.h"
 #include "oxygen/helper/HighResolutionTimer.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/helper/Profiling.h"
 #include "oxygen/rendering/parts/RenderParts.h"
 #include "oxygen/rendering/RenderResources.h"

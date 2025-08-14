@@ -14,7 +14,7 @@
 #include "oxygen/application/input/InputManager.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/application/video/VideoOut.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/platform/PlatformFunctions.h"
 #include "oxygen/rendering/RenderResources.h"
 #include "oxygen/resources/FontCollection.h"

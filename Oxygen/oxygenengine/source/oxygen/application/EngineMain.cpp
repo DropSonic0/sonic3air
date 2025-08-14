@@ -23,8 +23,8 @@
 #include "oxygen/drawing/software/SoftwareDrawer.h"
 #include "oxygen/file/PackedFileProvider.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/JsonHelper.h"
-#include "oxygen/helper/Logging.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/OxygenLogging.h"
 #include "oxygen/network/EngineServerClient.h"
 #include "oxygen/platform/CrashHandler.h"
 #include "oxygen/platform/PlatformFunctions.h"
@@ -380,11 +380,11 @@ void EngineMain::initDirectories()
 		// In any case: Check for redirect there
 		for (int iteration = 0; iteration < 3; ++iteration)
 		{
-			Json::Value redirectRoot = JsonHelper::loadFile(config.mAppDataPath + L"redirect.json");
+			Json::Value redirectRoot = OxygenJsonHelper::loadFile(config.mAppDataPath + L"redirect.json");
 			if (redirectRoot.isNull())
 				break;
 
-			JsonHelper rootHelper(redirectRoot);
+			OxygenJsonHelper rootHelper(redirectRoot);
 			std::wstring redirectedPath;
 			if (!rootHelper.tryReadString("Redirect", redirectedPath))
 				break;

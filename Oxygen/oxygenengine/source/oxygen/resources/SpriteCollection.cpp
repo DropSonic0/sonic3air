@@ -12,7 +12,7 @@
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 #include "oxygen/rendering/sprite/SpriteDump.h"
 #include "oxygen/rendering/utils/Kosinski.h"
 #include "oxygen/simulation/EmulatorInterface.h"
@@ -409,7 +409,7 @@ void SpriteCollection::loadSpriteDefinitions(const std::wstring& path, const Mod
 	++mGlobalChangeCounter;
 	for (const rmx::FileIO::FileEntry& fileEntry : fileEntries)
 	{
-		const Json::Value spritesJson = JsonHelper::loadFile(fileEntry.mPath + fileEntry.mFilename);
+		const Json::Value spritesJson = OxygenJsonHelper::loadFile(fileEntry.mPath + fileEntry.mFilename);
 		for (auto iterator = spritesJson.begin(); iterator != spritesJson.end(); ++iterator)
 		{
 			const String identifier(iterator.key().asString());
@@ -424,15 +424,15 @@ void SpriteCollection::loadSpriteDefinitions(const std::wstring& path, const Mod
 				Json::String keyString = it.key().asString();
 				if (keyString == "File")
 				{
-					JsonHelper::parseWString(filename, it);
+					OxygenJsonHelper::parseWString(filename, it);
 				}
 				else if (keyString == "Center")
 				{
-					JsonHelper::parseVec2i(center, it);
+					OxygenJsonHelper::parseVec2i(center, it);
 				}
 				else if (keyString == "Rect")
 				{
-					JsonHelper::parseRecti(rect, it);
+					OxygenJsonHelper::parseRecti(rect, it);
 				}
 			}
 

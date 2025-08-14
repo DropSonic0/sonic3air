@@ -9,7 +9,7 @@
 #include "oxygen/pch.h"
 #include "oxygen/resources/RawDataCollection.h"
 #include "oxygen/application/modding/ModManager.h"
-#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/OxygenJsonHelper.h"
 
 
 const std::vector<const RawDataCollection::RawData*>& RawDataCollection::getRawData(uint64 key) const
@@ -59,7 +59,7 @@ void RawDataCollection::loadRawDataInDirectory(const std::wstring& path, bool is
 
 	for (const rmx::FileIO::FileEntry& fileEntry : fileEntries)
 	{
-		const Json::Value root = JsonHelper::loadFile(fileEntry.mPath + fileEntry.mFilename);
+		const Json::Value root = OxygenJsonHelper::loadFile(fileEntry.mPath + fileEntry.mFilename);
 
 		for (auto it = root.begin(); it != root.end(); ++it)
 		{

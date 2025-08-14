@@ -50,7 +50,7 @@
 	#define _USRDLL
 #endif
 
-#if defined(_USRDLL) || defined(__PS3__)
+#if defined(_USRDLL)
 	// Export
 	#define API_EXPORT		GENERIC_API_EXPORT
 	#define FUNCTION_EXPORT	GENERIC_FUNCTION_EXPORT

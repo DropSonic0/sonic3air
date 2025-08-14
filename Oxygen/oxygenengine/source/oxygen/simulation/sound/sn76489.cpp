@@ -52,7 +52,7 @@
 *
 ****************************************************************************************/
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/simulation/sound/sn76489.h"
 #include "oxygen/simulation/sound/blip_buf.h"
 

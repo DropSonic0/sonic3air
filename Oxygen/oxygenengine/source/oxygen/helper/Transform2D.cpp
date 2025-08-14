@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/helper/Transform2D.h"
 
 
@@ -14,11 +14,11 @@ namespace
 {
 	void getSinCos(float angle, float& sine, float& cosine)
 	{
-		// Make sure to use precise values when close to a multiple of 90°
+		// Make sure to use precise values when close to a multiple of 90ï¿½
 		const float multiple = angle / (PI_FLOAT * 0.5f);
 		if (std::abs(multiple - roundToFloat(multiple)) < 0.001f)
 		{
-			// Make it an int value between 0 and 3, representing 0° to 270°
+			// Make it an int value between 0 and 3, representing 0ï¿½ to 270ï¿½
 			const int multipleInt = roundToInt(multiple) & 3;
 			sine   = (float)std::min(multipleInt, 2 - multipleInt);		// 0, 1, 0, -1
 			cosine = (float)std::max(1 - multipleInt, multipleInt - 3);	// 1, 0, -1, 0

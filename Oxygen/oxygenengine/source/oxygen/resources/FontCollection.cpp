@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/resources/FontCollection.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/rendering/RenderResources.h"

@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/pch.h"
+#include "sonic3air/sonic3air_pch.h"
 #include "sonic3air/menu/options/ControllerSetupMenu.h"
 #include "sonic3air/menu/options/OptionsMenu.h"
 #include "sonic3air/menu/SharedResources.h"

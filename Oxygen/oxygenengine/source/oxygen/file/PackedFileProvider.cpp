@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/file/PackedFileProvider.h"
 #include "oxygen/file/FileStructureTree.h"
 #include "oxygen/helper/OxygenLogging.h"
@@ -137,7 +137,10 @@ PackedFileProvider::PackedFileProvider(std::wstring_view packageFilename, CacheT
 
 	// Load the package if there is one
 	const bool forceLoadAll = (mCacheType == CacheType::CACHE_EVERYTHING);
-	mLoaded = FilePackage::loadPackage(packageFilename, mPackedFiles, forceLoadAll);
+	InputStream* inputStream = nullptr;
+	mLoaded = FilePackage::loadPackage(packageFilename, mPackedFiles, inputStream, forceLoadAll, true);
+	if (inputStream)
+		delete inputStream;
 	if (mLoaded)
 	{
 		RMX_LOG_INFO("Loaded file package '" << WString(packageFilename).toStdString() << "' with " << mPackedFiles.size() << " entries");

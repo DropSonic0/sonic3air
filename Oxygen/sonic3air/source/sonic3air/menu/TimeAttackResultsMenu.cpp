@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/pch.h"
+#include "sonic3air/sonic3air_pch.h"
 #include "sonic3air/menu/TimeAttackResultsMenu.h"
 #include "sonic3air/menu/GameApp.h"
 #include "sonic3air/menu/SharedResources.h"
@@ -22,7 +22,7 @@ namespace
 {
 	String formatTime(int hundreds, bool allowShortSpace = false)
 	{
-		// Misusing the degree character '°' = 0xb0 for a short space; the font has to support this
+		// Misusing the degree character 'ï¿½' = 0xb0 for a short space; the font has to support this
 		// TODO: Maybe use a different character for this...?
 		return String(0, "%d'%c%02d\"%02d", hundreds / 6000, allowShortSpace ? (char)0xb0 : ' ', (hundreds / 100) % 60, hundreds % 100);
 	}

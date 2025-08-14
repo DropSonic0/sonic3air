@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/simulation/sound/SoundEmulation.h"
 #include "oxygen/simulation/sound/blip_buf.h"
 #include "oxygen/simulation/sound/sn76489.h"

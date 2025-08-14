@@ -1,333 +1,206 @@
-/*
+ /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
-#include "oxygen/file/PackedFileProvider.h"
-#include "oxygen/file/FileStructureTree.h"
-#include "oxygen/helper/OxygenLogging.h"
+#include "oxygen/oxygen_pch.h"
+#include "oxygen/file/FilePackage.h"
+#include "oxygen/helper/Utils.h"
 
 
-struct PackedFileProvDetail
+bool FilePackage::loadPackage(std::wstring_view packageFilename, std::map<std::wstring, PackedFile>& outPackedFiles, InputStream*& inputStream, bool forceLoadAll, bool showErrors)
 {
-	static void buildFileEntries(std::vector<rmx::FileIO::FileEntry>& outFileEntries, const std::vector<const FileStructureTree::Entry*>& fileStructureEntries)
+	// Try to load the package
+	RMX_ASSERT(nullptr == inputStream, "Input stream was already opened");
+	inputStream = FTX::FileSystem->createInputStream(packageFilename);
+	if (nullptr == inputStream)
+		return false;
+
+	std::vector<uint8> content;
+	content.resize(PackageHeader::HEADER_SIZE);
+	if (inputStream->read(&content[0], PackageHeader::HEADER_SIZE) != PackageHeader::HEADER_SIZE)
+		return false;
+
+	VectorBinarySerializer serializer(true, content);
+	PackageHeader header;
+	if (!readPackageHeader(header, serializer))
 	{
-		if (!fileStructureEntries.empty())
+		if (showErrors)
 		{
-			outFileEntries.reserve(outFileEntries.size() + fileStructureEntries.size());
-			for (size_t k = 0; k < fileStructureEntries.size(); ++k)
+			if (header.mFormatVersion == PackageHeader::CURRENT_FORMAT_VERSION)
 			{
-				void* customData = fileStructureEntries[k]->mCustomData;
-				if (nullptr != customData)
+				RMX_ERROR("Unsupported format version " << header.mFormatVersion << " of file '" << WString(packageFilename).toStdString() << "'", );
+			}
+			else
+			{
+				RMX_ERROR("Invalid signature of file '" << WString(packageFilename).toStdString() << "'", );
+			}
+		}
+		return false;
+	}
+
+	// Load table of contents
+	content.resize(PackageHeader::HEADER_SIZE + header.mEntryHeaderSize);
+	if (inputStream->read(&content[PackageHeader::HEADER_SIZE], header.mEntryHeaderSize) != header.mEntryHeaderSize)
+		return false;
+
+	// Read entry headers
+	for (size_t i = 0; i < header.mNumEntries; ++i)
+	{
+		std::wstring key;
+		serializer.serialize(key, 1024);
+		PackedFile& packedFile = outPackedFiles[key];
+		packedFile.mPath = key;
+		packedFile.mPositionInFile = serializer.read<uint32>();
+		packedFile.mSizeInFile = serializer.read<uint32>();
+	}
+
+	if (forceLoadAll)
+	{
+		// Read entry contents
+		for (auto& pair : outPackedFiles)
+		{
+			pair.second.mContent.resize((size_t)pair.second.mSizeInFile);
+			inputStream->setPosition(pair.second.mPositionInFile);
+			const size_t bytesRead = inputStream->read(&pair.second.mContent[0], (size_t)pair.second.mSizeInFile);
+			RMX_CHECK(pair.second.mSizeInFile == bytesRead, "Failed to load entry '" << WString(pair.first).toStdString() << "' from package", continue);
+			pair.second.mLoadedContent = true;
+		}
+	}
+	return true;
+}
+
+void FilePackage::createFilePackage(const std::wstring& packageFilename, const std::vector<std::wstring>& includedPaths, const std::vector<std::wstring>& excludedPaths, const std::wstring& comparisonPath, uint32 contentVersion, bool forceReplace)
+{
+	// Collect file contents
+	std::map<std::wstring, PackedFile> packedFiles;
+	{
+		FileCrawler fc;
+		for (const std::wstring& includedPath : includedPaths)
+		{
+			fc.addFiles(includedPath, true);
+			// TODO: Remove duplicates
+		}
+
+		for (size_t i = 0; i < fc.size(); ++i)
+		{
+			const auto& entry = *fc[i];
+			std::wstring path = entry.mPath + entry.mFilename;
+
+			bool add = true;
+			for (const std::wstring& excludedPath : excludedPaths)
+			{
+				if (utils::startsWith(path, excludedPath))
 				{
-					FilePackage::PackedFile& packedFile = *(FilePackage::PackedFile*)customData;
-					rmx::FileIO::FileEntry& fileEntry = vectorAdd(outFileEntries);
-					const size_t slashPosition = packedFile.mPath.find_last_of(L"/\\");
-					fileEntry.mFilename = (slashPosition == std::wstring::npos) ? packedFile.mPath : packedFile.mPath.substr(slashPosition + 1);
-					fileEntry.mPath = (slashPosition == std::wstring::npos) ? L"" : packedFile.mPath.substr(0, slashPosition + 1);
-					fileEntry.mSize = packedFile.mContent.size();
+					add = false;
+					break;
+				}
+			}
+
+			if (add)
+			{
+				std::vector<uint8> content;
+				if (FTX::FileSystem->readFile(path, content))
+				{
+					PackedFile& packedFile = packedFiles[path];
+					packedFile.mContent.swap(content);
 				}
 			}
 		}
 	}
-};
 
-
-// At the moment, this class is not really necessary, as the provider never invalidates its created input streams.
-class PackedFileInputStream : public MemInputStream
-{
-public:
-	inline PackedFileInputStream(PackedFileProvider& provider, const void* data, size_t size) : MemInputStream(data, size), mProvider(provider) {}
-	inline ~PackedFileInputStream() { mProvider.unregisterPackedFileInputStream(*this); }
-
-	inline bool valid() const override				{ return mIsValid && MemInputStream::valid(); }
-	inline const char* getType() const override		{ return "packed"; }
-
-	inline void setPosition(size_t pos) override	{ if (mIsValid) MemInputStream::setPosition(pos); }
-	inline size_t getSize() const override			{ return mIsValid ? MemInputStream::getSize() : getPosition(); }
-	inline size_t getRemaining() const override		{ return mIsValid ? MemInputStream::getRemaining() : 0; }
-
-	using InputStream::read;
-	inline size_t read(void* dst, size_t len) override			{ return mIsValid ? MemInputStream::read(dst, len) : 0; }
-	inline void skip(size_t len) override						{ if (mIsValid) MemInputStream::skip(len); }
-	inline bool tryRead(const void* data, size_t len) override	{ return mIsValid ? MemInputStream::tryRead(data, len) : false; }
-	inline StreamingState getStreamingState() override			{ return mIsValid ? MemInputStream::getStreamingState() : StreamingState::COMPLETED; }
-
-public:
-	PackedFileProvider& mProvider;
-	bool mIsValid = true;
-};
-
-
-class StreamingPackedFileInputStream : public InputStream
-{
-public:
-	inline StreamingPackedFileInputStream(PackedFileProvider& provider, InputStream& baseInputStream, size_t start, size_t size) :
-		mProvider(provider), mBaseInputStream(baseInputStream), mStart(start), mSize(size)
+	// Check against existing file, if there is one already
+	if (!forceReplace && !comparisonPath.empty())
 	{
-		baseInputStream.setPosition(start);
-	}
-
-	inline ~StreamingPackedFileInputStream()
-	{
-		mProvider.unregisterStreamingPackedFileInputStream(*this);
-		delete &mBaseInputStream;
-	}
-
-	inline bool valid() const override				{ return mIsValid && mBaseInputStream.valid(); }
-	inline void close() override					{ mBaseInputStream.close(); }
-	inline const char* getType() const override		{ return "streamingPacked"; }
-
-	inline void setPosition(size_t pos) override	{ pos += mStart; if (mIsValid) mBaseInputStream.setPosition(pos); }
-	inline size_t getPosition() const override		{ return mBaseInputStream.getPosition() - mStart; }
-	inline size_t getSize() const override			{ return mIsValid ? mSize : 0; }
-	inline size_t getRemaining() const override		{ return mIsValid ? (mSize - getPosition()) : 0; }
-
-	using InputStream::read;
-	inline size_t read(void* dst, size_t len) override			{ return mIsValid ? mBaseInputStream.read(dst, std::min(len, mSize - getPosition())) : 0; }
-	inline void skip(size_t len) override						{ if (mIsValid) mBaseInputStream.skip(len); }
-	inline bool tryRead(const void* data, size_t len) override	{ return mIsValid ? mBaseInputStream.tryRead(data, std::min(len, mSize - getPosition())) : false; }
-	inline StreamingState getStreamingState() override			{ return mIsValid ? (getPosition() >= mSize ? StreamingState::COMPLETED : mBaseInputStream.getStreamingState()) : StreamingState::COMPLETED; }
-
-public:
-	PackedFileProvider& mProvider;
-	InputStream& mBaseInputStream;
-	size_t mStart = 0;
-	size_t mSize = 0;
-	bool mIsValid = true;
-};
-
-
-
-struct PackedFileProvider::Internal
-{
-	FileStructureTree mFileStructureTree;
-	std::vector<const FileStructureTree::Entry*> mEntriesBuffer;
-};
-
-
-
-PackedFileProvider* PackedFileProvider::createPackedFileProvider(std::wstring_view packageFilename)
-{
-	if (!FTX::FileSystem->exists(packageFilename))
-		return nullptr;
-
-	PackedFileProvider* provider = new PackedFileProvider(packageFilename, PackedFileProvider::CacheType::NO_CACHING);
-	if (provider->isLoaded())
-	{
-		return provider;
-	}
-	else
-	{
-		// Oops, could not load package file
-		delete provider;
-		return nullptr;
-	}
-}
-
-PackedFileProvider::PackedFileProvider(std::wstring_view packageFilename, CacheType cacheType) :
-	mInternal(*new Internal())
-{
-	mPackageFilename = packageFilename;
-	mCacheType = cacheType;
-
-	// Load the package if there is one
-	const bool forceLoadAll = (mCacheType == CacheType::CACHE_EVERYTHING);
-	mLoaded = FilePackage::loadPackage(packageFilename, mPackedFiles, forceLoadAll);
-	if (mLoaded)
-	{
-		RMX_LOG_INFO("Loaded file package '" << WString(packageFilename).toStdString() << "' with " << mPackedFiles.size() << " entries");
-
-		// Setup file structure tree
-		for (const auto& pair : mPackedFiles)
+		std::map<std::wstring, PackedFile> existingPackedFiles;
+		InputStream* inputStream = nullptr;
+		if (loadPackage(comparisonPath + packageFilename, existingPackedFiles, inputStream, true, false))
 		{
-			const PackedFile& packedFile = pair.second;
-			mInternal.mFileStructureTree.insertPath(packedFile.mPath, (void*)&packedFile);
-		}
-		mInternal.mFileStructureTree.sortTreeNodes();
-	}
-	else
-	{
-		RMX_LOG_INFO("Failed to load file package '" << WString(packageFilename).toStdString() << "'");
-	}
-}
+			delete inputStream;
 
-PackedFileProvider::~PackedFileProvider()
-{
-	delete &mInternal;
-}
-
-void PackedFileProvider::unregisterPackedFileInputStream(PackedFileInputStream& packedFileInputStream)
-{
-	mPackedFileInputStreams.erase(&packedFileInputStream);
-}
-
-void PackedFileProvider::unregisterStreamingPackedFileInputStream(StreamingPackedFileInputStream& packedFileInputStream)
-{
-	mStreamingPackedFileInputStreams.erase(&packedFileInputStream);
-}
-
-bool PackedFileProvider::exists(const std::wstring& path)
-{
-	if (nullptr != findPackedFile(path))
-		return true;
-
-	// Fallback needed specifically if the path refers to a directory
-	return mInternal.mFileStructureTree.pathExists(path);
-}
-
-bool PackedFileProvider::readFile(const std::wstring& filename, std::vector<uint8>& outData)
-{
-	PackedFile* packedFile = findPackedFile(filename);
-	if (nullptr != packedFile)
-	{
-		if (packedFile->mLoadedContent)
-		{
-			// Copy over the already cache content
-			outData.resize(packedFile->mContent.size());
-			memcpy(&outData[0], &packedFile->mContent[0], packedFile->mContent.size());
-		}
-		else
-		{
-			// Load from disk, with or without caching
-			if (mCacheType == CacheType::NO_CACHING)
+			// Compare
+			bool isEqual = (existingPackedFiles.size() == packedFiles.size());
+			if (isEqual)
 			{
-				loadPackedFile(*packedFile, outData);
+				for (const auto& pair : packedFiles)
+				{
+					PackedFile* packedFile = mapFind(existingPackedFiles, pair.first);
+					if (nullptr == packedFile || packedFile->mContent != pair.second.mContent)
+					{
+						isEqual = false;
+						break;
+					}
+				}
 			}
-			else
+
+			if (isEqual)
 			{
-				loadPackedFile(*packedFile);
-				outData.resize(packedFile->mContent.size());
-				memcpy(&outData[0], &packedFile->mContent[0], packedFile->mContent.size());
+				// Do not overwrite the existing file, as content has not changed (even though the content version might have changed)
+				return;
 			}
 		}
-		return true;
 	}
-	return false;
-}
 
-bool PackedFileProvider::listFiles(const std::wstring& path, bool recursive, std::vector<rmx::FileIO::FileEntry>& outFileEntries)
-{
-	if (mPackedFiles.empty())
-		return false;
-
-	mInternal.mEntriesBuffer.clear();
-	if (!mInternal.mFileStructureTree.listFiles(mInternal.mEntriesBuffer, path))
-		return false;
-
-	PackedFileProvDetail::buildFileEntries(outFileEntries, mInternal.mEntriesBuffer);
-	return true;
-}
-
-bool PackedFileProvider::listFilesByMask(const std::wstring& filemask, bool recursive, std::vector<rmx::FileIO::FileEntry>& outFileEntries)
-{
-	if (mPackedFiles.empty())
-		return false;
-
-	mInternal.mEntriesBuffer.clear();
-	if (!mInternal.mFileStructureTree.listFilesByMask(mInternal.mEntriesBuffer, filemask, recursive))
-		return false;
-
-	PackedFileProvDetail::buildFileEntries(outFileEntries, mInternal.mEntriesBuffer);
-	return true;
-}
-
-bool PackedFileProvider::listDirectories(const std::wstring& path, std::vector<std::wstring>& outDirectories)
-{
-	if (mPackedFiles.empty())
-		return false;
-
-	return mInternal.mFileStructureTree.listDirectories(outDirectories, path);
-}
-
-InputStream* PackedFileProvider::createInputStream(const std::wstring& filename)
-{
-	// Try to first read from package
-	PackedFile* packedFile = findPackedFile(filename);
-	if (nullptr != packedFile)
+	// Collect output content
+	std::vector<uint8> output;
+	size_t entryHeaderSize = 0;
 	{
-		return createPackedFileInputStream(*packedFile);
-	}
-	return nullptr;
-}
+		VectorBinarySerializer serializer(false, output);
 
-PackedFileProvider::PackedFile* PackedFileProvider::findPackedFile(const std::wstring& filename)
-{
-	if (!mPackedFiles.empty())
-	{
-		const auto it = mPackedFiles.find(filename);
-		if (it != mPackedFiles.end())
+		serializer.write(PackageHeader::SIGNATURE, 4);
+		const uint32 formatVersion = PackageHeader::CURRENT_FORMAT_VERSION;
+		serializer.write(formatVersion);
+		serializer.write(contentVersion);
+
+		const size_t headerSizePosition = output.size();
+		serializer.writeAs<uint32>(0);		// Will get overwritten
+
+		serializer.writeAs<uint32>(packedFiles.size());
+		for (auto& [key, packedFile] : packedFiles)
 		{
-			return &it->second;
-		}
-	}
-	return nullptr;
-}
-
-void PackedFileProvider::loadPackedFile(PackedFile& packedFile)
-{
-	if (!packedFile.mLoadedContent)
-	{
-		// Load and cache file content
-		if (loadPackedFile(packedFile, packedFile.mContent))
-		{
-			packedFile.mLoadedContent = true;
-		}
-	}
-}
-
-bool PackedFileProvider::loadPackedFile(PackedFile& packedFile, std::vector<uint8>& outData)
-{
-	InputStream* inputStream = FTX::FileSystem->createInputStream(mPackageFilename);
-	if (nullptr == inputStream)
-	{
-		RMX_ASSERT(false, "Input stream could not be opened");
-		return false;
-	}
-
-	outData.resize((size_t)packedFile.mSizeInFile);
-	inputStream->setPosition(packedFile.mPositionInFile);
-	const size_t bytesRead = inputStream->read(&outData[0], outData.size());
-	delete inputStream;
-
-	RMX_CHECK(packedFile.mSizeInFile == bytesRead, "Failed to load entry '" << WString(packedFile.mPath).toStdString() << "' from package '" << WString(mPackageFilename).toStdString() << "'", return false);
-	return true;
-}
-
-InputStream* PackedFileProvider::createPackedFileInputStream(PackedFile& packedFile)
-{
-	if (mCacheType == CacheType::NO_CACHING)
-	{
-		InputStream* baseInputStream = FTX::FileSystem->createInputStream(mPackageFilename);
-		if (nullptr == baseInputStream)
-		{
-			RMX_ASSERT(false, "Input stream could not be opened");
-			return nullptr;
+			serializer.write(key, 1024);
+			packedFile.mPositionInFile = (uint32)output.size();		// Temporarily misusing this variable to store the position where to write the content's position in file when it got determined
+			serializer.writeAs<uint32>(0);							// Will get overwritten
+			serializer.writeAs<uint32>(packedFile.mContent.size());
 		}
 
-		StreamingPackedFileInputStream* inputStream = new StreamingPackedFileInputStream(*this, *baseInputStream, packedFile.mPositionInFile, packedFile.mSizeInFile);
-		mStreamingPackedFileInputStreams.insert(inputStream);
-		return inputStream;
+		// Write entry header size
+		entryHeaderSize = output.size() - PackageHeader::HEADER_SIZE;
+		*(uint32*)&output[headerSizePosition] = (uint32)entryHeaderSize;
+
+		for (auto it = packedFiles.begin(); it != packedFiles.end(); ++it)
+		{
+			auto& packedFile = it->second;
+			const uint32 position = (uint32)output.size();
+			serializer.write(&packedFile.mContent[0], packedFile.mContent.size());
+			*(uint32*)&output[packedFile.mPositionInFile] = position;
+			packedFile.mPositionInFile = position;
+		}
 	}
-	else
-	{
-		loadPackedFile(packedFile);
-		PackedFileInputStream* inputStream = new PackedFileInputStream(*this, &packedFile.mContent[0], packedFile.mContent.size());
-		mPackedFileInputStreams.insert(inputStream);
-		return inputStream;
-	}
+
+	// Save output file
+	FTX::FileSystem->saveFile(packageFilename, output);
 }
 
-void PackedFileProvider::invalidateAllPackedFileInputStreams()
+bool FilePackage::readPackageHeader(PackageHeader& outHeader, VectorBinarySerializer& serializer)
 {
-	for (PackedFileInputStream* inputStream : mPackedFileInputStreams)
-		inputStream->mIsValid = false;
-	for (StreamingPackedFileInputStream* inputStream : mStreamingPackedFileInputStreams)
-		inputStream->mIsValid = false;
-	mPackedFileInputStreams.clear();
-	mStreamingPackedFileInputStreams.clear();
+	// Read header
+	char signature[4];
+	serializer.read(signature, 4);
+	if (memcmp(signature, PackageHeader::SIGNATURE, 4) != 0)
+		return false;
+
+	outHeader.mFormatVersion = serializer.read<uint32>();
+	if (outHeader.mFormatVersion != PackageHeader::CURRENT_FORMAT_VERSION)
+		return false;
+
+	outHeader.mContentVersion = serializer.read<uint32>();
+	outHeader.mEntryHeaderSize = serializer.read<uint32>();
+	outHeader.mNumEntries = (size_t)serializer.read<uint32>();
+
+	RMX_ASSERT(serializer.getReadPosition() == PackageHeader::HEADER_SIZE, "Got wrong package header size");
+	return true;
 }

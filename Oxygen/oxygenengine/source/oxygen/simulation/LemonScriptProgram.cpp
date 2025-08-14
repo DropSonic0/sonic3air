@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/simulation/LemonScriptProgram.h"
 #include "oxygen/simulation/EmulatorInterface.h"
 #include "oxygen/simulation/LogDisplay.h"

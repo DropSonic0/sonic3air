@@ -1591,7 +1591,7 @@
 		9E6E7B0E245F882600114DEB /* rmxmedia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rmxmedia.h; sourceTree = "<group>"; };
 		9E6E7B10245F882600114DEB /* rmxbase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rmxbase.h; sourceTree = "<group>"; };
 		9E6E7B14245F882600114DEB /* CleanWindowsInclude.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CleanWindowsInclude.h; sourceTree = "<group>"; };
-		9E6E7B54245F886B00114DEB /* pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pch.h; sourceTree = "<group>"; };
+		9E6E7B54245F886B00114DEB /* lemon_pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lemon_pch.h; sourceTree = "<group>"; };
 		9E6E7B56245F886B00114DEB /* RuntimeFunction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RuntimeFunction.cpp; sourceTree = "<group>"; };
 		9E6E7B57245F886B00114DEB /* RuntimeFunction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RuntimeFunction.h; sourceTree = "<group>"; };
 		9E6E7B58245F886B00114DEB /* StandardLibrary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StandardLibrary.h; sourceTree = "<group>"; };
@@ -1600,7 +1600,7 @@
 		9E6E7B5B245F886B00114DEB /* Runtime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Runtime.cpp; sourceTree = "<group>"; };
 		9E6E7B5D245F886B00114DEB /* Translator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Translator.cpp; sourceTree = "<group>"; };
 		9E6E7B5E245F886B00114DEB /* Translator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Translator.h; sourceTree = "<group>"; };
-		9E6E7B5F245F886B00114DEB /* pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pch.cpp; sourceTree = "<group>"; };
+		9E6E7B5F245F886B00114DEB /* lemon_pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lemon_pch.cpp; sourceTree = "<group>"; };
 		9E6E7B61245F886B00114DEB /* Program.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Program.cpp; sourceTree = "<group>"; };
 		9E6E7B62245F886B00114DEB /* GlobalsLookup.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GlobalsLookup.cpp; sourceTree = "<group>"; };
 		9E6E7B63245F886B00114DEB /* Define.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Define.h; sourceTree = "<group>"; };
@@ -1631,7 +1631,7 @@
 		9E6E7B87245F886B00114DEB /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		9E6E7BA0245F88D200114DEB /* oxygenproject.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = oxygenproject.json; sourceTree = "<group>"; };
 		9E6E7BA1245F88D200114DEB /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
-		9E6E7BA4245F88D200114DEB /* pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pch.h; sourceTree = "<group>"; };
+		9E6E7BA4245F88D200114DEB /* sonic3air_pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sonic3air_pch.h; sourceTree = "<group>"; };
 		9E6E7BA5245F88D200114DEB /* ConfigurationImpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConfigurationImpl.h; sourceTree = "<group>"; };
 		9E6E7BA6245F88D200114DEB /* ConfigurationImpl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConfigurationImpl.cpp; sourceTree = "<group>"; };
 		9E6E7BA8245F88D200114DEB /* ResourceScriptGenerator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResourceScriptGenerator.cpp; sourceTree = "<group>"; };
@@ -1687,7 +1687,7 @@
 		9E6E7BE2245F88D200114DEB /* Game.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Game.cpp; sourceTree = "<group>"; };
 		9E6E7BE3245F88D200114DEB /* version.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = version.inc; sourceTree = "<group>"; };
 		9E6E8518245F89C300114DEB /* GameApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GameApp.cpp; sourceTree = "<group>"; };
-		9E6E8519245F89C300114DEB /* pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pch.h; sourceTree = "<group>"; };
+		9E6E8519245F89C300114DEB /* engineapp_pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = engineapp_pch.h; sourceTree = "<group>"; };
 		9E6E851A245F89C300114DEB /* ConfigurationImpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConfigurationImpl.h; sourceTree = "<group>"; };
 		9E6E851C245F89C300114DEB /* Experiments.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Experiments.cpp; sourceTree = "<group>"; };
 		9E6E851D245F89C300114DEB /* Experiments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Experiments.h; sourceTree = "<group>"; };
@@ -1722,7 +1722,7 @@
 		9E6E853F245F89C300114DEB /* OpenGLDrawer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenGLDrawer.cpp; sourceTree = "<group>"; };
 		9E6E8540245F89C300114DEB /* Upscaler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Upscaler.h; sourceTree = "<group>"; };
 		9E6E8541245F89C300114DEB /* OpenGLDrawerTexture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGLDrawerTexture.h; sourceTree = "<group>"; };
-		9E6E8542245F89C300114DEB /* pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pch.h; sourceTree = "<group>"; };
+		9E6E8542245F89C300114DEB /* oxygen_pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oxygen_pch.h; sourceTree = "<group>"; };
 		9E6E8546245F89C300114DEB /* ResourcesCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResourcesCache.cpp; sourceTree = "<group>"; };
 		9E6E8547245F89C300114DEB /* ResourcesCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ResourcesCache.h; sourceTree = "<group>"; };
 		9E6E8549245F89C300114DEB /* CodeExec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CodeExec.cpp; sourceTree = "<group>"; };
@@ -1752,7 +1752,7 @@
 		9E6E8568245F89C300114DEB /* ym2612.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ym2612.h; sourceTree = "<group>"; };
 		9E6E8569245F89C300114DEB /* LemonScriptRuntime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LemonScriptRuntime.h; sourceTree = "<group>"; };
 		9E6E856A245F89C300114DEB /* LogDisplay.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LogDisplay.cpp; sourceTree = "<group>"; };
-		9E6E856B245F89C300114DEB /* pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pch.cpp; sourceTree = "<group>"; };
+		9E6E856B245F89C300114DEB /* oxygen_pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = oxygen_pch.cpp; sourceTree = "<group>"; };
 		9E6E856D245F89C300114DEB /* RenderResources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RenderResources.h; sourceTree = "<group>"; };
 		9E6E856E245F89C300114DEB /* Geometry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Geometry.cpp; sourceTree = "<group>"; };
 		9E6E856F245F89C300114DEB /* RenderResources.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RenderResources.cpp; sourceTree = "<group>"; };
@@ -1862,8 +1862,8 @@
 		9E82C77826BDF29A00ADDBD3 /* BackdropView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BackdropView.h; sourceTree = "<group>"; };
 		9E82C78126BDF33D00ADDBD3 /* LemonScriptProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LemonScriptProgram.cpp; sourceTree = "<group>"; };
 		9E82C78226BDF33D00ADDBD3 /* LemonScriptProgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LemonScriptProgram.h; sourceTree = "<group>"; };
-		9E82C79026BDF3C500ADDBD3 /* pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pch.cpp; sourceTree = "<group>"; };
-		9E82C79126BDF3C500ADDBD3 /* pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pch.h; sourceTree = "<group>"; };
+		9E82C79026BDF3C500ADDBD3 /* oxygen_netcore_pch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = oxygen_netcore_pch.cpp; sourceTree = "<group>"; };
+		9E82C79126BDF3C500ADDBD3 /* oxygen_netcore_pch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oxygen_netcore_pch.h; sourceTree = "<group>"; };
 		9E82C7BB26BDF88F00ADDBD3 /* DrawerHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawerHelper.h; sourceTree = "<group>"; };
 		9E82C7BC26BDF8B100ADDBD3 /* ControllerSetupMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ControllerSetupMenu.cpp; sourceTree = "<group>"; };
 		9E82C7BD26BDF8B100ADDBD3 /* ControllerSetupMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ControllerSetupMenu.h; sourceTree = "<group>"; };

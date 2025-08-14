@@ -89,6 +89,7 @@ SOURCES	+=	\
 			librmx/source/rmxbase \
 			librmx/source/rmxbase/base \
 			librmx/source/rmxbase/bitmap \
+			librmx/source/rmxbase/data \
 			librmx/source/rmxbase/file \
 			librmx/source/rmxbase/math \
 			librmx/source/rmxbase/memory \

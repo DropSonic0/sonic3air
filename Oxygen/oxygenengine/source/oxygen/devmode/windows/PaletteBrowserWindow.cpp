@@ -1,4 +1,4 @@
-﻿/*
+/*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
 *	Copyright (C) 2017-2025 by Eukaryot
 *
@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/devmode/windows/PaletteBrowserWindow.h"
 
 #if defined(SUPPORT_IMGUI)

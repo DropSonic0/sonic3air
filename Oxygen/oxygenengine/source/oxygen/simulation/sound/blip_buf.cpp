@@ -18,7 +18,7 @@
 /*    - modified blip_read_samples to always output to stereo streams */
 /*    - added blip_mix_samples function (see blip_buf.h)              */
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/simulation/sound/blip_buf.h"
 
 #ifdef BLIP_ASSERT

@@ -139,7 +139,7 @@
 /*    YM2610B : PSG:3ch FM:6ch ADPCM(18.5KHz):6ch DeltaT ADPCM:1ch      */
 /************************************************************************/
 
-#include "oxygen/pch.h"
+#include "oxygen/oxygen_pch.h"
 #include "oxygen/simulation/sound/ym2612.h"
 
 

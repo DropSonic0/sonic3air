@@ -7,7 +7,7 @@
 */
 
 #define RMX_LIB
-#include "engineapp/pch.h"
+#include "engineapp/engineapp_pch.h"
 #include "engineapp/EngineDelegate.h"
 
 #include "oxygen/application/ArgumentsReader.h"

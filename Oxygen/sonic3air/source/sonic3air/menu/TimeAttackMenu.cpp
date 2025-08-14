@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/pch.h"
+#include "sonic3air/sonic3air_pch.h"
 #include "sonic3air/menu/TimeAttackMenu.h"
 #include "sonic3air/menu/GameApp.h"
 #include "sonic3air/menu/MenuBackground.h"

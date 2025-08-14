@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen_netcore/pch.h"
+#include "oxygen_netcore/oxygen_netcore_pch.h"
 #include "oxygen_netcore/network/internal/CryptoFunctions.h"
 
 

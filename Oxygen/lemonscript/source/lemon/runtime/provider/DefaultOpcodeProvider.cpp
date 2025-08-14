@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/pch.h"
+#include "lemon/lemon_pch.h"
 #include "lemon/runtime/provider/DefaultOpcodeProvider.h"
 #include "lemon/runtime/RuntimeFunction.h"
 #include "lemon/runtime/RuntimeOpcodeContext.h"

@@ -467,6 +467,12 @@ namespace rmx
 		if (path.empty())
 			return path;
 
+	#if defined(PLATFORM_PS3)
+		// Assume that the path is always normal when it begins with /dev_hdd0/
+		const WString t(path);
+		if (t.startsWith(L"/dev_hdd0/"))
+			return path;
+	#endif
 	#ifdef PLATFORM_VITA
 		// Assume that the path is always normal when it begins with ux0:/data
 		const WString t(path);

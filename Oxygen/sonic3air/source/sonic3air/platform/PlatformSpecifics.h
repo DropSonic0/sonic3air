@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "oxygen/platform/PlatformFunctions.h"
+
 
 class PlatformSpecifics
 {

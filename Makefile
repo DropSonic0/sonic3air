@@ -121,7 +121,7 @@ TITLE		:=	Sonic 3 A.I.R
 APPID		:=	SNC300AIR
 CONTENTID	:=	UP0001-$(APPID)_00-SNC3ANGELINSLAND
 
-CFLAGS		=	-D__PS3__ -Wall -mcpu=cell $(MACHDEP) $(INCLUDE) $(INCLUDE)
+CFLAGS		=	-g3 -D__PS3__ -Wall -mcpu=cell $(MACHDEP) $(INCLUDE) $(INCLUDE)
 CXXFLAGS	=	$(CFLAGS) -std=c++17 -Wno-psabi
 
 LDFLAGS		=	-Wl,--gc-sections -s -Wl,--strip-all -Wl,--sort-common=descending $(MACHDEP) -Wl,-Map,$(notdir $@).map

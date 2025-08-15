@@ -65,6 +65,10 @@ namespace
 
 void PlatformSpecifics::platformStartup()
 {
+#if defined(PLATFORM_PS3)
+	// Set the working directory for PS3
+	PlatformFunctions::changeWorkingDirectory(L"/dev_hdd0/game/SNC300AIR/USRDIR/");
+#endif
 #if defined(PLATFORM_VITA)
 	scePowerSetArmClockFrequency(444);
 	scePowerSetBusClockFrequency(222);

@@ -43,6 +43,13 @@ extern "C"
 }
 #endif
 
+#if defined(PLATFORM_PS3)
+extern "C"
+{
+	int _newlib_heap_size_user = 128 * 1024 * 1024; // 128 MB
+}
+#endif
+
 
 int main(int argc, char** argv)
 {

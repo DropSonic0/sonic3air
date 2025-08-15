@@ -28,7 +28,9 @@ namespace rmx
 	FileSystem::FileSystem()
 	{
 		// By default, add a real file provider with mounted at root
-	#if !defined(PLATFORM_VITA)
+	#if defined(PLATFORM_PS3)
+		addMountPoint(mDefaultRealFileProvider, L"/dev_hdd0/game/SNC300AIR/USRDIR/", L"", 0);
+	#elif !defined(PLATFORM_VITA)
 		addMountPoint(mDefaultRealFileProvider, L"", L"", 0);
 	#else
 		addMountPoint(mDefaultRealFileProvider, L"ux0:data/sonic3air/", L"ux0:data/sonic3air/", 0);

@@ -183,7 +183,7 @@ loadFont(void)
         SDL_BlitSurface(surface, NULL, converted, NULL);
         /* create our texture */
         texture = SDL_CreateTextureFromSurface(renderer, converted);
-        if (!texture) {
+        if (texture == 0) {
             printf("texture creation failed: %s\n", SDL_GetError());
         } else {
             /* set blend mode for our texture */
@@ -196,7 +196,7 @@ loadFont(void)
 }
 
 void
-draw(void)
+draw()
 {
     SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
     SDL_RenderClear(renderer);

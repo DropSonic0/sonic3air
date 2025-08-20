@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -9,23 +9,15 @@
 #pragma once
 
 #include <rmxbase.h>
-#include "Portability.h"
+
 
 class Sockets
 {
 public:
-	enum class ProtocolFamily
-	{
-		IPv4,
-		IPv6,
-		DualStack	// IPv6 socket that also supports IPv4
-	};
-
-public:
 	static void startupSockets();
 	static void shutdownSockets();
 
-	static bool resolveToIP(const std::string& hostName, std::string& outIP, bool useIPv6);
+	static bool resolveToIP(const std::string& hostName, std::string& outIP);
 
 public:
 	static inline rmx::ErrorHandling::LoggerInterface* mLogger = nullptr;
@@ -47,7 +39,7 @@ public:
 		mPort(0)
 	{}
 
-	inline SocketAddress(std::string_view ip, uint16 port) :
+	inline SocketAddress(const std::string& ip, uint16 port) :
 		mHasSockAddr(false),
 		mHasIpPort(true),
 		mIP(ip),
@@ -59,7 +51,7 @@ public:
 
 	inline const std::string& getIP() const	 { assureIpPort();  return mIP; }
 	inline uint16 getPort() const			 { assureIpPort();  return mPort; }
-	inline std::string toString() const		 { assureIpPort();  return mIP + ':' + to_string_ps3(mPort); }
+	inline std::string toString() const		 { assureIpPort();  return mIP + ':' + std::to_string(mPort); }
 	std::string toLoggedString() const;
 
 	inline bool isValid() const  { return (mHasSockAddr || mHasIpPort); }
@@ -70,7 +62,7 @@ public:
 		mHasIpPort = false;
 	}
 
-	inline void set(std::string_view ip, uint16 port)
+	inline void set(const std::string& ip, uint16 port)
 	{
 		mHasSockAddr = false;
 		mHasIpPort = true;
@@ -137,10 +129,10 @@ public:
 	const SocketAddress& getRemoteAddress();
 	void swapWith(TCPSocket& other);
 
-	bool setupServer(uint16 serverPort, Sockets::ProtocolFamily protocolFamily = Sockets::ProtocolFamily::IPv4);
+	bool setupServer(uint16 serverPort);
 	bool acceptConnection(TCPSocket& outSocket);
 
-	bool connectTo(const std::string& serverAddress, uint16 serverPort, Sockets::ProtocolFamily protocolFamily = Sockets::ProtocolFamily::IPv4);
+	bool connectTo(const std::string& serverAddress, uint16 serverPort);
 
 	bool sendData(const uint8* data, size_t length);
 	bool sendData(const std::vector<uint8>& data);
@@ -174,8 +166,8 @@ public:
 	bool isValid() const;
 	void close();
 
-	bool bindToPort(uint16 port, Sockets::ProtocolFamily protocolFamily = Sockets::ProtocolFamily::IPv4);
-	bool bindToAnyPort(Sockets::ProtocolFamily protocolFamily = Sockets::ProtocolFamily::IPv4);
+	bool bindToPort(uint16 port);
+	bool bindToAnyPort();
 
 	bool sendData(const uint8* data, size_t length, const SocketAddress& destinationAddress);
 	bool sendData(const std::vector<uint8>& data, const SocketAddress& destinationAddress);

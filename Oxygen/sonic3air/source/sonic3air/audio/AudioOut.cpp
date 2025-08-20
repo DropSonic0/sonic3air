@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/audio/AudioOut.h"
 #include "sonic3air/audio/CustomAudioMixer.h"
 #include "sonic3air/data/SharedDatabase.h"
@@ -15,7 +15,7 @@
 #include "oxygen/application/audio/AudioPlayer.h"
 #include "oxygen/application/Application.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/JsonHelper.h"
 #include "oxygen/simulation/EmulatorInterface.h"
 
 
@@ -59,6 +59,7 @@ void AudioOut::shutdown()
 void AudioOut::reset()
 {
 	mAudioPlayer.stopAllSounds();
+	mPausedContexts.clear();
 	resetGame();
 }
 
@@ -66,6 +67,11 @@ void AudioOut::resetGame()
 {
 	mAudioPlayer.resetChannelOverrides();
 	mAudioPlayer.resetAudioModifiers();
+}
+
+void AudioOut::update(float secondsPassed)
+{
+	// This is an update once per frame -- currently not used
 }
 
 void AudioOut::realtimeUpdate(float secondsPassed)
@@ -137,11 +143,13 @@ void AudioOut::moveIngameMusicToMenu()
 void AudioOut::pauseSoundContext(int contextId)
 {
 	mAudioPlayer.pauseAllSoundsByContext(contextId);
+	mPausedContexts.insert(contextId);
 }
 
 void AudioOut::resumeSoundContext(int contextId)
 {
 	mAudioPlayer.resumeAllSoundsByContext(contextId);
+	mPausedContexts.erase(contextId);
 }
 
 void AudioOut::stopSoundContext(int contextId)

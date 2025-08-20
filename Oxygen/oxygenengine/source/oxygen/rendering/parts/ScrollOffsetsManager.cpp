@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/rendering/parts/ScrollOffsetsManager.h"
 #include "oxygen/rendering/parts/PlaneManager.h"
 #include "oxygen/simulation/EmulatorInterface.h"
@@ -68,6 +68,12 @@ void ScrollOffsetsManager::refresh(const RefreshParameters& refreshParameters)
 					}
 				}
 			}
+
+			// Reset overwrite flags
+			for (int k = 0; k < 0x100; ++k)
+			{
+				overwriteFlags[k] = false;
+			}
 		}
 
 		// Vertical scrolling
@@ -98,6 +104,12 @@ void ScrollOffsetsManager::refresh(const RefreshParameters& refreshParameters)
 						buffer[k] = mSets[index - 2].mScrollOffsetsV[k];
 					}
 				}
+			}
+
+			// Reset overwrite flags
+			for (int k = 0; k < 0x20; ++k)
+			{
+				overwriteFlags[k] = false;
 			}
 		}
 
@@ -178,26 +190,6 @@ void ScrollOffsetsManager::preFrameUpdate()
 
 void ScrollOffsetsManager::postFrameUpdate()
 {
-}
-
-void ScrollOffsetsManager::resetOverwriteFlags()
-{
-	for (int index = 0; index < 4; ++index)
-	{
-		// Horizontal scrolling
-		bool* overwriteFlags = mSets[index].mExplicitOverwriteH;
-		for (int k = 0; k < 0x100; ++k)
-		{
-			overwriteFlags[k] = false;
-		}
-
-		// Vertical scrolling
-		overwriteFlags = mSets[index].mExplicitOverwriteV;
-		for (int k = 0; k < 0x20; ++k)
-		{
-			overwriteFlags[k] = false;
-		}
-	}
 }
 
 bool ScrollOffsetsManager::getHorizontalScrollNoRepeat(int setIndex) const

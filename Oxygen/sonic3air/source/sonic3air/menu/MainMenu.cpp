@@ -1,28 +1,28 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/MainMenu.h"
 #include "sonic3air/menu/GameApp.h"
 #include "sonic3air/menu/MenuBackground.h"
 #include "sonic3air/menu/SharedResources.h"
+#include "sonic3air/Game.h"
 #include "sonic3air/audio/AudioOut.h"
 #include "sonic3air/data/SharedDatabase.h"
-#include "sonic3air/ConfigurationImpl.h"
-#include "sonic3air/Game.h"
 #include "sonic3air/version.inc"
 
 #include "oxygen/application/Application.h"
 #include "oxygen/application/EngineMain.h"
-#include "oxygen/application/gameview/GameView.h"
 #include "oxygen/application/input/InputManager.h"
+#include "oxygen/application/mainview/GameView.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/helper/Utils.h"
+#include "oxygen/simulation/Simulation.h"
 
 
 namespace mainmenu
@@ -200,14 +200,16 @@ void MainMenu::update(float timeElapsed)
 
 	if (mState == State::APPEAR)
 	{
-		if (updateFadeIn(timeElapsed * 4.0f))
+		mVisibility = saturate(mVisibility + timeElapsed * 4.0f);
+		if (mVisibility >= 1.0f)
 		{
 			mState = State::SHOW;
 		}
 	}
 	else if (mState > State::SHOW)
 	{
-		if (updateFadeOut(timeElapsed * 4.0f))
+		mVisibility = saturate(mVisibility - timeElapsed * 4.0f);
+		if (mVisibility <= 0.0f)
 		{
 			switch (mState)
 			{
@@ -291,10 +293,10 @@ void MainMenu::render()
 		}
 		else
 		{
-			const uint32 value = ConfigurationImpl::instance().mActiveGameSettings->getValue((uint32)SharedDatabase::Setting::SETTING_FIX_GLITCHES);
-			if (value < 2)
+			const SharedDatabase::Setting* setting = SharedDatabase::getSetting(SharedDatabase::Setting::SETTING_FIX_GLITCHES);
+			if (nullptr != setting && setting->mCurrentValue < 2)
 			{
-				const char* txt = (value == 0) ? "NO GLITCH FIXES" : "ONLY BASIC FIXES";
+				const char* txt = (setting->mCurrentValue == 0) ? "NO GLITCH FIXES" : "ONLY BASIC FIXES";
 				drawer.printText(global::mSmallfont, Vec2i(px, 1), txt, 3, Color(0.6f, 0.2f, 0.2f, mVisibility * 0.3f));
 			}
 		}
@@ -365,6 +367,6 @@ void MainMenu::exitGame()
 {
 	AudioOut::instance().fadeOutChannel(0, 0.25f);
 	GameApp::instance().getGameView().startFadingOut(0.25f);
-	mMenuBackground->startTransition(MenuBackground::Target::TITLE);
+	mMenuBackground->fadeToExit();
 	mState = State::FADE_TO_EXIT;
 }

@@ -1,4 +1,4 @@
-#include "engineapp/engineapp_pch.h"
+#include "engineapp/pch.h"
 #include "engineapp/audio/AudioOut.h"
 
 
@@ -27,6 +27,10 @@ void AudioOut::reset()
 }
 
 void AudioOut::resetGame()
+{
+}
+
+void AudioOut::update(float secondsPassed)
 {
 }
 

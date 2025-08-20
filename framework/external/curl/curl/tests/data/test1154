@@ -29,10 +29,10 @@ Long: %repeat[102400 x A]%
 <server>
 http
 </server>
-<name>
+ <name>
 HTTP GET with 100K (too long) response header
-</name>
-<command>
+ </name>
+ <command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>
 </client>
@@ -47,9 +47,9 @@ User-Agent: curl/%VERSION
 Accept: */*
 
 </protocol>
-# 100 == CURLE_TOO_LARGE
+# 27 == CURLE_OUT_OF_MEMORY
 <errorcode>
-100
+27
 </errorcode>
 </verify>
 </testcase>

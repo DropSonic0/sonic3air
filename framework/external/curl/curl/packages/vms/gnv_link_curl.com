@@ -1,8 +1,10 @@
 $! File: gnv_link_curl.com
 $!
+$! $Id$
+$!
 $! File to build images using gnv$libcurl.exe
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2013 - 2022, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -18,6 +20,7 @@ $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
 $! SPDX-License-Identifier: ISC
 $!
+$! 10-Jun-2009  J. Malmberg
 $!============================================================================
 $!
 $! Save this so we can get back.
@@ -388,7 +391,7 @@ $ if f$search("[.src]curl-tool_main.o") .nes. ""
 $ then
 $!  From src/makefile.inc:
 $!  # libcurl has sources that provide functions named curlx_* that aren't
-$!  # part of the official API, but we reuse the code here to avoid
+$!  # part of the official API, but we re-use the code here to avoid
 $!  # duplication.
 $!
 $!
@@ -409,7 +412,7 @@ $       link'ldebug'/exe=[.src]curl.exe/dsf=[.src]curl.dsf -
            [.src]curl-tool_hugehelp.o, [.src]curl-tool_libinfo.o, -
            [.src]curl-tool_mfiles.o, -
            [.src]curl-tool_msgs.o, [.src]curl-tool_operate.o, -
-           [.src]curl-tool_operhlp.o, -
+           [.src]curl-tool_operhlp.o, [.src]curl-tool_panykey.o, -
            [.src]curl-tool_paramhlp.o, [.src]curl-tool_parsecfg.o, -
            [.src]curl-tool_setopt.o, [.src]curl-tool_sleep.o, -
            [.src]curl-tool_urlglob.o, [.src]curl-tool_util.o, -

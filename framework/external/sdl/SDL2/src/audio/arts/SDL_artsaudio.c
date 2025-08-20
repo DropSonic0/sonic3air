@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,7 +20,7 @@
 */
 #include "../../SDL_internal.h"
 
-#ifdef SDL_AUDIO_DRIVER_ARTS
+#if SDL_AUDIO_DRIVER_ARTS
 
 /* Allow access to a raw mixing buffer */
 
@@ -86,21 +86,23 @@ static struct
 
 #undef SDL_ARTS_SYM
 
-static void UnloadARTSLibrary(void)
+static void
+UnloadARTSLibrary()
 {
-    if (arts_handle) {
+    if (arts_handle != NULL) {
         SDL_UnloadObject(arts_handle);
         arts_handle = NULL;
     }
 }
 
-static int LoadARTSLibrary(void)
+static int
+LoadARTSLibrary(void)
 {
     int i, retval = -1;
 
-    if (!arts_handle) {
+    if (arts_handle == NULL) {
         arts_handle = SDL_LoadObject(arts_library);
-        if (arts_handle) {
+        if (arts_handle != NULL) {
             retval = 0;
             for (i = 0; i < SDL_arraysize(arts_functions); ++i) {
                 *arts_functions[i].func =
@@ -119,12 +121,14 @@ static int LoadARTSLibrary(void)
 
 #else
 
-static void UnloadARTSLibrary(void)
+static void
+UnloadARTSLibrary()
 {
     return;
 }
 
-static int LoadARTSLibrary(void)
+static int
+LoadARTSLibrary(void)
 {
     return 0;
 }
@@ -132,7 +136,8 @@ static int LoadARTSLibrary(void)
 #endif /* SDL_AUDIO_DRIVER_ARTS_DYNAMIC */
 
 /* This function waits until it is possible to write a full sound buffer */
-static void ARTS_WaitDevice(_THIS)
+static void
+ARTS_WaitDevice(_THIS)
 {
     Sint32 ticks;
 
@@ -158,7 +163,8 @@ static void ARTS_WaitDevice(_THIS)
     }
 }
 
-static void ARTS_PlayDevice(_THIS)
+static void
+ARTS_PlayDevice(_THIS)
 {
     /* Write the audio data */
     int written = SDL_NAME(arts_write) (this->hidden->stream,
@@ -179,13 +185,15 @@ static void ARTS_PlayDevice(_THIS)
 #endif
 }
 
-static Uint8 *ARTS_GetDeviceBuf(_THIS)
+static Uint8 *
+ARTS_GetDeviceBuf(_THIS)
 {
     return (this->hidden->mixbuf);
 }
 
 
-static void ARTS_CloseDevice(_THIS)
+static void
+ARTS_CloseDevice(_THIS)
 {
     if (this->hidden->stream) {
         SDL_NAME(arts_close_stream) (this->hidden->stream);
@@ -195,7 +203,8 @@ static void ARTS_CloseDevice(_THIS)
     SDL_free(this->hidden);
 }
 
-static int ARTS_Suspend(void)
+static int
+ARTS_Suspend(void)
 {
     const Uint32 abortms = SDL_GetTicks() + 3000; /* give up after 3 secs */
     while ( (!SDL_NAME(arts_suspended)()) && !SDL_TICKS_PASSED(SDL_GetTicks(), abortms) ) {
@@ -206,15 +215,17 @@ static int ARTS_Suspend(void)
     return SDL_NAME(arts_suspended)();
 }
 
-static int ARTS_OpenDevice(_THIS, const char *devname)
+static int
+ARTS_OpenDevice(_THIS, const char *devname)
 {
     int rc = 0;
     int bits, frag_spec = 0;
     SDL_AudioFormat test_format = 0;
 
     /* Initialize all variables that we clean on shutdown */
-    this->hidden = (struct SDL_PrivateAudioData *)SDL_malloc(sizeof(*this->hidden));
-    if (!this->hidden) {
+    this->hidden = (struct SDL_PrivateAudioData *)
+        SDL_malloc((sizeof *this->hidden));
+    if (this->hidden == NULL) {
         return SDL_OutOfMemory();
     }
     SDL_zerop(this->hidden);
@@ -281,7 +292,7 @@ static int ARTS_OpenDevice(_THIS, const char *devname)
     /* Allocate mixing buffer */
     this->hidden->mixlen = this->spec.size;
     this->hidden->mixbuf = (Uint8 *) SDL_malloc(this->hidden->mixlen);
-    if (!this->hidden->mixbuf) {
+    if (this->hidden->mixbuf == NULL) {
         return SDL_OutOfMemory();
     }
     SDL_memset(this->hidden->mixbuf, this->spec.silence, this->spec.size);
@@ -294,13 +305,15 @@ static int ARTS_OpenDevice(_THIS, const char *devname)
 }
 
 
-static void ARTS_Deinitialize(void)
+static void
+ARTS_Deinitialize(void)
 {
     UnloadARTSLibrary();
 }
 
 
-static SDL_bool ARTS_Init(SDL_AudioDriverImpl *impl)
+static SDL_bool
+ARTS_Init(SDL_AudioDriverImpl * impl)
 {
     if (LoadARTSLibrary() < 0) {
         return SDL_FALSE;

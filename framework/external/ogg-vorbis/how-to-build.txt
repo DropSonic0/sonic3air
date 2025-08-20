@@ -1,5 +1,5 @@
 
-=== Build for Windows with Visual Studio 2022 ===
+=== Build for Windows with Visual Studio 2019 ===
 
 
 Using the build script

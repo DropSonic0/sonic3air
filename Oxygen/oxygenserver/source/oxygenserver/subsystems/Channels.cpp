@@ -127,7 +127,6 @@ bool Channels::onReceivedRequestQuery(ReceivedQueryEvaluation& evaluation)
 			if (nullptr != channel)
 			{
 				removePlayerFromSingleChannel(*channel, connection);
-				cleanupEmptyChannels();
 			}
 
 			// Done
@@ -176,17 +175,7 @@ void Channels::addPlayerToChannel(Channel& channel, ServerNetConnection& playerC
 	playerData.mServerNetConnection = &playerConnection;
 }
 
-void Channels::removePlayerFromAllChannels(ServerNetConnection& playerConnection)
-{
-	for (auto it = mAllChannels.begin(); it != mAllChannels.end(); ++it)
-	{
-		Channel* channel = it->second;
-		removePlayerFromSingleChannel(*channel, playerConnection);
-	}
-	cleanupEmptyChannels();
-}
-
-bool Channels::removePlayerFromSingleChannel(Channel& channel, ServerNetConnection& playerConnection)
+void Channels::removePlayerFromSingleChannel(Channel& channel, ServerNetConnection& playerConnection)
 {
 	for (auto it = channel.mPlayers.begin(); it != channel.mPlayers.end(); ++it)
 	{
@@ -195,27 +184,11 @@ bool Channels::removePlayerFromSingleChannel(Channel& channel, ServerNetConnecti
 			channel.mPlayers.erase(it);
 
 			// Is channel empty now?
-			if (channel.mPlayers.empty() && !vectorContains(mPossiblyEmptyChannels, &channel))
+			if (channel.mPlayers.empty())
 			{
-				mPossiblyEmptyChannels.push_back(&channel);
+				destroyChannel(channel);
 			}
-			return true;
+			break;
 		}
 	}
-	return false;
-}
-
-void Channels::cleanupEmptyChannels()
-{
-	if (mPossiblyEmptyChannels.empty())
-		return;
-
-	for (Channel* channel : mPossiblyEmptyChannels)
-	{
-		if (channel->mPlayers.empty())
-		{
-			destroyChannel(*channel);
-		}
-	}
-	mPossiblyEmptyChannels.clear();
 }

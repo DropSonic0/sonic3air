@@ -1,20 +1,18 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/simulation/SaveStateSerializer.h"
 #include "oxygen/simulation/CodeExec.h"
 #include "oxygen/simulation/EmulatorInterface.h"
-#include "oxygen/simulation/Simulation.h"
-#include "oxygen/simulation/SimulationState.h"
 #include "oxygen/application/video/VideoOut.h"
-#include "oxygen/rendering/parts/palette/PaletteManager.h"
 #include "oxygen/rendering/parts/RenderParts.h"
+#include "oxygen/rendering/parts/PaletteManager.h"
 
 
 namespace
@@ -24,14 +22,12 @@ namespace
 	//  - 3: Using shared memory access flags
 	//  - 4: Added more rendering data (scroll offsets, sprites, etc.)
 	//  - 5: Added data for ROM based sprites
-	//  - 6: Added spaces manager serialization
-	static const constexpr uint8 OXYGEN_SAVESTATE_FORMATVERSION = 6;
+	static const constexpr uint8 OXYGEN_SAVESTATE_FORMATVERSION = 5;
 }
 
 
-SaveStateSerializer::SaveStateSerializer(Simulation& simulation, RenderParts& renderParts) :
-	mSimulation(simulation),
-	mCodeExec(simulation.getCodeExec()),
+SaveStateSerializer::SaveStateSerializer(CodeExec& codeExec, RenderParts& renderParts) :
+	mCodeExec(codeExec),
 	mRenderParts(renderParts)
 {
 }
@@ -176,18 +172,16 @@ bool SaveStateSerializer::serializeState(VectorBinarySerializer& serializer, Sta
 		// VSRAM
 		serializer.serialize(emulatorInterface.getVSRam(), 0x80);
 
-		// Engine graphics state
+		// Other graphics managers
 		mRenderParts.getPlaneManager().serializeSaveState(serializer, formatVersion);
 		mRenderParts.getScrollOffsetsManager().serializeSaveState(serializer, formatVersion);
 		mRenderParts.getSpriteManager().serializeSaveState(serializer, formatVersion);
-		mRenderParts.getSpacesManager().serializeSaveState(serializer, formatVersion);
+
+		// TODO: How about overlay manager and spaces manager?
 
 		// Lemon script runtime state
 		if (!mCodeExec.getLemonScriptRuntime().serializeRuntime(serializer))
 			return false;
-
-		// Simulation state
-		mSimulation.getSimulationState().serializeSaveState(serializer, formatVersion);
 	}
 
 	if (serializer.isReading())

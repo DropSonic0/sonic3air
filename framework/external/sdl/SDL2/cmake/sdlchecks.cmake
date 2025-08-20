@@ -1,5 +1,4 @@
 include(CMakeParseArguments)
-include(${SDL2_SOURCE_DIR}/cmake/sdlfind.cmake)
 macro(FindLibraryAndSONAME _LIB)
   cmake_parse_arguments(FLAS "" "" "LIBDIRS" ${ARGN})
 
@@ -7,18 +6,10 @@ macro(FindLibraryAndSONAME _LIB)
   string(REGEX REPLACE "\\-" "_" _LNAME "${_UPPERLNAME}")
 
   find_library(${_LNAME}_LIB ${_LIB} PATHS ${FLAS_LIBDIRS})
-
-  if(${_LNAME}_LIB MATCHES ".*\\${CMAKE_SHARED_LIBRARY_SUFFIX}.*" AND NOT ${_LNAME}_LIB MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}.*")
-    set(${_LNAME}_SHARED TRUE)
-  else()
-    set(${_LNAME}_SHARED FALSE)
-  endif()
-
   if(${_LNAME}_LIB)
     # reduce the library name for shared linking
 
     get_filename_component(_LIB_REALPATH ${${_LNAME}_LIB} REALPATH)  # resolves symlinks
-    get_filename_component(_LIB_DIRECTORY ${_LIB_REALPATH} DIRECTORY)
     get_filename_component(_LIB_JUSTNAME ${_LIB_REALPATH} NAME)
 
     if(APPLE)
@@ -26,11 +17,6 @@ macro(FindLibraryAndSONAME _LIB)
     else()
       string(REGEX REPLACE "(\\.[0-9]*)\\.[0-9\\.]*$" "\\1" _LIB_REGEXD "${_LIB_JUSTNAME}")
     endif()
-
-    if(NOT EXISTS "${_LIB_DIRECTORY}/${_LIB_REGEXD}")
-      set(_LIB_REGEXD "${_LIB_JUSTNAME}")
-    endif()
-    set(${_LNAME}_LIBDIR "${_LIB_LIBDIR}")
 
     SET(_DEBUG_FindSONAME FALSE)
     if(_DEBUG_FindSONAME)
@@ -73,16 +59,26 @@ endmacro()
 # - n/a
 macro(CheckOSS)
   if(SDL_OSS)
+    set(OSS_HEADER_FILE "sys/soundcard.h")
     check_c_source_compiles("
         #include <sys/soundcard.h>
-        int main(int argc, char **argv) { int arg = SNDCTL_DSP_SETFRAGMENT; return 0; }" HAVE_OSS_SYS_SOUNDCARD_H)
+        int main(int argc, char **argv) { int arg = SNDCTL_DSP_SETFRAGMENT; return 0; }" OSS_FOUND)
+    if(NOT OSS_FOUND)
+      set(OSS_HEADER_FILE "soundcard.h")
+      check_c_source_compiles("
+          #include <soundcard.h>
+          int main(int argc, char **argv) { int arg = SNDCTL_DSP_SETFRAGMENT; return 0; }" OSS_FOUND)
+    endif()
 
-    if(HAVE_OSS_SYS_SOUNDCARD_H)
+    if(OSS_FOUND)
       set(HAVE_OSS TRUE)
       file(GLOB OSS_SOURCES ${SDL2_SOURCE_DIR}/src/audio/dsp/*.c)
+      if(OSS_HEADER_FILE STREQUAL "soundcard.h")
+        set(SDL_AUDIO_DRIVER_OSS_SOUNDCARD_H 1)
+      endif()
       set(SDL_AUDIO_DRIVER_OSS 1)
       list(APPEND SOURCE_FILES ${OSS_SOURCES})
-      if(NETBSD)
+      if(NETBSD OR OPENBSD)
         list(APPEND EXTRA_LIBS ossaudio)
       endif()
       set(HAVE_SDL_AUDIO TRUE)
@@ -97,35 +93,26 @@ endmacro()
 # - HAVE_SDL_LOADSO opt
 macro(CheckALSA)
   if(SDL_ALSA)
-    sdlFindALSA()
-    if(ALSA_FOUND)
-      file(GLOB ALSA_SOURCES "${SDL2_SOURCE_DIR}/src/audio/alsa/*.c")
+    CHECK_INCLUDE_FILE(alsa/asoundlib.h HAVE_ASOUNDLIB_H)
+    if(HAVE_ASOUNDLIB_H)
+      CHECK_LIBRARY_EXISTS(asound snd_pcm_recover "" HAVE_LIBASOUND)
+    endif()
+    if(HAVE_LIBASOUND)
+      set(HAVE_ALSA TRUE)
+      file(GLOB ALSA_SOURCES ${SDL2_SOURCE_DIR}/src/audio/alsa/*.c)
       list(APPEND SOURCE_FILES ${ALSA_SOURCES})
       set(SDL_AUDIO_DRIVER_ALSA 1)
-      set(HAVE_ALSA TRUE)
-      set(HAVE_ALSA_SHARED FALSE)
-      if(SDL_ALSA_SHARED)
-        if(HAVE_SDL_LOADSO)
-          FindLibraryAndSONAME("asound")
-          if(ASOUND_LIB AND ASOUND_SHARED)
-            target_include_directories(sdl-build-options SYSTEM INTERFACE $<TARGET_PROPERTY:ALSA::ALSA,INTERFACE_INCLUDE_DIRECTORIES>)
-            set(SDL_AUDIO_DRIVER_ALSA_DYNAMIC "\"${ASOUND_LIB_SONAME}\"")
-            set(HAVE_ALSA_SHARED TRUE)
-          else()
-            message(WARNING "Unable to find asound shared object")
-          endif()
-        else()
-          message(WARNING "You must have SDL_LoadObject() support for dynamic ALSA loading")
-        endif()
+      if(SDL_ALSA_SHARED AND NOT HAVE_SDL_LOADSO)
+        message_warn("You must have SDL_LoadObject() support for dynamic ALSA loading")
       endif()
-      if(NOT HAVE_ALSA_SHARED)
-        list(APPEND CMAKE_DEPENDS ALSA::ALSA)
-        list(APPEND PKGCONFIG_DEPENDS alsa)
+      FindLibraryAndSONAME("asound")
+      if(SDL_ALSA_SHARED AND ASOUND_LIB AND HAVE_SDL_LOADSO)
+        set(SDL_AUDIO_DRIVER_ALSA_DYNAMIC "\"${ASOUND_LIB_SONAME}\"")
+        set(HAVE_ALSA_SHARED TRUE)
+      else()
+        list(APPEND EXTRA_LIBS asound)
       endif()
       set(HAVE_SDL_AUDIO TRUE)
-    else()
-      set(HAVE_ALSA FALSE)
-      message(WARNING "Unable to found the alsa development library")
     endif()
   endif()
 endmacro()
@@ -166,7 +153,7 @@ endmacro()
 # - HAVE_SDL_LOADSO opt
 macro(CheckPulseAudio)
   if(SDL_PULSEAUDIO)
-    pkg_check_modules(PKG_PULSEAUDIO libpulse>=0.9.15)
+    pkg_check_modules(PKG_PULSEAUDIO libpulse-simple)
     if(PKG_PULSEAUDIO_FOUND)
       set(HAVE_PULSEAUDIO TRUE)
       file(GLOB PULSEAUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/pulseaudio/*.c)
@@ -176,9 +163,9 @@ macro(CheckPulseAudio)
       if(SDL_PULSEAUDIO_SHARED AND NOT HAVE_SDL_LOADSO)
         message_warn("You must have SDL_LoadObject() support for dynamic PulseAudio loading")
       endif()
-      FindLibraryAndSONAME("pulse" LIBDIRS ${PKG_PULSEAUDIO_LIBRARY_DIRS})
-      if(SDL_PULSEAUDIO_SHARED AND PULSE_LIB AND HAVE_SDL_LOADSO)
-        set(SDL_AUDIO_DRIVER_PULSEAUDIO_DYNAMIC "\"${PULSE_LIB_SONAME}\"")
+      FindLibraryAndSONAME("pulse-simple" LIBDIRS ${PKG_PULSEAUDIO_LIBRARY_DIRS})
+      if(SDL_PULSEAUDIO_SHARED AND PULSE_SIMPLE_LIB AND HAVE_SDL_LOADSO)
+        set(SDL_AUDIO_DRIVER_PULSEAUDIO_DYNAMIC "\"${PULSE_SIMPLE_LIB_SONAME}\"")
         set(HAVE_PULSEAUDIO_SHARED TRUE)
       else()
         list(APPEND EXTRA_LDFLAGS ${PKG_PULSEAUDIO_LDFLAGS})
@@ -311,19 +298,20 @@ macro(CheckNAS)
 endmacro()
 
 # Requires:
-# - PkgCheckModules
+# - n/a
 # Optional:
 # - SDL_SNDIO_SHARED opt
 # - HAVE_SDL_LOADSO opt
 macro(CheckSNDIO)
   if(SDL_SNDIO)
-    pkg_check_modules(PKG_SNDIO sndio)
-    if(PKG_SNDIO_FOUND)
+    # TODO: set include paths properly, so the sndio headers are found
+    check_include_file(sndio.h HAVE_SNDIO_H)
+    find_library(D_SNDIO_LIB sndio)
+    if(HAVE_SNDIO_H AND D_SNDIO_LIB)
       set(HAVE_SNDIO TRUE)
       file(GLOB SNDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/sndio/*.c)
       list(APPEND SOURCE_FILES ${SNDIO_SOURCES})
       set(SDL_AUDIO_DRIVER_SNDIO 1)
-      list(APPEND EXTRA_CFLAGS ${PKG_SNDIO_CFLAGS})
       if(SDL_SNDIO_SHARED AND NOT HAVE_SDL_LOADSO)
         message_warn("You must have SDL_LoadObject() support for dynamic sndio loading")
       endif()
@@ -332,7 +320,7 @@ macro(CheckSNDIO)
         set(SDL_AUDIO_DRIVER_SNDIO_DYNAMIC "\"${SNDIO_LIB_SONAME}\"")
         set(HAVE_SNDIO_SHARED TRUE)
       else()
-        list(APPEND EXTRA_LIBS ${PKG_SNDIO_LDFLAGS})
+        list(APPEND EXTRA_LIBS ${D_SNDIO_LIB})
       endif()
       set(HAVE_SDL_AUDIO TRUE)
     endif()
@@ -380,7 +368,7 @@ macro(CheckLibSampleRate)
       set(HAVE_LIBSAMPLERATE TRUE)
       set(HAVE_LIBSAMPLERATE_H TRUE)
       if(SDL_LIBSAMPLERATE_SHARED)
-        target_include_directories(sdl-build-options SYSTEM INTERFACE $<TARGET_PROPERTY:SampleRate::samplerate,INTERFACE_INCLUDE_DIRECTORIES>)
+        target_include_directories(sdl-build-options INTERFACE $<TARGET_PROPERTY:SampleRate::samplerate,INTERFACE_INCLUDE_DIRECTORIES>)
         if(NOT HAVE_SDL_LOADSO)
           message_warn("You must have SDL_LoadObject() support for dynamic libsamplerate loading")
         else()
@@ -423,7 +411,6 @@ endmacro()
 # - SDL_X11_SHARED opt
 # - HAVE_SDL_LOADSO opt
 macro(CheckX11)
-  cmake_push_check_state(RESET)
   if(SDL_X11)
     foreach(_LIB X11 Xext Xcursor Xi Xfixes Xrandr Xrender Xss)
         FindLibraryAndSONAME("${_LIB}")
@@ -446,7 +433,6 @@ macro(CheckX11)
 
     if(X_INCLUDEDIR)
       list(APPEND EXTRA_CFLAGS "-I${X_INCLUDEDIR}")
-      list(APPEND CMAKE_REQUIRED_INCLUDES ${X_INCLUDEDIR})
     endif()
 
     find_file(HAVE_XCURSOR_H NAMES "X11/Xcursor/Xcursor.h" HINTS "${X_INCLUDEDIR}")
@@ -471,20 +457,18 @@ macro(CheckX11)
       list(APPEND SOURCE_FILES ${X11_SOURCES})
       set(SDL_VIDEO_DRIVER_X11 1)
 
-      # Note: Disabled on Apple because the dynamic mode backend for X11 doesn't
-      # work properly on Apple during several issues like inconsistent paths
-      # among platforms. See #6778 (https://github.com/libsdl-org/SDL/issues/6778)
+      # !!! FIXME: why is this disabled for Apple?
       if(APPLE)
         set(SDL_X11_SHARED OFF)
       endif()
 
-      check_symbol_exists(shmat "sys/shm.h" HAVE_SHMAT_IN_LIBC)
-      if(NOT HAVE_SHMAT_IN_LIBC)
-        check_library_exists(ipc shmat "" HAVE_SHMAT_IN_LIBIPC)
-        if(HAVE_SHMAT_IN_LIBIPC)
+      check_symbol_exists(shmat "sys/shm.h" HAVE_SHMAT)
+      if(NOT HAVE_SHMAT)
+        check_library_exists(ipc shmat "" HAVE_SHMAT)
+        if(HAVE_SHMAT)
           list(APPEND EXTRA_LIBS ipc)
         endif()
-        if(NOT HAVE_SHMAT_IN_LIBIPC)
+        if(NOT HAVE_SHMAT)
           list(APPEND EXTRA_CFLAGS "-DNO_SHARED_MEMORY")
         endif()
       endif()
@@ -624,7 +608,6 @@ macro(CheckX11)
     # Prevent Mesa from including X11 headers
     list(APPEND EXTRA_CFLAGS "-DMESA_EGL_NO_X11_HEADERS -DEGL_NO_X11")
   endif()
-  cmake_pop_check_state()
 endmacro()
 
 macro(WaylandProtocolGen _SCANNER _CODE_MODE _XML _PROTL)
@@ -685,7 +668,7 @@ macro(CheckWayland)
 
     if(WAYLAND_FOUND)
       target_link_directories(sdl-build-options INTERFACE "${PKG_WAYLAND_LIBRARY_DIRS}")
-      target_include_directories(sdl-build-options SYSTEM INTERFACE "${PKG_WAYLAND_INCLUDE_DIRS}")
+      target_include_directories(sdl-build-options INTERFACE "${PKG_WAYLAND_INCLUDE_DIRS}")
 
       set(HAVE_WAYLAND TRUE)
       set(HAVE_SDL_VIDEO TRUE)
@@ -695,7 +678,7 @@ macro(CheckWayland)
 
       # We have to generate some protocol interface code for some unstable Wayland features.
       file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols")
-      target_include_directories(sdl-build-options SYSTEM INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols")
+      target_include_directories(sdl-build-options INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols")
 
       file(GLOB WAYLAND_PROTOCOLS_XML RELATIVE "${SDL2_SOURCE_DIR}/wayland-protocols/" "${SDL2_SOURCE_DIR}/wayland-protocols/*.xml")
       foreach(_XML ${WAYLAND_PROTOCOLS_XML})
@@ -731,7 +714,7 @@ macro(CheckWayland)
             set(HAVE_WAYLAND_LIBDECOR TRUE)
             set(HAVE_LIBDECOR_H 1)
             target_link_directories(sdl-build-options INTERFACE "${PKG_LIBDECOR_LIBRARY_DIRS}")
-            target_include_directories(sdl-build-options SYSTEM INTERFACE "${PKG_LIBDECOR_INCLUDE_DIRS}")
+            target_include_directories(sdl-build-options INTERFACE "${PKG_LIBDECOR_INCLUDE_DIRS}")
             if(SDL_WAYLAND_LIBDECOR_SHARED AND NOT HAVE_SDL_LOADSO)
                 message_warn("You must have SDL_LoadObject() support for dynamic libdecor loading")
             endif()
@@ -742,17 +725,6 @@ macro(CheckWayland)
             else()
               list(APPEND EXTRA_LIBS ${PKG_LIBDECOR_LIBRARIES})
             endif()
-
-            cmake_push_check_state()
-            list(APPEND CMAKE_REQUIRED_FLAGS ${PKG_LIBDECOR_CFLAGS})
-            list(APPEND CMAKE_REQUIRED_INCLUDES ${PKG_LIBDECOR_INCLUDE_DIRS})
-            list(APPEND CMAKE_REQUIRED_LIBRARIES ${PKG_LIBDECOR_LINK_LIBRARIES})
-            check_symbol_exists(libdecor_frame_get_max_content_size "libdecor.h" HAVE_LIBDECOR_FRAME_GET_MAX_CONTENT_SIZE)
-            check_symbol_exists(libdecor_frame_get_min_content_size "libdecor.h" HAVE_LIBDECOR_FRAME_GET_MIN_CONTENT_SIZE)
-            if(HAVE_LIBDECOR_FRAME_GET_MAX_CONTENT_SIZE AND HAVE_LIBDECOR_FRAME_GET_MIN_CONTENT_SIZE)
-              set(SDL_HAVE_LIBDECOR_GET_MIN_MAX 1)
-            endif()
-            cmake_pop_check_state()
         endif()
       endif()
 
@@ -914,22 +886,6 @@ macro(CheckOpenGLES)
 endmacro()
 
 # Requires:
-# - EGL
-macro(CheckQNXScreen)
-  if(QNX AND HAVE_OPENGL_EGL)
-    check_c_source_compiles("
-        #include <screen/screen.h>
-        int main (int argc, char** argv) { return 0; }" HAVE_QNX_SCREEN)
-    if(HAVE_QNX_SCREEN)
-      set(SDL_VIDEO_DRIVER_QNX 1)
-      file(GLOB QNX_VIDEO_SOURCES ${SDL2_SOURCE_DIR}/src/video/qnx/*.c)
-      list(APPEND SOURCE_FILES ${QNX_VIDEO_SOURCES})
-      list(APPEND EXTRA_LIBS screen EGL)
-    endif()
-  endif()
-endmacro()
-
-# Requires:
 # - nada
 # Optional:
 # - THREADS opt
@@ -960,7 +916,7 @@ macro(CheckPTHREAD)
       set(PTHREAD_LDFLAGS "-lpthread")
     elseif(OPENBSD)
       set(PTHREAD_CFLAGS "-D_REENTRANT")
-      set(PTHREAD_LDFLAGS "-lpthread")
+      set(PTHREAD_LDFLAGS "-pthread")
     elseif(SOLARIS)
       set(PTHREAD_CFLAGS "-D_REENTRANT")
       set(PTHREAD_LDFLAGS "-pthread -lposix4")
@@ -979,8 +935,6 @@ macro(CheckPTHREAD)
     elseif(EMSCRIPTEN)
       set(PTHREAD_CFLAGS "-D_REENTRANT -pthread")
       set(PTHREAD_LDFLAGS "-pthread")
-    elseif(QNX)
-      # pthread support is baked in
     else()
       set(PTHREAD_CFLAGS "-D_REENTRANT")
       set(PTHREAD_LDFLAGS "-lpthread")
@@ -1003,6 +957,7 @@ macro(CheckPTHREAD)
       list(APPEND SDL_CFLAGS ${PTHREAD_CFLAGS})
 
       check_c_source_compiles("
+        #define _GNU_SOURCE 1
         #include <pthread.h>
         int main(int argc, char **argv) {
           pthread_mutexattr_t attr;
@@ -1013,6 +968,7 @@ macro(CheckPTHREAD)
         set(SDL_THREAD_PTHREAD_RECURSIVE_MUTEX 1)
       else()
         check_c_source_compiles("
+            #define _GNU_SOURCE 1
             #include <pthread.h>
             int main(int argc, char **argv) {
               pthread_mutexattr_t attr;
@@ -1043,13 +999,10 @@ macro(CheckPTHREAD)
       check_include_files("pthread_np.h" HAVE_PTHREAD_NP_H)
       if (HAVE_PTHREAD_H)
         check_c_source_compiles("
+            #define _GNU_SOURCE 1
             #include <pthread.h>
             int main(int argc, char **argv) {
-              #ifdef __APPLE__
-              pthread_setname_np(\"\");
-              #else
-              pthread_setname_np(pthread_self(),\"\");
-              #endif
+              pthread_setname_np(pthread_self(), \"\");
               return 0;
             }" HAVE_PTHREAD_SETNAME_NP)
         if (HAVE_PTHREAD_NP_H)
@@ -1323,7 +1276,7 @@ macro(CheckKMSDRM)
     pkg_check_modules(PKG_KMSDRM libdrm gbm egl)
     if(PKG_KMSDRM_FOUND AND HAVE_OPENGL_EGL)
       target_link_directories(sdl-build-options INTERFACE ${PKG_KMSDRM_LIBRARY_DIRS})
-      target_include_directories(sdl-build-options SYSTEM INTERFACE "${PKG_KMSDRM_INCLUDE_DIRS}")
+      target_include_directories(sdl-build-options INTERFACE "${PKG_KMSDRM_INCLUDE_DIRS}")
       set(HAVE_KMSDRM TRUE)
       set(HAVE_SDL_VIDEO TRUE)
 
@@ -1347,66 +1300,5 @@ macro(CheckKMSDRM)
         list(APPEND EXTRA_LIBS ${PKG_KMSDRM_LIBRARIES})
       endif()
     endif()
-  endif()
-endmacro()
-
-macro(CheckLibUDev)
-  if(SDL_LIBUDEV)
-    check_include_file("libudev.h" HAVE_LIBUDEV_HEADER)
-    if(HAVE_LIBUDEV_HEADER)
-      set(HAVE_LIBUDEV_H TRUE)
-      FindLibraryAndSONAME(udev)
-      if(UDEV_LIB_SONAME)
-        set(SDL_UDEV_DYNAMIC "\"${UDEV_LIB_SONAME}\"")
-        set(HAVE_LIBUDEV TRUE)
-      endif()
-    endif()
-  endif()
-endmacro()
-
-
-macro(CheckLibUnwind)
-  set(found_libunwind FALSE)
-  set(_libunwind_src "#include <libunwind.h>\nint main() {unw_context_t context; unw_getcontext(&context); return 0;}")
-
-  if(NOT found_libunwind)
-    cmake_push_check_state()
-    check_c_source_compiles("${_libunwind_src}" LIBC_HAS_WORKING_LIBUNWIND)
-    cmake_pop_check_state()
-    if(LIBC_HAS_WORKING_LIBUNWIND)
-      set(found_libunwind TRUE)
-    endif()
-  endif()
-
-  if(NOT found_libunwind)
-    cmake_push_check_state()
-    list(APPEND CMAKE_REQUIRED_LIBRARIES "unwind")
-    check_c_source_compiles("${_libunwind_src}" LIBUNWIND_HAS_WORKINGLIBUNWIND)
-    cmake_pop_check_state()
-    if(LIBUNWIND_HAS_WORKINGLIBUNWIND)
-      set(found_libunwind TRUE)
-      list(APPEND EXTRA_TEST_LIBS unwind)
-    endif()
-  endif()
-
-  if(NOT found_libunwind)
-    set(LibUnwind_PKG_CONFIG_SPEC libunwind libunwind-generic)
-    pkg_check_modules(PC_LIBUNWIND IMPORTED_TARGET ${LibUnwind_PKG_CONFIG_SPEC})
-    if(PC_LIBUNWIND_FOUND)
-      cmake_push_check_state()
-      list(APPEND CMAKE_REQUIRED_LIBRARIES ${PC_LIBUNWIND_LIBRARIES})
-      list(APPEND CMAKE_REQUIRED_INCLUDES ${PC_LIBUNWIND_INCLUDE_DIRS})
-      check_c_source_compiles("${_libunwind_src}" PC_LIBUNWIND_HAS_WORKING_LIBUNWIND)
-      cmake_pop_check_state()
-      if(PC_LIBUNWIND_HAS_WORKING_LIBUNWIND)
-        set(found_libunwind TRUE)
-        list(APPEND EXTRA_TEST_LIBS ${PC_LIBUNWIND_LIBRARIES})
-        list(APPEND EXTRA_TEST_INCLUDES ${PC_LIBUNWIND_INCLUDE_DIRS})
-      endif()
-    endif()
-  endif()
-
-  if(found_libunwind)
-    set(HAVE_LIBUNWIND_H TRUE)
   endif()
 endmacro()

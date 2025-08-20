@@ -1,22 +1,21 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/audio/OggAudioSource.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/helper/FileHelper.h"
 
 #if defined(PLATFORM_VITA) // For the emergency unloads
-	#include "oxygen/application/audio/AudioOutBase.h"
-	#include "oxygen/application/audio/AudioPlayer.h"
-	#include "oxygen/application/EngineMain.h"
+#include "oxygen/application/audio/AudioOutBase.h"
+#include "oxygen/application/audio/AudioPlayer.h"
+#include "oxygen/application/EngineMain.h"
 #endif
-
 
 OggAudioSource::OggAudioSource(bool useCaching, bool isLooping, int loopStart) :
 	AudioSourceBase(useCaching ? CachingType::STREAMING_STATIC : CachingType::STREAMING_DYNAMIC),
@@ -47,7 +46,7 @@ bool OggAudioSource::load(const std::wstring& filename)
 	mInputStream = FTX::FileSystem->createInputStream(filename);
 	if (nullptr == mInputStream)
 	{
-		RMX_ERROR("Failed to load audio file '" << *WString(filename).toString() << "': File not found", );
+		RMX_ERROR("Failed to load audio file '" << *WString(filename).toString() << "'", );
 		return false;
 	}
 	return true;
@@ -104,8 +103,8 @@ bool OggAudioSource::checkForUnload(float timestamp)
 {
 	bool mayUnload = false;
 
-#if defined(PLATFORM_VITA)
 	// PSVITA has limited RAM, so...
+	#if defined(PLATFORM_VITA)
 	if (((float)EngineMain::instance().getAudioOut().getAudioPlayer().getMemoryUsage() / 1048576.0f) >= 80.0f) // 80 MB
 	{
 		// Let's make an emergency forced unload since the buffer is getting too big
@@ -116,8 +115,8 @@ bool OggAudioSource::checkForUnload(float timestamp)
 		// Since it's silenced, lets take the chance to unload stuff
 		mayUnload = (timestamp - mLastUsedTimestamp > 30.0f); // Everything not used in the past 30 seconds
 	}
-#endif
-
+	#endif
+	
 	if (isDynamic())
 	{
 		// Ignore tracks not loaded
@@ -133,12 +132,12 @@ bool OggAudioSource::checkForUnload(float timestamp)
 		if (mAudioBuffer.getLengthInSec() > 5.0f)
 		{
 			// Unload after 3 minutes
-		#if !defined(PLATFORM_VITA)
-			mayUnload = (timestamp - mLastUsedTimestamp > 180.0f);
-		#else
-			// PSVITA has limited RAM, so...
-			mayUnload = (timestamp - mLastUsedTimestamp > 60.0f); // 60 seconds and unload
-		#endif
+			#if !defined(PLATFORM_VITA)
+				mayUnload = (timestamp - mLastUsedTimestamp > 180.0f);
+			#else
+				// PSVITA has limited RAM, so...
+				mayUnload = (timestamp - mLastUsedTimestamp > 60.0f); // 60 seconds and unload
+			#endif
 		}
 	}
 

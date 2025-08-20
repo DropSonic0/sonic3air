@@ -255,9 +255,6 @@
     <ClInclude Include="..\src\joystick\SDL_joystick_c.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\joystick\SDL_steam_virtual_gamepad.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\joystick\SDL_sysjoystick.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -561,9 +558,6 @@
     <ClCompile Include="..\src\joystick\SDL_joystick.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\joystick\SDL_steam_virtual_gamepad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\joystick\virtual\SDL_virtualjoystick.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -846,9 +840,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\joystick\controller_type.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\stdlib\SDL_mslibc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

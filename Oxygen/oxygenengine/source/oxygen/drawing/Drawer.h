@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -46,7 +46,6 @@ public:
 	void destroyDrawer();
 
 	void shutdown();
-	void updateDrawer(float deltaSeconds);
 
 	inline DrawerInterface* getActiveDrawer() const  { return mActiveDrawer; }
 
@@ -54,9 +53,8 @@ public:
 
 	Recti getSpriteRect(uint64 spriteKey) const;	// Return sprite size and pivot offset (usually negative)
 
-	void setWindowRenderTarget(const Recti& rect);
 	void setRenderTarget(DrawerTexture& texture, const Recti& rect);
-
+	void setWindowRenderTarget(const Recti& rect);
 	void setBlendMode(BlendMode blendMode);
 	void setSamplingMode(SamplingMode samplingMode);
 	void setWrapMode(TextureWrapMode wrapMode);
@@ -68,7 +66,6 @@ public:
 	void drawRect(const Rectf& rect, DrawerTexture& texture, const Recti& textureInnerRect, const Color& tintColor = Color::WHITE);
 	void drawUpscaledRect(const Rectf& rect, DrawerTexture& texture);
 	void drawSprite(Vec2i position, uint64 spriteKey, const Color& tintColor = Color::WHITE, Vec2f scale = Vec2f(1.0f, 1.0f));
-	void drawSprite(Vec2i position, uint64 spriteKey, uint64 paletteKey, const Color& tintColor = Color::WHITE, Vec2f scale = Vec2f(1.0f, 1.0f));
 	void drawSpriteRect(const Recti& rect, uint64 spriteKey, const Color& tintColor = Color::WHITE);
 	void drawMesh(const std::vector<DrawerMeshVertex>& triangles, DrawerTexture& texture);
 	void drawMesh(const std::vector<DrawerMeshVertex_P2_C4>& triangles);
@@ -93,7 +90,6 @@ public:
 private:
 	bool onDrawerCreated();
 	void unregisterTexture(DrawerTexture& texture);
-	void addDrawCommand(DrawCommand& drawCommand);
 
 private:
 	DrawerInterface* mActiveDrawer = nullptr;

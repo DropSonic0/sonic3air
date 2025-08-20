@@ -1,16 +1,16 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/translator/Translator.h"
 #include "lemon/translator/SourceCodeWriter.h"
 #include "lemon/program/Function.h"
-#include "Portability.h"
+
 
 namespace lemon
 {
@@ -186,7 +186,7 @@ namespace lemon
 
 				default:
 				{
-					writer.writeLine("<unknown_node_" + to_string_ps3((int)node.getType()) + ">");
+					writer.writeLine("<unknown_node_" + std::to_string((int)node.getType()) + ">");
 					break;
 				}
 			}

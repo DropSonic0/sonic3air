@@ -1,13 +1,14 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/MenuBackground.h"
+#include "sonic3air/menu/ActSelectMenu.h"
 #include "sonic3air/menu/ExtrasMenu.h"
 #include "sonic3air/menu/GameApp.h"
 #include "sonic3air/menu/GameMenuManager.h"
@@ -20,7 +21,7 @@
 
 #include "oxygen/application/Application.h"
 #include "oxygen/application/EngineMain.h"
-#include "oxygen/application/gameview/GameView.h"
+#include "oxygen/application/mainview/GameView.h"
 #include "oxygen/application/video/VideoOut.h"
 #include "oxygen/simulation/CodeExec.h"
 #include "oxygen/simulation/Simulation.h"
@@ -86,6 +87,7 @@ namespace detail
 MenuBackground::MenuBackground()
 {
 	detail::createGameMenuInstance(mMainMenu,		mAllChildren, *this);
+	detail::createGameMenuInstance(mActSelectMenu,	mAllChildren, *this);
 	detail::createGameMenuInstance(mTimeAttackMenu,	mAllChildren, *this);
 	detail::createGameMenuInstance(mOptionsMenu,	mAllChildren, *this);
 	detail::createGameMenuInstance(mExtrasMenu,		mAllChildren, *this);
@@ -102,34 +104,6 @@ MenuBackground::~MenuBackground()
 
 void MenuBackground::initialize()
 {
-	// On first initialize, build the preview sprite keys
-	if (mPreviewSprites.empty())
-	{
-		const std::vector<SharedDatabase::Zone>& zones = SharedDatabase::getAllZones();
-		for (const SharedDatabase::Zone& zone : zones)
-		{
-			const uint8 acts = std::max(zone.mActsNormal, zone.mActsTimeAttack);
-			if (acts == 0)
-				continue;
-
-			PreviewKey key;
-			key.mZone = zone.mInternalIndex;
-			for (uint8 act = 0; act < acts; ++act)
-			{
-				key.mAct = act;
-				for (uint8 image = 0; image < 2; ++image)
-				{
-					key.mImage = image;
-					const String spriteName(0, "%s_act%d%c", zone.mShortName.substr(0, 6).c_str(), act + 1, 'a' + image);
-
-					PreviewSprite& previewSprite = mPreviewSprites[key];
-					previewSprite.mSpriteKey = rmx::getMurmur2_64(spriteName);
-					previewSprite.mPaletteKey = previewSprite.mSpriteKey;
-				}
-			}
-		}
-	}
-
 	mLightLayer.setPosition(1.0f);
 	mBlueLayer.setPosition(1.0f);
 	mAlterLayer.setPosition(0.0f);
@@ -148,7 +122,7 @@ void MenuBackground::deinitialize()
 {
 	for (GameMenuBase* child : mAllChildren)
 	{
-		removeChild(*child);
+		removeChild(child);
 	}
 }
 
@@ -204,8 +178,8 @@ void MenuBackground::render()
 			LemonScriptRuntime& runtime = Application::instance().getSimulation().getCodeExec().getLemonScriptRuntime();
 			static const lemon::FlyweightString SCROLL_OFFSET_NAME("MainMenuBG.scrollOffset");
 			static const lemon::FlyweightString LOGO_POSITION_NAME("MainMenuBG.logoPosition");
-			runtime.setGlobalVariableValue<int64>(SCROLL_OFFSET_NAME, roundToInt(-mBackgroundLayer.mCurrentPosition * 150.0f));
-			runtime.setGlobalVariableValue<int64>(LOGO_POSITION_NAME, roundToInt(interpolate(splitMin, splitMax, normalizedTitleRight) - 91.0f));
+			runtime.setGlobalVariableValue_int64(SCROLL_OFFSET_NAME, roundToInt(-mBackgroundLayer.mCurrentPosition * 150.0f));
+			runtime.setGlobalVariableValue_int64(LOGO_POSITION_NAME, roundToInt(interpolate(splitMin, splitMax, normalizedTitleRight) - 91.0f));
 			mAnimatedBackgroundActive = true;
 		}
 		else
@@ -265,7 +239,7 @@ void MenuBackground::render()
 		for (int i = 0; i < 2; ++i)
 		{
 			const PreviewImage& img = mPreviewImage[i];
-			if (nullptr == img.mPreviewSprite)
+			if (img.mSpriteKey == 0)
 				continue;
 
 			const int maxOffset = std::min(480 - (int)mRect.width, 80);
@@ -273,13 +247,13 @@ void MenuBackground::render()
 			const int visibleWidth = roundToInt(mRect.width * img.mVisibility);
 
 			drawer.pushScissor(Recti((int)mRect.width - visibleWidth, 0, visibleWidth, (int)mRect.height));
-			drawer.drawSprite(Vec2i(px, 18), img.mPreviewSprite->mSpriteKey, img.mPreviewSprite->mPaletteKey, Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
+			drawer.drawSprite(Vec2i(px, 18), img.mSpriteKey, Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
 			drawer.popScissor();
 		}
 
-		drawer.drawSprite(Vec2i(0, 8), rmx::constMurmur2_64("level_preview_border_left"), Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
-		drawer.drawSpriteRect(Recti(10, 8, (int)mRect.width - 20, 100), rmx::constMurmur2_64("level_preview_border_center"), Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
-		drawer.drawSprite(Vec2i((int)mRect.width, 8), rmx::constMurmur2_64("level_preview_border_right"), Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
+		drawer.drawSprite(Vec2i(0, 8), rmx::getMurmur2_64("level_preview_border_left"), Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
+		drawer.drawSpriteRect(Recti(10, 8, (int)mRect.width - 20, 100), rmx::getMurmur2_64("level_preview_border_center"), Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
+		drawer.drawSprite(Vec2i((int)mRect.width, 8), rmx::getMurmur2_64("level_preview_border_right"), Color(1.0f, 1.0f, 1.0f, mPreviewVisibility));
 	}
 
 	GuiBase::render();
@@ -359,11 +333,11 @@ void MenuBackground::setPreviewZoneAndAct(uint8 zone, uint8 act, bool forceReset
 	mPreviewKey.mAct = act;
 	mPreviewKey.mImage = 0;
 
-	mPreviewImage[0].mPreviewSprite = &mPreviewSprites[mPreviewKey];
+	mPreviewImage[0].mSpriteKey = global::mZoneActPreviewSpriteKeys[mPreviewKey];
 	mPreviewImage[0].mSubIndex = 0;
 	mPreviewImage[0].mOffset = 0.5f;
 	mPreviewImage[0].mVisibility = 1.0f;
-	mPreviewImage[1].mPreviewSprite = nullptr;
+	mPreviewImage[1].mSpriteKey = 0;
 
 	mCurrentTime = 0.0f;
 	updatePreview(0.0f);
@@ -385,6 +359,11 @@ void MenuBackground::showPreview(bool show, bool useTransition)
 void MenuBackground::openMainMenu()
 {
 	openMenu(*mMainMenu);
+}
+
+void MenuBackground::openActSelectMenu()
+{
+	openMenu(*mActSelectMenu);
 }
 
 void MenuBackground::openTimeAttackMenu()
@@ -432,6 +411,11 @@ void MenuBackground::openGameStartedMenu()
 	}
 }
 
+void MenuBackground::fadeToExit()
+{
+	startTransition(MenuBackground::Target::TITLE);
+}
+
 void MenuBackground::setGameStartedMenu()
 {
 	mGameStartedMenu = mLastOpenedMenu;
@@ -442,7 +426,12 @@ void MenuBackground::openMenu(GameMenuBase& menu)
 	// The menus only really work in a fixed resolution, so make sure that one is set
 	VideoOut::instance().setScreenSize(400, 224);
 
-	GameMenuManager::instance().addMenu(menu);
+	GameApp::instance().getGameMenuManager().addMenu(menu);
+
+	if (&menu == mOptionsMenu || &menu == mExtrasMenu || &menu == mModsMenu)
+	{
+		showPreview(false, false);
+	}
 
 	mLastOpenedMenu = &menu;
 }
@@ -524,17 +513,17 @@ void MenuBackground::updatePreview(float timeElapsed)
 			mPreviewImage[0] = mPreviewImage[1];
 			mPreviewImage[0].mOffset = 0.5f;
 			mPreviewImage[0].mVisibility = 1.0f;
-			mPreviewImage[1].mPreviewSprite = nullptr;
+			mPreviewImage[1].mSpriteKey = 0;
 			mCurrentTime -= TOTAL_TIME;
 		}
 
 		if (mCurrentTime >= MOVE_TIME)
 		{
 			// Transition animation
-			if (nullptr == mPreviewImage[1].mPreviewSprite)
+			if (mPreviewImage[1].mSpriteKey == 0)
 			{
 				mPreviewKey.mImage = (mPreviewImage[0].mSubIndex + 1) % 2;
-				mPreviewImage[1].mPreviewSprite = &mPreviewSprites[mPreviewKey];
+				mPreviewImage[1].mSpriteKey = global::mZoneActPreviewSpriteKeys[mPreviewKey];
 				mPreviewImage[1].mSubIndex = mPreviewKey.mImage;
 			}
 

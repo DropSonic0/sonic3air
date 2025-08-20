@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,48 +38,49 @@ extern "C" {
  */
 struct haptic_hwdata
 {
-#ifdef SDL_HAPTIC_DINPUT
+#if SDL_HAPTIC_DINPUT
     LPDIRECTINPUTDEVICE8 device;
 #endif
-    DWORD axes[3];        /* Axes to use. */
-    SDL_bool is_joystick; /* Device is loaded as joystick. */
-    Uint8 bXInputHaptic;  /* Supports force feedback via XInput. */
-    Uint8 userid;         /* XInput userid index for this joystick */
+    DWORD axes[3];              /* Axes to use. */
+    SDL_bool is_joystick;       /* Device is loaded as joystick. */
+    Uint8 bXInputHaptic; /* Supports force feedback via XInput. */
+    Uint8 userid; /* XInput userid index for this joystick */
     SDL_Thread *thread;
     SDL_mutex *mutex;
     Uint32 stopTicks;
     SDL_atomic_t stopThread;
 };
 
+
 /*
  * Haptic system effect data.
  */
-#if defined(SDL_HAPTIC_DINPUT) || defined(SDL_HAPTIC_XINPUT)
+#if SDL_HAPTIC_DINPUT || SDL_HAPTIC_XINPUT
 struct haptic_hweffect
 {
-#ifdef SDL_HAPTIC_DINPUT
+#if SDL_HAPTIC_DINPUT
     DIEFFECT effect;
     LPDIRECTINPUTEFFECT ref;
 #endif
-#ifdef SDL_HAPTIC_XINPUT
+#if SDL_HAPTIC_XINPUT
     XINPUT_VIBRATION vibration;
 #endif
 };
 #endif
 
 /*
- * List of available haptic devices.
- */
+* List of available haptic devices.
+*/
 typedef struct SDL_hapticlist_item
 {
     char *name;
     SDL_Haptic *haptic;
-#ifdef SDL_HAPTIC_DINPUT
+#if SDL_HAPTIC_DINPUT
     DIDEVICEINSTANCE instance;
     DIDEVCAPS capabilities;
 #endif
     SDL_bool bXInputHaptic; /* Supports force feedback via XInput. */
-    Uint8 userid;           /* XInput userid index for this joystick */
+    Uint8 userid; /* XInput userid index for this joystick */
     struct SDL_hapticlist_item *next;
 } SDL_hapticlist_item;
 
@@ -96,3 +97,4 @@ extern int SDL_SYS_RemoveHapticDevice(SDL_hapticlist_item *prev, SDL_hapticlist_
 #endif /* SDL_windowshaptic_c_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */
+

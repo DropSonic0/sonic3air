@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,7 +20,7 @@
 */
 #include "../../SDL_internal.h"
 
-#if defined(SDL_VIDEO_DRIVER_UIKIT) && (defined(SDL_VIDEO_OPENGL_ES) || defined(SDL_VIDEO_OPENGL_ES2))
+#if SDL_VIDEO_DRIVER_UIKIT && (SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2)
 
 #include <OpenGLES/EAGLDrawable.h>
 #include <OpenGLES/ES2/glext.h>
@@ -74,7 +74,6 @@
         const BOOL useStencilBuffer = (stencilBits != 0);
         const BOOL useDepthBuffer = (depthBits != 0);
         NSString *colorFormat = nil;
-        CAEAGLLayer *eaglLayer;
 
         context = glcontext;
         samples = multisamples;
@@ -94,8 +93,14 @@
         }
 
         if (sRGB) {
-            colorFormat = kEAGLColorFormatSRGBA8;
-            colorBufferFormat = GL_SRGB8_ALPHA8;
+            /* sRGB EAGL drawable support was added in iOS 7. */
+            if (UIKit_IsSystemVersionAtLeast(7.0)) {
+                colorFormat = kEAGLColorFormatSRGBA8;
+                colorBufferFormat = GL_SRGB8_ALPHA8;
+            } else {
+                SDL_SetError("sRGB drawables are not supported.");
+                return nil;
+            }
         } else if (rBits >= 8 || gBits >= 8 || bBits >= 8 || aBits > 0) {
             /* if user specifically requests rbg888 or some color format higher than 16bpp */
             colorFormat = kEAGLColorFormatRGBA8;
@@ -106,7 +111,7 @@
             colorBufferFormat = GL_RGB565;
         }
 
-        eaglLayer = (CAEAGLLayer *)self.layer;
+        CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
 
         eaglLayer.opaque = YES;
         eaglLayer.drawableProperties = @{
@@ -316,13 +321,10 @@
 
 - (void)layoutSubviews
 {
-    int width;
-    int height;
-
     [super layoutSubviews];
 
-    width  = (int) (self.bounds.size.width * self.contentScaleFactor);
-    height = (int) (self.bounds.size.height * self.contentScaleFactor);
+    int width  = (int) (self.bounds.size.width * self.contentScaleFactor);
+    int height = (int) (self.bounds.size.height * self.contentScaleFactor);
 
     /* Update the color and depth buffer storage if the layer size has changed. */
     if (width != backingWidth || height != backingHeight) {

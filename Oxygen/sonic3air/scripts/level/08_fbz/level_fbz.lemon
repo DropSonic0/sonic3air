@@ -1,6 +1,6 @@
 /*
 	This script file is part of the Sonic 3 A.I.R. script software distribution.
-	Copyright (C) 2017-2025 by Eukaryot
+	Copyright (C) 2017-2024 by Eukaryot
 
 	Published under the GNU GPLv3 open source software license, see license.txt
 	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -175,7 +175,7 @@ function void fn0524e8()
 	D0.u16 = u16[A3 - 0x08]
 	for (u8 i = 0; i < 6; ++i)
 	{
-		copyMemory(A1, A5, 4)
+		u32[A1] = u32[A5]
 		A1 += D0.u16
 		A5 += D0.u16
 	}
@@ -184,7 +184,7 @@ function void fn0524e8()
 	D0.u16 = u16[A3 - 0x08]
 	for (u8 i = 0; i < 4; ++i)
 	{
-		copyMemory(A1, A6, 6)
+		copyMemory(A1, A6, 0x06)
 		A1 += D0.u16
 		A6 += D0.u16
 	}
@@ -357,21 +357,27 @@ function void fn052622()
 function void fn052636()
 {
 	A1 = 0xffff0028 + u16[A3 + 0x48]
-	D0.u16 = u16[A3 - 0x08]
-	for (u8 k = 0; k < 4; ++k)
+	D0.u16 = u16[A3 - 0x08] - 6
+	D1 = 3
+	while (D1.s16 >= 0)
 	{
-		copyMemory(A1, A5, 6)
+		u32[(A1+=4)-4] = u32[(A5+=4)-4]
+		u16[(A1+=2)-2] = u16[(A5+=2)-2]
 		A5 += D0.u16
 		A1 += D0.u16
+		--D1.s16
 	}
 
 	A1 = 0xffff0034 + u16[A3 + 0x48]
-	D0.u16 = u16[A3 - 0x08]
-	for (u8 k = 0; k < 4; ++k)
+	D0.u16 = u16[A3 - 0x08] - 6
+	D1 = 3
+	while (D1.s16 >= 0)
 	{
-		copyMemory(A1, A6, 6)
+		u32[(A1+=4)-4] = u32[(A6+=4)-4]
+		u16[(A1+=2)-2] = u16[(A6+=2)-2]
 		A6 += D0.u16
 		A1 += D0.u16
+		--D1.s16
 	}
 
 	fn04ed62()
@@ -433,7 +439,7 @@ function void fn052672()
 	D0.u16 = u16[A3 - 0x08]
 	for (u8 i = 0; i < 4; ++i)
 	{
-		copyMemory(A1, A5, 8)
+		copyMemory(A1, A5, 0x08)
 		A1 += D0.u16
 		A5 += D0.u16
 	}
@@ -442,7 +448,7 @@ function void fn052672()
 	D0.u16 = u16[A3 - 0x08]
 	for (u8 i = 0; i < 5; ++i)
 	{
-		copyMemory(A1, A6, 18)
+		copyMemory(A1, A6, 0x12)
 		A1 += D0.u16
 		A6 += D0.u16
 	}
@@ -504,21 +510,30 @@ function void fn05276e()
 function void fn052782()
 {
 	A1 = 0xffff0036 + u16[A3]
-	D0.u16 = u16[A3 - 0x08]
-	for (u8 k = 0; k < 4; ++k)
+	D0.u16 = u16[A3 - 0x08] - 8
+	D1 = 3
+	while (D1.s16 >= 0)
 	{
-		copyMemory(A1, A5, 8)
+		u32[(A1+=4)-4] = u32[(A5+=4)-4]
+		u32[(A1+=4)-4] = u32[(A5+=4)-4]
 		A5 += D0.u16
 		A1 += D0.u16
+		--D1.s16
 	}
 
 	A1 = 0xffff003e + u16[A3]
-	D0.u16 = u16[A3 - 0x08]
-	for (u8 k = 0; k < 5; ++k)
+	D0.u16 = u16[A3 - 0x08] - 0x12
+	D1 = 4
+	while (D1.s16 >= 0)
 	{
-		copyMemory(A1, A6, 18)
+		u32[(A1+=4)-4] = u32[(A6+=4)-4]
+		u32[(A1+=4)-4] = u32[(A6+=4)-4]
+		u32[(A1+=4)-4] = u32[(A6+=4)-4]
+		u32[(A1+=4)-4] = u32[(A6+=4)-4]
+		u16[(A1+=2)-2] = u16[(A6+=2)-2]
 		A6 += D0.u16
 		A1 += D0.u16
+		--D1.s16
 	}
 
 	fn04ed62()
@@ -575,7 +590,7 @@ function void fn0527f4()
 	D0.u16 = u16[A3 - 0x08]
 	for (u8 i = 0; i < 3; ++i)
 	{
-		copyMemory(A1, A5, 5)
+		copyMemory(A1, A5, 0x05)
 		A1 += D0.u16
 		A5 += D0.u16
 	}
@@ -608,7 +623,9 @@ function void InitLevelScrolling.FBZ1()
 	if (u16[0xffffb000 + 0x10] < 0x0180)
 	{
 		u8[0xffffeed6] = 0xff
-		copyMemory(0xfffffce4, 0x052dd0, 16)
+		A1 = 0x052dd0
+		A5 = 0xfffffce4
+		copyMemory((A5+=16)-16, (A1+=16)-16, 16)
 
 		fn052a2a()
 		fn04f2f6()
@@ -1230,12 +1247,12 @@ function void fn052c0c()
 //# address-hook(0x052c2e) end(0x052c3c)
 function void fn052c2e()
 {
-#if STANDALONE
-	// Immediately refresh the background with a blue sky, to avoid visual glitch in widescreen
-	//  -> TODO: Rather load the actual background content here
-	for (u16 address = 0xe000; address <= 0xf000; address += 2)
-		setVRAM(address, 0x6092)
-#endif
+	#if STANDALONE
+		// Immediately refresh the background with a blue sky, to avoid visual glitch in widescreen
+		//  -> TODO: Rather load the actual background content here
+		for (u16 address = 0xe000; address <= 0xf000; address += 2)
+			setVRAM(address, 0x6092)
+	#endif
 
 	u8[0xffffeed6] = 0xff
 	D0 = 0x10
@@ -1376,7 +1393,8 @@ function void fn052cd4()
 //# translated(0x052cd8) end(0x052d0c)
 function void fn052cd8()
 {
-	copyMemory(0xfffffc64, A1, 16)
+	A5 = 0xfffffc64
+	copyMemory((A5+=16)-16, (A1+=16)-16, 16)
 	level.scrolling_routine = D0.u16
 	fn052a2a()
 	fn04f2f6()
@@ -1590,14 +1608,18 @@ function void fn052ede()
 function void fn052eea()
 {
 	A1 = 0xffff001a + u16[A3 + 0x50]
-	D0.u16 = u16[A3 - 0x08]
-	for (u8 k = 0; k < 4; ++k)
+	D0.u16 = u16[A3 - 0x08] - 0x0e
+	D1 = 3
+	while (D1.s16 >= 0)
 	{
-		copyMemory(A1, A5, 14)
+		u32[(A1+=4)-4] = u32[(A5+=4)-4]
+		u32[(A1+=4)-4] = u32[(A5+=4)-4]
+		u32[(A1+=4)-4] = u32[(A5+=4)-4]
+		u16[(A1+=2)-2] = u16[(A5+=2)-2]
 		A5 += D0.u16
 		A1 += D0.u16
+		--D1.s16
 	}
-
 	fn04ed62()
 }
 
@@ -1660,10 +1682,10 @@ function void fn052f32()
 	A1 = 0x052dd0
 	A5 = 0xfffffc62
 	A6 = 0xfffffce2
-	u16[A5] = 0x0eee
-	u16[A6] = 0x0eee
-	copyMemory(A5+2, A1, 16)
-	copyMemory(A6+2, A1, 16)
+	u16[(A5+=2)-2] = 0x0eee
+	u16[(A6+=2)-2] = 0x0eee
+	copyMemory((A5+=16)-16, A1, 16)
+	copyMemory((A6+=16)-16, (A1+=16)-16, 16)
 }
 
 
@@ -1932,7 +1954,7 @@ function void fn0530f0()
 		for (u32 k = 0; k < 4; ++k)
 		{
 			zeroMemory(A1, 0x14)
-			A1 += level.num_foreground_chunks_x
+			A1 += u16[0xffff8000]
 		}
 	}
 }
@@ -2054,7 +2076,8 @@ function void fn05327a()
 //# address-hook(0x05327e) end(0x0532b2)
 function void fn05327e()
 {
-	copyMemory(0xfffffc64, A1, 16)
+	A5 = 0xfffffc64
+	copyMemory((A5+=16)-16, (A1+=16)-16, 16)
 	level.scrolling_routine = D0.u16
 
 	fn052a2a()

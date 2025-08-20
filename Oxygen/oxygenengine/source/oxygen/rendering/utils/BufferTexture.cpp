@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 
 #ifdef RMX_WITH_OPENGL_SUPPORT
 
@@ -39,12 +39,11 @@ BufferTexture::~BufferTexture()
 	{
 		glDeleteBuffers(1, &mTexBuffer);
 	}
-#endif
-
 	if (mTextureHandle != 0)
 	{
 		glDeleteTextures(1, &mTextureHandle);
 	}
+#endif
 }
 
 void BufferTexture::create(PixelFormat pixelFormat, int width, int height, const void* data)
@@ -56,8 +55,6 @@ void BufferTexture::create(PixelFormat pixelFormat, int width, int height, const
 	{
 		glGenTextures(1, &mTextureHandle);
 	}
-
-	mSize.set(width, height);
 
 #if defined(SUPPORTS_BUFFER_TEXTURES)
 	glGenBuffers(1, &mTexBuffer);

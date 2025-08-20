@@ -1,20 +1,20 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/data/PlayerRecorder.h"
+#include "sonic3air/helper/GameUtils.h"
 #include "sonic3air/data/SharedDatabase.h"
 #include "sonic3air/data/TimeAttackData.h"
-#include "sonic3air/helper/GameUtils.h"
-#include "sonic3air/ConfigurationImpl.h"
+#include "sonic3air/version.inc"
 
 #include "oxygen/application/input/ControlsIn.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/JsonHelper.h"
 #include "oxygen/rendering/parts/RenderParts.h"
 #include "oxygen/rendering/parts/SpriteManager.h"
 #include "oxygen/simulation/EmulatorInterface.h"
@@ -30,6 +30,9 @@ namespace
 	//  - 0x0106 = Serialization of settings
 	const uint16 EARLIEST_FORMAT_VERSION = 0x0103;
 	const uint16 CURRENT_FORMAT_VERSION	 = 0x0106;
+
+	// Game build, so we can distinguish between recordings from older builds
+	const uint32 GAME_VERSION			 = BUILD_NUMBER;
 
 	const wchar_t* getLeadingZeroString(uint32 value)
 	{
@@ -142,7 +145,7 @@ void PlayerRecorder::initRecording(const std::wstring& filename, uint16 zoneAndA
 
 	mCurrentRecording.mFilename = filename;
 	mCurrentRecording.mFormatVersion = CURRENT_FORMAT_VERSION;
-	mCurrentRecording.mGameVersion = EngineMain::getDelegate().getAppMetaData().mBuildVersionNumber;
+	mCurrentRecording.mGameVersion = GAME_VERSION;
 	mCurrentRecording.mZoneAndAct = zoneAndAct;
 	mCurrentRecording.mCategory = category;
 	mCurrentRecording.mFrames.clear();
@@ -152,10 +155,9 @@ void PlayerRecorder::initRecording(const std::wstring& filename, uint16 zoneAndA
 	for (const auto& pair : settingsMap)
 	{
 		const SharedDatabase::Setting& setting = pair.second;
-		const uint32 value = ConfigurationImpl::instance().mActiveGameSettings->getValue(pair.first);
-		if (setting.mSerializationType != SharedDatabase::Setting::SerializationType::NONE && value != setting.mDefaultValue)
+		if (setting.mSerializationType != SharedDatabase::Setting::SerializationType::NONE && setting.mCurrentValue != setting.mDefaultValue)
 		{
-			mCurrentRecording.mSettings.emplace_back(pair.first, value);
+			mCurrentRecording.mSettings.emplace_back(pair.first, setting.mCurrentValue);
 		}
 	}
 }
@@ -308,7 +310,7 @@ void PlayerRecorder::updateRecording(Recording& recording, uint16 frameNumber)
 		Frame& frame = recording.mFrames.back();
 
 		// Collect data
-		frame.mInput = ControlsIn::instance().getGamepad(0).mCurrentInput;
+		frame.mInput = ControlsIn::instance().getInputPad(0);
 		frame.mPosition.x = emulatorInterface.readMemory16(0xffffb010);
 		frame.mPosition.y = emulatorInterface.readMemory16(0xffffb014);
 		frame.mSprite = emulatorInterface.readMemory16(0x801002);

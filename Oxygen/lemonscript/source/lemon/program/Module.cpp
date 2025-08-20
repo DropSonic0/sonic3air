@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/program/Module.h"
 #include "lemon/program/ModuleSerializer.h"
 #include "lemon/program/GlobalsLookup.h"
@@ -22,10 +22,9 @@ namespace lemon
 	}
 
 
-	Module::Module(const std::string& name, AppendedInfo* appendedInfo) :
+	Module::Module(const std::string& name) :
 		mModuleName(name),
-		mModuleId(rmx::getMurmur2_64(name) & 0xffffffffffff0000ull),
-		mAppendedInfo(appendedInfo)
+		mModuleId(rmx::getMurmur2_64(name) & 0xffffffffffff0000ull)
 	{
 		static_assert((size_t)Opcode::Type::_NUM_TYPES == 36);	// Otherwise DEFAULT_OPCODE_BASETYPES needs to get updated
 	}
@@ -33,7 +32,6 @@ namespace lemon
 	Module::~Module()
 	{
 		clear();
-		delete mAppendedInfo;
 	}
 
 	void Module::clear()
@@ -54,9 +52,6 @@ namespace lemon
 		mNativeFunctionPool.clear();
 		mScriptFunctionPool.clear();
 
-		// Callable functions
-		mCallableFunctions.clear();
-
 		// Variables
 		for (Variable* var : mGlobalVariables)
 			delete var;
@@ -67,7 +62,6 @@ namespace lemon
 
 		// Constant arrays
 		mConstantArrays.clear();
-		mNumGlobalConstantArrays = 0;
 
 		// Defines
 		for (Define* define : mDefines)
@@ -90,7 +84,6 @@ namespace lemon
 		// Clear source file infos
 		mSourceFileInfoPool.clear();
 		mAllSourceFiles.clear();
-		mWarnings.clear();
 	}
 
 	void Module::startCompiling(const GlobalsLookup& globalsLookup)
@@ -144,9 +137,7 @@ namespace lemon
 				{
 					case DataTypeDefinition::Class::INTEGER:
 					{
-						const uint64 value = constant->getValue().get<uint64>();
-						const uint32 minDigits = (uint32)constant->getDataType()->getBytes() * 2;
-						content << rmx::hexString(value, minDigits);
+						content << rmx::hexString(constant->getValue().get<uint64>());
 						break;
 					}
 
@@ -183,16 +174,14 @@ namespace lemon
 			for (const Function* function : mFunctions)
 			{
 				const bool isMethod = !function->getContext().isEmpty();
-				if (isMethod != outputMethods)
-					continue;
-				if (function->hasFlag(Function::Flag::EXCLUDE_FROM_DEFINITIONS))
-					continue;
-				if (function->getName().getString()[0] == '#')	// Exclude hidden built-ins (which can't be accessed by scripts directly anyways)
-					continue;
-
-				currentFunctions.push_back(function);
+				if (isMethod == outputMethods)
+				{
+					if (function->getName().getString()[0] != '#')	// Exclude hidden built-ins (which can't be accessed by scripts directly anyways)
+					{
+						currentFunctions.push_back(function);
+					}
+				}
 			}
-
 			if (currentFunctions.empty())
 				continue;
 
@@ -244,12 +233,11 @@ namespace lemon
 		fileHandle.write(&content[0], content.length());
 	}
 
-	const SourceFileInfo& Module::addSourceFileInfo(const std::wstring& localPath, const std::wstring& filename)
+	const SourceFileInfo& Module::addSourceFileInfo(const std::wstring& basepath, const std::wstring& filename)
 	{
 		SourceFileInfo& sourceFileInfo = mSourceFileInfoPool.createObject();
-		sourceFileInfo.mModule = this;
 		sourceFileInfo.mFilename = filename;
-		sourceFileInfo.mLocalPath = localPath;
+		sourceFileInfo.mFullPath = basepath + filename;
 		sourceFileInfo.mIndex = mAllSourceFiles.size();
 		mAllSourceFiles.push_back(&sourceFileInfo);
 		return sourceFileInfo;
@@ -283,7 +271,7 @@ namespace lemon
 		return mFunctions[uniqueId & 0xffff];
 	}
 
-	ScriptFunction& Module::addScriptFunction(FlyweightString name, const DataTypeDefinition* returnType, const Function::ParameterList& parameters, std::vector<Function::AliasName>* aliasNames)
+	ScriptFunction& Module::addScriptFunction(FlyweightString name, const DataTypeDefinition* returnType, const Function::ParameterList& parameters, std::vector<FlyweightString>* aliasNames)
 	{
 		ScriptFunction& func = mScriptFunctionPool.createObject();
 		func.setModule(*this);
@@ -319,22 +307,6 @@ namespace lemon
 
 		addFunctionInternal(func);
 		return func;
-	}
-
-	uint32 Module::addOrFindCallableFunctionAddress(const Function& function)
-	{
-		const uint64 nameHash = function.getName().getHash();
-		const uint32 address = ((uint32)nameHash & 0x0fffffff) | 0x10000000;	// Value 1 in the uppermost 4 bits tells us that this is referring to a function
-		uint64& ref = mCallableFunctions[address];
-		if (ref == 0)
-		{
-			ref = nameHash;
-		}
-		else
-		{
-			RMX_ASSERT(ref == nameHash, "Conflict: Function '" << function.getName() << "' uses the same callable address " << rmx::hexString(address, 8) << " as a different function");
-		}
-		return address;
 	}
 
 	void Module::addFunctionInternal(Function& func)
@@ -401,7 +373,7 @@ namespace lemon
 		return constant;
 	}
 
-	ConstantArray& Module::addConstantArray(FlyweightString name, const DataTypeDefinition* elementDataType, const AnyBaseValue* values, size_t size, bool isGlobalDefinition)
+	ConstantArray& Module::addConstantArray(FlyweightString name, const DataTypeDefinition* elementDataType, const uint64* values, size_t size, bool isGlobalDefinition)
 	{
 		ConstantArray& constantArray = mConstantArrayPool.createObject();
 		constantArray.mName = name;

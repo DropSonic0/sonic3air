@@ -22,6 +22,8 @@ public:
 	inline uint32 getPlayerID() const  { return mPlayerID; }
 	inline const std::string& getHexPlayerID() const  { return mHexPlayerID; }
 
+	void unregisterPlayer();
+
 private:
 	uint32 mPlayerID = 0;
 	std::string mHexPlayerID;

@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/context/ApplicationContextMenu.h"
 #include "sonic3air/menu/SharedResources.h"
 
@@ -49,13 +49,6 @@ void ApplicationContextMenu::initialize()
 
 void ApplicationContextMenu::mouse(const rmx::MouseEvent& ev)
 {
-	if (FTX::System->wasEventConsumed())
-	{
-		mActive = false;
-		mContextMenuClick.set(-1, -1);
-		return;
-	}
-
 	if (ev.state)
 	{
 		if (ev.button == rmx::MouseButton::Right && !FTX::keyState(SDLK_LALT) && !FTX::keyState(SDLK_RALT))
@@ -118,7 +111,7 @@ void ApplicationContextMenu::render()
 		for (Item& item : mItems)
 		{
 			rect.y += 2;
-			const bool selected = rect.contains(FTX::mousePos()) && !FTX::System->wasEventConsumed();
+			const bool selected = rect.contains(FTX::mousePos());
 			if (mContextMenuClick.x >= 0 && rect.contains(mContextMenuClick))
 			{
 				clickedItem = &item;

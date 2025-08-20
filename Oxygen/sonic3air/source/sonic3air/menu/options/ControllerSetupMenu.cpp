@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/options/ControllerSetupMenu.h"
 #include "sonic3air/menu/options/OptionsMenu.h"
 #include "sonic3air/menu/SharedResources.h"
@@ -16,7 +16,6 @@
 #include "oxygen/application/Application.h"
 #include "oxygen/helper/DrawerHelper.h"
 #include "oxygen/helper/Utils.h"
-#include "Portability.h"
 
 
 namespace
@@ -576,9 +575,9 @@ const InputManager::RealDevice* ControllerSetupMenu::getSelectedDevice() const
 		return nullptr;
 
 	const uint32 deviceId = mControllerSelectEntry->selected().mValue;
-	if (deviceId >= 0xfff0 && deviceId < 0xfff0 + InputManager::NUM_PLAYERS)
+	if (deviceId >= 0xfffe)
 	{
-		return &InputManager::instance().getKeyboards()[deviceId - 0xfff0];
+		return &InputManager::instance().getKeyboards()[deviceId - 0xfffe];
 	}
 	else
 	{
@@ -657,13 +656,22 @@ void ControllerSetupMenu::refreshGamepadList(bool forceUpdate)
 
 		GameMenuEntry& entry = *mControllerSelectEntry;
 		const int oldValue = entry.hasSelected() ? entry.selected().mValue : 0;		// Default value 0 = select first controller if something goes wrong
-		entry.mOptions.clear();
 		if (Application::instance().hasKeyboard())
 		{
-			for (int k = 0; k < Configuration::instance().mNumPlayers; ++k)
+			if (entry.mOptions.size() >= 2 && entry.mOptions[0].mValue == 0xfffe)
 			{
-				entry.addOption("Keyboard Player " + to_string_ps3(k + 1), 0xfff0 + k);
+				entry.mOptions.resize(2);	// Reduce back to first two entries, which are for keyboard
 			}
+			else
+			{
+				entry.mOptions.clear();
+				entry.addOption("Keyboard Player 1", 0xfffe);
+				entry.addOption("Keyboard Player 2", 0xffff);
+			}
+		}
+		else
+		{
+			entry.mOptions.clear();
 		}
 
 		for (const InputManager::RealDevice& gamepad : InputManager::instance().getGamepads())

@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -45,25 +45,16 @@ AM_CPPFLAGS = -I$(top_srcdir)/include        \
 
 bin_PROGRAMS = curl
 
-if BUILD_DOCS
 SUBDIRS = ../docs
-endif
 
 if USE_CPPFLAG_CURL_STATICLIB
 AM_CPPFLAGS += -DCURL_STATICLIB
 endif
-AM_CPPFLAGS += -DBUILDING_CURL
 
 include Makefile.inc
 
 # CURL_FILES comes from Makefile.inc
 curl_SOURCES = $(CURL_FILES)
-if HAVE_WINDRES
-curl_SOURCES += $(CURL_RCFILES)
-$(CURL_RCFILES): tool_version.h
-endif
-
-curl_LDFLAGS = $(AM_LDFLAGS) $(CURL_LDFLAGS_BIN)
 
 # This might hold -Werror
 CFLAGS += @CURL_CFLAG_EXTRAS@
@@ -74,7 +65,7 @@ LIBS = $(BLANK_AT_MAKETIME)
 if USE_EXPLICIT_LIB_DEPS
 curl_LDADD = $(top_builddir)/lib/libcurl.la @LIBCURL_LIBS@
 else
-curl_LDADD = $(top_builddir)/lib/libcurl.la @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
+curl_LDADD = $(top_builddir)/lib/libcurl.la @NSS_LIBS@ @SSL_LIBS@ @ZLIB_LIBS@ @CURL_NETWORK_AND_TIME_LIBS@
 endif
 
 # if unit tests are enabled, build a static library to link them with
@@ -84,19 +75,19 @@ libcurltool_la_CPPFLAGS = $(AM_CPPFLAGS) \
                           -DCURL_STATICLIB -DUNITTESTS
 libcurltool_la_CFLAGS =
 libcurltool_la_LDFLAGS = -static $(LINKFLAGS)
-libcurltool_la_SOURCES = $(CURL_FILES)
+libcurltool_la_SOURCES = $(curl_SOURCES)
 endif
 
 CLEANFILES = tool_hugehelp.c
 # Use the C locale to ensure that only ASCII characters appear in the
 # embedded text.
-NROFF=env LC_ALL=C @NROFF@ @MANOPT@ 2>/dev/null # figured out by the configure script
+NROFF=env LC_ALL=C @NROFF@ @MANOPT@ # figured out by the configure script
 
-EXTRA_DIST = mkhelp.pl \
- Makefile.mk curl.rc Makefile.inc CMakeLists.txt .checksrc
+EXTRA_DIST = mkhelp.pl makefile.dj                                     \
+ Makefile.m32 makefile.amiga curl.rc Makefile.inc CMakeLists.txt
 
 # Use absolute directory to disable VPATH
-ASCIIPAGE=$(abs_top_builddir)/docs/cmdline-opts/curl.txt
+MANPAGE=$(abs_top_builddir)/docs/curl.1
 MKHELP=$(top_srcdir)/src/mkhelp.pl
 HUGE=tool_hugehelp.c
 
@@ -113,30 +104,32 @@ CS_ = $(CS_0)
 if USE_MANUAL
 # Here are the stuff to create a built-in manual
 
-$(ASCIIPAGE):
+$(MANPAGE):
 	cd $(top_builddir)/docs && $(MAKE)
 
 if HAVE_LIBZ
 # This generates the tool_hugehelp.c file in both uncompressed and
 # compressed formats.
-$(HUGE): $(ASCIIPAGE) $(MKHELP)
+$(HUGE): $(MANPAGE) $(MKHELP)
 	$(HUGECMD) (echo '#include "tool_setup.h"' > $(HUGE);   \
 	echo '#ifndef HAVE_LIBZ' >> $(HUGE);                    \
-	$(PERL) $(MKHELP) < $(ASCIIPAGE) >> $(HUGE);     \
+	$(NROFF) $(MANPAGE) | $(PERL) $(MKHELP) >> $(HUGE);     \
 	echo '#else' >> $(HUGE);                                \
-	$(PERL) $(MKHELP) -c < $(ASCIIPAGE) >> $(HUGE);  \
+	$(NROFF) $(MANPAGE) | $(PERL) $(MKHELP) -c >> $(HUGE);  \
 	echo '#endif /* HAVE_LIBZ */' >> $(HUGE) )
 else # HAVE_LIBZ
 # This generates the tool_hugehelp.c file uncompressed only
-$(HUGE): $(ASCIIPAGE) $(MKHELP)
+$(HUGE): $(MANPAGE) $(MKHELP)
 	$(HUGECMD)(echo '#include "tool_setup.h"' > $(HUGE);    \
-	$(PERL) $(MKHELP) < $(ASCIIPAGE) >> $(HUGE) )
+	$(NROFF) $(MANPAGE) | $(PERL) $(MKHELP) >> $(HUGE) )
 endif
 
 else # USE_MANUAL
 # built-in manual has been disabled, make a blank file
 $(HUGE):
-	echo '#include "tool_hugehelp.h"' >> $(HUGE)
+	$(HUGECMD)(echo "/* built-in manual is disabled, blank function */" > $(HUGE); \
+	echo '#include "tool_hugehelp.h"' >> $(HUGE); \
+	echo "void hugehelp(void) {}" >>$(HUGE) )
 endif
 
 # ignore tool_hugehelp.c since it is generated source code and it plays
@@ -159,9 +152,4 @@ tidy:
 	$(TIDY) $(CURL_CFILES) $(TIDYFLAGS) -- $(curl_CPPFLAGS) $(CPPFLAGS) -DHAVE_CONFIG_H
 
 listhelp:
-	(cd $(top_srcdir)/docs/cmdline-opts && make listhelp)
-
-if HAVE_WINDRES
-.rc.o:
-	$(RC) -I$(top_srcdir)/include -DCURL_EMBED_MANIFEST $(RCFLAGS) -i $< -o $@
-endif
+	(cd $(top_srcdir)/docs/cmdline-opts && ./gen.pl listhelp *.d) > tool_listhelp.c

@@ -8,10 +8,10 @@
 
 #define RMX_LIB
 
-#include "oxygen_netcore/network/ConnectionListener.h"
 #include "oxygen_netcore/network/ConnectionManager.h"
-#include "oxygen_netcore/network/NetConnection.h"
 #include "oxygen_netcore/network/RequestBase.h"
+#include "oxygen_netcore/network/NetConnection.h"
+#include "oxygen_netcore/network/ServerClientBase.h"
 #include "oxygen_netcore/serverclient/Packets.h"
 #include "oxygen_netcore/serverclient/ProtocolVersion.h"
 
@@ -54,7 +54,7 @@ void killServerProcess()
 }
 
 
-class Restarter : public ConnectionListenerInterface
+class Restarter : public ServerClientBase
 {
 public:
 	void runRestarter();
@@ -108,19 +108,21 @@ void Restarter::runRestarter()
 
 	mState = State::START_CONNECTION;
 
-	uint64 lastTimestamp = ConnectionManager::getCurrentTimestamp();
+	uint64 lastTimestamp = getCurrentTimestamp();
 	uint64 lastMessageTimestamp = 0;
 	while (mState != State::EXIT)
 	{
-		const uint64 currentTimestamp = ConnectionManager::getCurrentTimestamp();
+		const uint64 currentTimestamp = getCurrentTimestamp();
 		const uint64 millisecondsElapsed = currentTimestamp - lastTimestamp;
 		lastTimestamp = currentTimestamp;
 
 		// Check for new packets
-		if (!connectionManager.updateConnectionManager())
+		if (!updateReceivePackets(connectionManager))
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
+
+		connectionManager.updateConnections(currentTimestamp);
 
 		// Update client state
 		updateClient(currentTimestamp);
@@ -136,7 +138,7 @@ void Restarter::updateClient(uint64 currentTimestamp)
 			// Connect to server
 			//RMX_LOG_INFO("Starting connection");	// Already logged inside "startConnectTo"
 			const SocketAddress serverAddress("127.0.0.1", UDP_SERVER_PORT);
-			if (!mConnection.startConnectTo(*mConnectionManager, serverAddress))
+			if (!mConnection.startConnectTo(*mConnectionManager, serverAddress, getCurrentTimestamp()))
 			{
 				RMX_ERROR("Starting a connection failed", return);
 			}
@@ -181,7 +183,7 @@ void Restarter::updateClient(uint64 currentTimestamp)
 			{
 				RMX_LOG_INFO("Timeout for the response");
 				const SocketAddress serverAddress("127.0.0.1", UDP_SERVER_PORT);
-				mConnection.startConnectTo(*mConnectionManager, serverAddress);
+				mConnection.startConnectTo(*mConnectionManager, serverAddress, getCurrentTimestamp());
 				mState = State::WAITING_FOR_CONNECTION;
 			}
 			break;

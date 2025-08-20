@@ -1,9 +1,11 @@
 $! File: curl_Startup.com
 $!
+$! $Id$
+$!
 $! Procedure to setup the CURL libraries for use by programs from the
 $! VMS SYSTARTUP*.COM procedure.
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2013 - 2022, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -19,6 +21,8 @@ $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
 $! SPDX-License-Identifier: ISC
 $!
+$! 15-Jun-2009 J. Malmberg
+$! 30-Jul-2013 J. Malmberg  Update for Curl 7.32
 $!========================================================================
 $!
 $!

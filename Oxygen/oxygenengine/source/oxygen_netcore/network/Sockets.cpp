@@ -1,14 +1,13 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen_netcore/oxygen_netcore_pch.h"
+#include "oxygen_netcore/pch.h"
 #include "oxygen_netcore/network/Sockets.h"
-#include "Portability.h"
 
 #ifdef _WIN32
 	#define WIN32_LEAN_AND_MEAN
@@ -19,19 +18,6 @@
 	#pragma comment (lib, "Ws2_32.lib")
 	#pragma comment (lib, "Mswsock.lib")
 	#pragma comment (lib, "AdvApi32.lib")
-
-#elif defined(PLATFORM_PS3)
-	#include <net/net.h> // Main header for PSL1GHT networking
-	#include <sys/socket.h>
-	#include <netdb.h>
-	#include <unistd.h>
-	#include <arpa/inet.h>
-	#include <fcntl.h>
-
-
-	#define SOCKET int
-	#define INVALID_SOCKET -1
-	#define SOMAXCONN 128
 
 #else
 	// Use POSIX sockets
@@ -52,45 +38,6 @@
 #endif
 
 
-namespace
-{
-	void setSocketOptionGeneric(SOCKET socket, int level, int optname, void* ptr, size_t size)
-	{
-		const int result = ::setsockopt(socket, level, optname, (const char*)ptr, (int)size);
-	#ifdef _WIN32
-		RMX_ASSERT(result == 0, "setsockopt failed with error: " << WSAGetLastError());
-	#else
-		RMX_ASSERT(result == 0, "setsockopt failed with error: " << errno);
-	#endif
-	}
-
-	void setSocketOptionBool(SOCKET socket, int level, int optname, bool enable)
-	{
-		int option = enable ? 1 : 0;
-		setSocketOptionGeneric(socket, level, optname, &option, sizeof(option));
-	}
-
-	void setSocketOptionInt(SOCKET socket, int level, int optname, int value)
-	{
-		setSocketOptionGeneric(socket, level, optname, &value, sizeof(value));
-	}
-
-	void configureSocket(SOCKET socket, Sockets::ProtocolFamily protocolFamily)
-	{
-		// Allow re-use of the port
-		setSocketOptionBool(socket, SOL_SOCKET, SO_REUSEADDR, true);
-
-#if !defined(PLATFORM_PS3)
-		if (protocolFamily >= Sockets::ProtocolFamily::IPv6)
-		{
-			// Optionally allow IPv4 + IPv6 dual stack support on the socket
-			setSocketOptionBool(socket, IPPROTO_IPV6, IPV6_V6ONLY, protocolFamily != Sockets::ProtocolFamily::DualStack);
-		}
-#endif
-	}
-}
-
-
 void Sockets::startupSockets()
 {
 	if (mIsInitialized)
@@ -100,8 +47,6 @@ void Sockets::startupSockets()
 	WSADATA wsaData;
 	const int result = ::WSAStartup((WORD)0x0202, &wsaData);
 	RMX_CHECK(result == 0, "WSAStartup failed with error: " << result, );
-#elif defined(PLATFORM_PS3)
-	netInitialize();
 #endif
 	mIsInitialized = true;
 }
@@ -113,30 +58,16 @@ void Sockets::shutdownSockets()
 
 #ifdef _WIN32
 	::WSACleanup();
-#elif defined(PLATFORM_PS3)
-	netDeinitialize();
 #endif
 	mIsInitialized = false;
 }
 
-bool Sockets::resolveToIP(const std::string& hostName, std::string& outIP, bool useIPv6)
+bool Sockets::resolveToIP(const std::string& hostName, std::string& outIP)
 {
 #if defined(__EMSCRIPTEN__) || defined(__vita__)
 	// Just return the input
 	outIP = hostName;
 	return true;
-#elif defined(PLATFORM_PS3)
-    if (useIPv6) return false; // No IPv6 support on PS3
-    struct hostent* he = gethostbyname(hostName.c_str());
-    if (he == nullptr) {
-        return false;
-    }
-    in_addr** addr_list = (struct in_addr**)he->h_addr_list;
-    if (addr_list[0] != nullptr) {
-        outIP = inet_ntoa(*addr_list[0]);
-        return true;
-    }
-    return false;
 #else
 
 	// Resolve host name to an IP
@@ -146,8 +77,21 @@ bool Sockets::resolveToIP(const std::string& hostName, std::string& outIP, bool 
 	{
 		addrinfo* firstAddrInfo = addrInfo;
 
-		// Return either IPv4 or IPv6, depending on requested protocol family
-		const int aiFamily = useIPv6 ? AF_INET6 : AF_INET;
+		// Prefer IPv4 if possible
+		bool ipv4 = false;
+		bool ipv6 = false;
+		for (; nullptr != addrInfo; addrInfo = addrInfo->ai_next)
+		{
+			if (AF_INET == addrInfo->ai_family)
+			{
+				ipv4 = true;
+			}
+			if (AF_INET6 == addrInfo->ai_family)
+			{
+				ipv6 = true;
+			}
+		}
+		const int aiFamily = ipv4 ? AF_INET : AF_INET6;
 
 		for (addrInfo = firstAddrInfo; nullptr != addrInfo; addrInfo = addrInfo->ai_next)
 		{
@@ -190,18 +134,18 @@ std::string SocketAddress::toLoggedString() const
 	if (mPreventIPLogging)
 	{
 		// Do not log the IP itself
-		return "[IP]:" + to_string_ps3(mPort);
+		return "[IP]:" + std::to_string(mPort);
 	}
 	else
 	{
-		return mIP + ':' + to_string_ps3(mPort);
+		return mIP + ':' + std::to_string(mPort);
 	}
 }
 
 uint64 SocketAddress::getHash() const
 {
 	assureSockAddr();
-	return rmx::getMurmur2_64(mSockAddr, 16);
+	return rmx::getMurmur2_64(mSockAddr, 16) ^ ((uint64)mPort << 48);
 }
 
 void SocketAddress::assureSockAddr() const
@@ -210,7 +154,7 @@ void SocketAddress::assureSockAddr() const
 	{
 		memset(&mSockAddr, 0, sizeof(mSockAddr));
 		bool success = false;
-#if !defined(PLATFORM_SWITCH) && !defined(PLATFORM_PS3)
+	#if !defined(PLATFORM_SWITCH)	// The IPv6 part won't compile on Switch, but isn't really needed there anyways
 		{
 			// IPv6
 			sockaddr_in6& addr = *reinterpret_cast<sockaddr_in6*>(&mSockAddr);
@@ -218,7 +162,7 @@ void SocketAddress::assureSockAddr() const
 			addr.sin6_port = htons(mPort);
 			success = (1 == inet_pton(addr.sin6_family, mIP.c_str(), &addr.sin6_addr));
 		}
-#endif
+	#endif
 		if (!success)
 		{
 			// IPv4
@@ -238,26 +182,9 @@ void SocketAddress::assureIpPort() const
 		if (mHasSockAddr)
 		{
 			char myIP[512];
-#if !defined(PLATFORM_PS3)
-			const auto addressFamily = reinterpret_cast<const sockaddr_storage&>(mSockAddr).ss_family;
-#else
-			const auto addressFamily = reinterpret_cast<const sockaddr_in&>(mSockAddr).sin_family;
-#endif
-			if (addressFamily == AF_INET)
-			{
-				// IPv4
-				inet_ntop(addressFamily, &(reinterpret_cast<const sockaddr_in&>(mSockAddr).sin_addr), myIP, sizeof(myIP));
-				mPort = ntohs(reinterpret_cast<const sockaddr_in&>(mSockAddr).sin_port);
-			}
-#if !defined(PLATFORM_SWITCH) && !defined(PLATFORM_PS3)
-			else
-			{
-				// IPv6
-				inet_ntop(addressFamily, &(reinterpret_cast<const sockaddr_in6&>(mSockAddr).sin6_addr), myIP, sizeof(myIP));
-				mPort = ntohs(reinterpret_cast<const sockaddr_in6&>(mSockAddr).sin6_port);
-			}
-#endif
+			inet_ntop(reinterpret_cast<sockaddr_storage&>(mSockAddr).ss_family, &(reinterpret_cast<sockaddr_in&>(mSockAddr).sin_addr), myIP, sizeof(myIP));
 			mIP = myIP;
+			mPort = ntohs(reinterpret_cast<sockaddr_in&>(mSockAddr).sin_port);
 		}
 		else
 		{
@@ -316,8 +243,8 @@ void TCPSocket::close()
 	}
 #endif
 
-	// Reset to defaults
-	*mInternal = Internal();
+	mInternal->mSocket = INVALID_SOCKET;
+	mInternal->mRemoteAddress.clear();
 }
 
 const SocketAddress& TCPSocket::getRemoteAddress()
@@ -333,7 +260,7 @@ void TCPSocket::swapWith(TCPSocket& other)
 	std::swap(mInternal, other.mInternal);
 }
 
-bool TCPSocket::setupServer(uint16 serverPort, Sockets::ProtocolFamily protocolFamily)
+bool TCPSocket::setupServer(uint16 serverPort)
 {
 	if (nullptr == mInternal)
 	{
@@ -344,38 +271,15 @@ bool TCPSocket::setupServer(uint16 serverPort, Sockets::ProtocolFamily protocolF
 		close();
 	}
 
-#if defined(PLATFORM_PS3)
-    if (protocolFamily != Sockets::ProtocolFamily::IPv4) return false; // PS3 only supports IPv4 in this implementation
-    sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(serverPort);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-
-    mInternal->mSocket = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (mInternal->mSocket == INVALID_SOCKET) return false;
-
-    configureSocket(mInternal->mSocket, protocolFamily);
-
-    if (::bind(mInternal->mSocket, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        close();
-        return false;
-    }
-
-    if (::listen(mInternal->mSocket, SOMAXCONN) < 0) {
-        close();
-        return false;
-    }
-#else
 	addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = (protocolFamily >= Sockets::ProtocolFamily::IPv6) ? AF_INET6 : AF_INET;
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
 	addrinfo* addr = nullptr;
-	const std::string portAsString = to_string_ps3(serverPort);
+	const std::string portAsString = std::to_string(serverPort);
 	int result = ::getaddrinfo(nullptr, portAsString.c_str(), &hints, &addr);
 	if (result != 0)
 	{
@@ -392,15 +296,13 @@ bool TCPSocket::setupServer(uint16 serverPort, Sockets::ProtocolFamily protocolF
 	if (mInternal->mSocket == INVALID_SOCKET)
 	{
 	#ifdef _WIN32
-		RMX_ERROR("socket failed with error: " << WSAGetLastError(), );
+		RMX_ERROR("bind failed with error: " << WSAGetLastError(), );
 	#else
-		RMX_ERROR("socket failed with error: " << result, );
+		RMX_ERROR("bind failed with error: " << result, );
 	#endif
 		close();
 		return false;
 	}
-
-	configureSocket(mInternal->mSocket, protocolFamily);
 
 	// Bind socket
 	result = ::bind(mInternal->mSocket, addr->ai_addr, (int)addr->ai_addrlen);
@@ -427,8 +329,6 @@ bool TCPSocket::setupServer(uint16 serverPort, Sockets::ProtocolFamily protocolF
 		close();
 		return false;
 	}
-	::freeaddrinfo(addr);
-#endif
 
 	#ifdef _WIN32
 		// Switch socket to non-blocking (especially for sending)
@@ -472,14 +372,10 @@ bool TCPSocket::acceptConnection(TCPSocket& outSocket)
 		outSocket.close();
 	}
 
-#if !defined(PLATFORM_PS3)
 	sockaddr_storage& senderAddr = *reinterpret_cast<sockaddr_storage*>(outSocket.mInternal->mRemoteAddress.accessSockAddr());
 	socklen_t senderAddrSize = sizeof(sockaddr_storage);
-#else
-	sockaddr_in& senderAddr = *reinterpret_cast<sockaddr_in*>(outSocket.mInternal->mRemoteAddress.accessSockAddr());
-	socklen_t senderAddrSize = sizeof(sockaddr_in);
-#endif
 
+	outSocket.mInternal->mSocket = INVALID_SOCKET;
 	outSocket.mInternal->mSocket = ::accept(mInternal->mSocket, (sockaddr*)&senderAddr, &senderAddrSize);
 	if (outSocket.mInternal->mSocket < 0)
 	{
@@ -496,7 +392,7 @@ bool TCPSocket::acceptConnection(TCPSocket& outSocket)
 	return true;
 }
 
-bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort, Sockets::ProtocolFamily protocolFamily)
+bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort)
 {
 	if (nullptr == mInternal)
 	{
@@ -507,38 +403,16 @@ bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort, S
 		close();
 	}
 
-#if defined(PLATFORM_PS3)
-    if (protocolFamily != Sockets::ProtocolFamily::IPv4) return false;
-    std::string ip;
-    if (!Sockets::resolveToIP(serverAddress, ip, false)) return false;
-
-    sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(serverPort);
-    inet_pton(AF_INET, ip.c_str(), &addr.sin_addr);
-
-    mInternal->mSocket = ::socket(AF_INET, SOCK_STREAM, 0);
-    if(mInternal->mSocket == INVALID_SOCKET) return false;
-
-    configureSocket(mInternal->mSocket, protocolFamily);
-
-    if(::connect(mInternal->mSocket, (sockaddr*)&addr, sizeof(addr)) < 0) {
-        close();
-        return false;
-    }
-    return true;
-#else
 	// Resolve the server address
 	addrinfo* addressInfos = nullptr;
 	{
 		addrinfo hints;
 		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = (protocolFamily >= Sockets::ProtocolFamily::IPv6) ? AF_INET6 : AF_INET;
+		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;	// Needed for TCP
 		hints.ai_protocol = IPPROTO_TCP;	// Use TCP
 
-		const int result = getaddrinfo(serverAddress.c_str(), to_string_ps3(serverPort).c_str(), &hints, &addressInfos);
+		const int result = getaddrinfo(serverAddress.c_str(), std::to_string(serverPort).c_str(), &hints, &addressInfos);
 		RMX_CHECK(result == 0, "getaddrinfo failed with error: " << result, return false);
 	}
 
@@ -549,8 +423,6 @@ bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort, S
 		int result = (int)::socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		RMX_CHECK(result >= 0, "socket failed with error: " << result, return false);
 		mInternal->mSocket = (SOCKET)result;
-
-		configureSocket(mInternal->mSocket, protocolFamily);
 
 		// Connect to server
 		result = ::connect(mInternal->mSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
@@ -566,7 +438,6 @@ bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort, S
 
 	::freeaddrinfo(addressInfos);
 	return (mInternal->mSocket != INVALID_SOCKET);
-#endif
 }
 
 bool TCPSocket::sendData(const uint8* data, size_t length)
@@ -665,7 +536,6 @@ bool TCPSocket::receiveInternal(ReceiveResult& outReceiveResult)
 		}
 		else
 		{
-			outReceiveResult.mBuffer.clear();
 		#ifdef _WIN32
 			const int errorCode = WSAGetLastError();
 			if (errorCode == WSAECONNRESET)		// Ignore this error, see https://stackoverflow.com/questions/30749423/is-winsock-error-10054-wsaeconnreset-normal-with-udp-to-from-localhost
@@ -723,11 +593,11 @@ void UDPSocket::close()
 	}
 #endif
 
-	// Reset to defaults
-	*mInternal = Internal();
+	mInternal->mSocket = INVALID_SOCKET;
+	mInternal->mLocalPort = 0;
 }
 
-bool UDPSocket::bindToPort(uint16 port, Sockets::ProtocolFamily protocolFamily)
+bool UDPSocket::bindToPort(uint16 port)
 {
 	if (nullptr == mInternal)
 	{
@@ -738,34 +608,16 @@ bool UDPSocket::bindToPort(uint16 port, Sockets::ProtocolFamily protocolFamily)
 		close();
 	}
 
-#if defined(PLATFORM_PS3)
-    if (protocolFamily != Sockets::ProtocolFamily::IPv4) return false;
-    sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-
-    mInternal->mSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (mInternal->mSocket == INVALID_SOCKET) return false;
-
-    configureSocket(mInternal->mSocket, protocolFamily);
-
-    if (::bind(mInternal->mSocket, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        close();
-        return false;
-    }
-#else
 	addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = (protocolFamily >= Sockets::ProtocolFamily::IPv6) ? AF_INET6 : AF_INET;
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
 
 	// Resolve the server address and port
 	addrinfo* addressInfo = nullptr;
-	int result = ::getaddrinfo(nullptr, to_string_ps3(port).c_str(), &hints, &addressInfo);
+	int result = ::getaddrinfo(nullptr, std::to_string(port).c_str(), &hints, &addressInfo);
 	if (result != 0)
 	{
 		RMX_ERROR("getaddrinfo failed with error: " << result, );
@@ -776,17 +628,11 @@ bool UDPSocket::bindToPort(uint16 port, Sockets::ProtocolFamily protocolFamily)
 	result = (int)::socket(addressInfo->ai_family, addressInfo->ai_socktype, addressInfo->ai_protocol);
 	if (result < 0)
 	{
-	#ifdef _WIN32
-		RMX_ERROR("socket failed with error: " << WSAGetLastError(), );
-	#else
-		RMX_ERROR("socket failed with error: " << result, );
-	#endif
+		RMX_ERROR("socket failed with error: " << mInternal->mSocket, );
 		::freeaddrinfo(addressInfo);
 		return false;
 	}
 	mInternal->mSocket = (SOCKET)result;
-
-	configureSocket(mInternal->mSocket, protocolFamily);
 
 	// Setup the socket
 	result = ::bind(mInternal->mSocket, addressInfo->ai_addr, (int)addressInfo->ai_addrlen);
@@ -803,17 +649,16 @@ bool UDPSocket::bindToPort(uint16 port, Sockets::ProtocolFamily protocolFamily)
 	}
 
 	::freeaddrinfo(addressInfo);
-#endif
 	mInternal->mLocalPort = port;
 
 	// Setup socket options
 	int bufsize = MAX_DATAGRAM_SIZE * 8;	// This would be 256 KB, enough to hold multiple large datagrams
-	setSocketOptionInt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, bufsize);
-	setSocketOptionInt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, bufsize);
+	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize, sizeof(bufsize));
+	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize, sizeof(bufsize));
 	return true;
 }
 
-bool UDPSocket::bindToAnyPort(Sockets::ProtocolFamily protocolFamily)
+bool UDPSocket::bindToAnyPort()
 {
 	if (nullptr == mInternal)
 	{
@@ -824,28 +669,21 @@ bool UDPSocket::bindToAnyPort(Sockets::ProtocolFamily protocolFamily)
 		close();
 	}
 
-#if defined(PLATFORM_PS3)
-    if (protocolFamily != Sockets::ProtocolFamily::IPv4) return false;
-    mInternal->mSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-#else
 	// Create a socket
-	mInternal->mSocket = ::socket((protocolFamily >= Sockets::ProtocolFamily::IPv6) ? AF_INET6 : AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-#endif
+	mInternal->mSocket = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (mInternal->mSocket < 0)
 	{
 		RMX_ERROR("socket failed with error: " << mInternal->mSocket, );
 		return false;
 	}
 
-	configureSocket(mInternal->mSocket, protocolFamily);
-
 	// Note that the local port stays unknown this way
 	mInternal->mLocalPort = 0;
 
 	// Setup socket options
 	int bufsize = 0x20000;
-	setSocketOptionInt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, bufsize);
-	setSocketOptionInt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, bufsize);
+	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize, sizeof(bufsize));
+	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize, sizeof(bufsize));
 	return true;
 }
 
@@ -854,11 +692,7 @@ bool UDPSocket::sendData(const uint8* data, size_t length, const SocketAddress& 
 	if (!isValid())
 		return false;
 
-#if !defined(PLATFORM_PS3)
-	const int result = ::sendto(mInternal->mSocket, (const char*)data, (int)length, 0, (sockaddr*)destinationAddress.getSockAddr(), (int)sizeof(sockaddr_storage));
-#else
-	const int result = ::sendto(mInternal->mSocket, (const char*)data, (int)length, 0, (sockaddr*)destinationAddress.getSockAddr(), (int)sizeof(sockaddr_in));
-#endif
+	const int result = ::sendto(mInternal->mSocket, (const char*)data, (int)length, 0, (sockaddr*)destinationAddress.getSockAddr(), (int)sizeof(sockaddr));
 	if (result >= 0)
 		return true;
 
@@ -940,24 +774,16 @@ bool UDPSocket::receiveInternal(ReceiveResult& outReceiveResult)
 		const constexpr size_t CHUNK_SIZE = MAX_DATAGRAM_SIZE;
 		outReceiveResult.mBuffer.resize(bytesRead + CHUNK_SIZE);
 
-#if !defined(PLATFORM_PS3)
 		sockaddr_storage& senderAddr = *reinterpret_cast<sockaddr_storage*>(outReceiveResult.mSenderAddress.accessSockAddr());
-		socklen_t senderAddrSize = sizeof(sockaddr_storage);
-#else
-		sockaddr_in& senderAddr = *reinterpret_cast<sockaddr_in*>(outReceiveResult.mSenderAddress.accessSockAddr());
-		socklen_t senderAddrSize = sizeof(sockaddr_in);
-#endif
+		socklen_t senderAddrSize = sizeof(sockaddr);
 		const int result = ::recvfrom(mInternal->mSocket, (char*)&outReceiveResult.mBuffer[bytesRead], CHUNK_SIZE, 0, (sockaddr*)&senderAddr, &senderAddrSize);
 		if (result < 0)
 		{
-			outReceiveResult.mBuffer.clear();
 		#ifdef _WIN32
 			const int errorCode = WSAGetLastError();
 			if (errorCode == WSAECONNRESET)		// Ignore this error, see https://stackoverflow.com/questions/30749423/is-winsock-error-10054-wsaeconnreset-normal-with-udp-to-from-localhost
 				return true;
 			RMX_ERROR("recv failed with error: " << errorCode, );
-			if (errorCode == WSAENETRESET)		// Ignore this error as well (it happens occasionally on the server)
-				return true;
 		#else
 			// This is only an error for blocking sockets
 			if (mInternal->mIsBlockingSocket)
@@ -965,6 +791,7 @@ bool UDPSocket::receiveInternal(ReceiveResult& outReceiveResult)
 				RMX_ERROR("recv failed with error: " << result, );
 			}
 		#endif
+			outReceiveResult.mBuffer.clear();
 			return false;
 		}
 

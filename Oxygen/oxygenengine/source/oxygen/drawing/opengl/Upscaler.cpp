@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 
 #ifdef RMX_WITH_OPENGL_SUPPORT
 
@@ -14,20 +14,19 @@
 #include "oxygen/drawing/opengl/OpenGLDrawerResources.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/rendering/opengl/shaders/SimpleRectTexturedShader.h"
 
 
 void Upscaler::startup()
 {
 	FileHelper::loadShader(mUpscalerSoftShader,             L"data/shader/upscaler_soft.shader", "Standard");
 	FileHelper::loadShader(mUpscalerSoftShaderScanlines,    L"data/shader/upscaler_soft.shader", "Scanlines");
-#if !defined(PLATFORM_VITA)
+	#if !defined(PLATFORM_VITA)
 	FileHelper::loadShader(mUpscalerXBRZMultipassShader[0], L"data/shader/upscaler_xbrz-freescale-pass0.shader", "Standard");
 	FileHelper::loadShader(mUpscalerXBRZMultipassShader[1], L"data/shader/upscaler_xbrz-freescale-pass1.shader", "Standard");
 	FileHelper::loadShader(mUpscalerHQ2xShader,             L"data/shader/upscaler_hqx.shader", "Standard_2x");
 	FileHelper::loadShader(mUpscalerHQ3xShader,             L"data/shader/upscaler_hqx.shader", "Standard_3x");
 	FileHelper::loadShader(mUpscalerHQ4xShader,             L"data/shader/upscaler_hqx.shader", "Standard_4x");
-#endif
+	#endif
 
 	mPass0Texture.setup(Configuration::instance().mGameScreen, rmx::OpenGLHelper::FORMAT_RGBA);
 
@@ -41,19 +40,18 @@ void Upscaler::shutdown()
 {
 }
 
-void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textureResolution)
+void Upscaler::renderImage(const Rectf& rect, GLuint textureHandle, Vec2i textureResolution)
 {
 	const int filtering = Configuration::instance().mFiltering;
 	const int scanlines = Configuration::instance().mScanlines;
 
 	// Select upscaler
-	SimpleRectTexturedShader& simpleRectTexturedShader = mResources.getSimpleRectTexturedShader(false, false);
-	Shader* upscaleShader = &simpleRectTexturedShader.getShader();		// Fallback: Simple rendering
+	Shader& simpleRectTexturedShader = OpenGLDrawerResources::getSimpleRectTexturedShader(false, false);
+	Shader* upscaleShader = &simpleRectTexturedShader;		// Fallback: Simple rendering
 	Shader* pass0Shader = nullptr;
 	bool filterLinear = false;
 	int lookupTextureIndex = -1;
 
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureHandle);
 	if (scanlines > 0 && filtering < 3)
 	{
@@ -65,7 +63,7 @@ void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textur
 		switch (filtering)
 		{
 			case 0:
-				upscaleShader = &simpleRectTexturedShader.getShader();
+				upscaleShader = &simpleRectTexturedShader;
 				break;
 
 			case 1:
@@ -73,13 +71,12 @@ void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textur
 				filterLinear = true;
 				upscaleShader = &mUpscalerSoftShader;
 				break;
-
-		#if !defined(PLATFORM_VITA)
+				
+			#if !defined(PLATFORM_VITA)
 			case 3:
 				pass0Shader = &mUpscalerXBRZMultipassShader[0];
 				upscaleShader = &mUpscalerXBRZMultipassShader[1];
 				break;
-
 			case 4:
 				upscaleShader = &mUpscalerHQ2xShader;
 				lookupTextureIndex = 0;
@@ -92,12 +89,12 @@ void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textur
 				upscaleShader = &mUpscalerHQ4xShader;
 				lookupTextureIndex = 2;
 				break;
-		#else
+			#else
 			case 3: break;
 			case 4: break;
 			case 5: break;
 			case 6: break;
-		#endif
+			#endif
 		}
 	}
 
@@ -123,14 +120,15 @@ void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textur
 		}
 	}
 
-	if (firstShader == &simpleRectTexturedShader.getShader())
+	firstShader->bind();
+	firstShader->setTexture("Texture", textureHandle, GL_TEXTURE_2D);
+
+	if (firstShader == &simpleRectTexturedShader)
 	{
-		simpleRectTexturedShader.setup(textureHandle, Vec4f(-1.0f, 1.0f, 2.0f, -2.0f));
+		firstShader->setParam("Transform", Vec4f(-1.0f, 1.0f, 2.0f, -2.0f));
 	}
 	else
 	{
-		firstShader->bind();
-		firstShader->setTexture("MainTexture", textureHandle, GL_TEXTURE_2D);
 		firstShader->setParam("GameResolution", Vec2f(textureResolution));
 
 		// Configuration for soft shader
@@ -155,9 +153,9 @@ void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textur
 	}
 
 	// Disable blending (though it shouldn't be necessary, as upscaling shaders usually do this already)
-	mResources.setBlendMode(BlendMode::OPAQUE);
+	OpenGLDrawerResources::setBlendMode(BlendMode::OPAQUE);
 
-	opengl::VertexArrayObject& vao = mResources.getSimpleQuadVAO();
+	opengl::VertexArrayObject& vao = OpenGLDrawerResources::getSimpleQuadVAO();
 	vao.bind();
 
 	if (isMultiPass)
@@ -178,18 +176,16 @@ void Upscaler::renderImage(const Recti& rect, GLuint textureHandle, Vec2i textur
 
 		secondShader->bind();
 		secondShader->setParam("GameResolution", Vec2f(textureResolution));
-		secondShader->setParam("OutputSize", Vec2f(rect.getSize()));
-		secondShader->setTexture("MainTexture", mPass0Texture.getHandle(), GL_TEXTURE_2D);
+		secondShader->setParam("OutputSize", Vec2f(rect.width, rect.height));
+		secondShader->setTexture("Texture", mPass0Texture.getHandle(), GL_TEXTURE_2D);
 		secondShader->setTexture("OrigTexture", textureHandle, GL_TEXTURE_2D);
 	}
 
-	// Flip rect in y direction
-	glViewport_Recti(Recti(rect.x, FTX::screenHeight() - rect.height - rect.y, rect.width, rect.height));
+	glViewport_Recti(rect);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glViewport_Recti(FTX::screenRect());
 
 	secondShader->unbind();
-	OpenGLShader::resetLastUsedShader();
 }
 
 #endif

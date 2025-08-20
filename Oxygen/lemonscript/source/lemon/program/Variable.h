@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -9,7 +9,6 @@
 #pragma once
 
 #include "lemon/program/DataType.h"
-#include "lemon/utility/AnyBaseValue.h"
 #include "lemon/utility/FlyweightString.h"
 
 #include <functional>
@@ -17,7 +16,6 @@
 
 namespace lemon
 {
-	class ControlFlow;
 	class Environment;
 
 
@@ -37,6 +35,9 @@ namespace lemon
 		};
 
 	public:
+		virtual int64 getValue() const = 0;
+		virtual void setValue(int64 value) = 0;
+
 		inline Type getType() const							 { return mType; }
 		inline FlyweightString getName() const				 { return mName; }
 		inline uint32 getID() const							 { return mID; }
@@ -63,7 +64,9 @@ namespace lemon
 	public:
 		inline LocalVariable() : Variable(Type::LOCAL) {}
 
-		// Local variables get accessed via the current state's variables stack
+		// Do not use these for variables, instead look it up in the current state's variables stack
+		int64 getValue() const override		 { return 0; }
+		void setValue(int64 value) override  {}
 	};
 
 
@@ -72,10 +75,12 @@ namespace lemon
 	public:
 		inline GlobalVariable() : Variable(Type::GLOBAL) {}
 
-		// Global variables get accessed via the runtime's global variables list
+		// Do not use these for variables, instead look it up in the runtime's global variables list
+		int64 getValue() const override		 { return 0; }
+		void setValue(int64 value) override  {}
 
 	public:
-		AnyBaseValue mInitialValue;
+		int64 mInitialValue = 0;
 	};
 
 
@@ -84,11 +89,12 @@ namespace lemon
 	public:
 		inline UserDefinedVariable() : Variable(Type::USER) {}
 
+		int64 getValue() const override		 { return (mGetter) ? mGetter() : 0; }
+		void setValue(int64 value) override  { if (mSetter) mSetter(value); }
+
 	public:
-		// User defined variables get accessed using their getter and setter methods
-		//  -> Note that these need to read from / write to the value stack, using the given runtime opcode context
-		std::function<void(ControlFlow&)> mGetter;
-		std::function<void(ControlFlow&)> mSetter;
+		std::function<int64()> mGetter;
+		std::function<void(int64)> mSetter;
 	};
 
 
@@ -97,8 +103,11 @@ namespace lemon
 	public:
 		inline ExternalVariable() : Variable(Type::EXTERNAL) {}
 
+		// Do not use these for variables, instead directly access the pointer with the right data type
+		int64 getValue() const override		 { return 0; }
+		void setValue(int64 value) override  {}
+
 	public:
-		// External variables get accessed directly via the accessor the pointer, using the right data type
 		std::function<int64*()> mAccessor;
 	};
 

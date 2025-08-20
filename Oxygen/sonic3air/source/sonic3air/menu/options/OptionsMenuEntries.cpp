@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/options/OptionsMenuEntries.h"
 #include "sonic3air/menu/options/OptionsEntry.h"
 #include "sonic3air/menu/options/OptionsMenu.h"
@@ -21,7 +21,6 @@
 #include "oxygen/application/Application.h"
 #include "oxygen/application/modding/Mod.h"
 #include "oxygen/download/Downloader.h"
-#include "Portability.h"
 
 
 namespace
@@ -375,7 +374,7 @@ void SoundtrackDownloadMenuEntry::renderEntry(RenderContext& renderContext_)
 				break;
 
 			case RemasteredMusicDownload::State::DOWNLOAD_RUNNING:
-				text = "Downloading... " + to_string_ps3(download.getBytesDownloaded() / (1024*1024)) + " MB";
+				text = "Downloading... " + std::to_string(download.getBytesDownloaded() / (1024*1024)) + " MB";
 				mText = "Stop download";
 				break;
 

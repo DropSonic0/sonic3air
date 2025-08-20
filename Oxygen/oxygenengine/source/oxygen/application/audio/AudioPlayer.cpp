@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/audio/AudioPlayer.h"
 #include "oxygen/application/audio/EmulationAudioSource.h"
 
@@ -96,13 +96,11 @@ void AudioPlayer::clearPlayback()
 
 bool AudioPlayer::playAudio(uint64 sfxId, int contextId)
 {
-	PlayingSound* playingSound = playAudioInternal(mAudioCollection.getSourceRegistration(sfxId), contextId);
-	return (nullptr != playingSound);
-}
+	SourceRegistration* sourceReg = mAudioCollection.getSourceRegistration(sfxId);
+	if (nullptr == sourceReg)
+		return false;
 
-bool AudioPlayer::playAudio(uint64 sfxId, int contextId, int channelId)
-{
-	PlayingSound* playingSound = playAudioInternal(mAudioCollection.getSourceRegistration(sfxId), channelId, contextId);
+	PlayingSound* playingSound = playAudioInternal(sourceReg, sourceReg->mAudioDefinition->mChannel, contextId);
 	return (nullptr != playingSound);
 }
 
@@ -117,8 +115,16 @@ void AudioPlayer::playOverride(uint64 sfxId, int contextId, int channelId, int o
 		}
 	}
 
-	// Start playback of new sound
-	PlayingSound* playingSound = playAudioInternal(mAudioCollection.getSourceRegistration(sfxId), channelId, contextId);
+	PlayingSound* playingSound = nullptr;
+	{
+		SourceRegistration* sourceReg = mAudioCollection.getSourceRegistration(sfxId);
+		if (nullptr != sourceReg)
+		{
+			// Start playback of new sound
+			playingSound = playAudioInternal(sourceReg, channelId, contextId);
+		}
+	}
+
 	if (nullptr != playingSound)
 	{
 		// Create new channel override
@@ -314,69 +320,6 @@ void AudioPlayer::changeSoundContext(AudioReference& audioRef, int contextId)
 	}
 }
 
-void AudioPlayer::pauseAllSoundsByChannel(int channelId)
-{
-	SoundIterator iterator(mPlayingSounds);
-	iterator.filterChannel(channelId);
-	iterator.filterState(PlayingSound::State::PLAYING);
-	while (PlayingSound* soundPtr = iterator.getNext())
-	{
-		soundPtr->mAudioRef.setPause(true);
-	}
-}
-
-void AudioPlayer::resumeAllSoundsByChannel(int channelId)
-{
-	SoundIterator iterator(mPlayingSounds);
-	iterator.filterChannel(channelId);
-	iterator.filterState(PlayingSound::State::PLAYING);
-	while (PlayingSound* soundPtr = iterator.getNext())
-	{
-		soundPtr->mAudioRef.setPause(false);
-	}
-}
-
-void AudioPlayer::pauseAllSoundsByContext(int contextId)
-{
-	SoundIterator iterator(mPlayingSounds);
-	iterator.filterContext(contextId);
-	iterator.filterState(PlayingSound::State::PLAYING);
-	while (PlayingSound* soundPtr = iterator.getNext())
-	{
-		soundPtr->mAudioRef.setPause(true);
-	}
-}
-
-void AudioPlayer::resumeAllSoundsByContext(int contextId)
-{
-	SoundIterator iterator(mPlayingSounds);
-	iterator.filterContext(contextId);
-	iterator.filterState(PlayingSound::State::PLAYING);
-	while (PlayingSound* soundPtr = iterator.getNext())
-	{
-		soundPtr->mAudioRef.setPause(false);
-	}
-}
-
-void AudioPlayer::stopAllSoundsByContext(int contextId)
-{
-	SoundIterator iterator(mPlayingSounds);
-	iterator.filterContext(contextId);
-	iterator.filterState(PlayingSound::State::PLAYING);
-	while (PlayingSound* soundPtr = iterator.getNext())
-	{
-		if (soundPtr->mAudioRef.isPaused())
-		{
-			// No need for quick fade-out if it's paused anyways
-			soundPtr->mAudioRef.stop();
-		}
-		else
-		{
-			soundPtr->mAudioRef.setVolumeChange(-20.0f);
-		}
-	}
-}
-
 void AudioPlayer::stopAllSounds(bool immediately)
 {
 	if (immediately)
@@ -441,6 +384,47 @@ void AudioPlayer::fadeOutChannel(int channelId, float length)
 	while (PlayingSound* soundPtr = iterator.getNext())
 	{
 		soundPtr->mRelativeVolumeChange = (length > 0.0f) ? (-1.0f / length) : 0.1f;
+	}
+}
+
+void AudioPlayer::pauseAllSoundsByContext(int contextId)
+{
+	SoundIterator iterator(mPlayingSounds);
+	iterator.filterContext(contextId);
+	iterator.filterState(PlayingSound::State::PLAYING);
+	while (PlayingSound* soundPtr = iterator.getNext())
+	{
+		soundPtr->mAudioRef.setPause(true);
+	}
+}
+
+void AudioPlayer::resumeAllSoundsByContext(int contextId)
+{
+	SoundIterator iterator(mPlayingSounds);
+	iterator.filterContext(contextId);
+	iterator.filterState(PlayingSound::State::PLAYING);
+	while (PlayingSound* soundPtr = iterator.getNext())
+	{
+		soundPtr->mAudioRef.setPause(false);
+	}
+}
+
+void AudioPlayer::stopAllSoundsByContext(int contextId)
+{
+	SoundIterator iterator(mPlayingSounds);
+	iterator.filterContext(contextId);
+	iterator.filterState(PlayingSound::State::PLAYING);
+	while (PlayingSound* soundPtr = iterator.getNext())
+	{
+		if (soundPtr->mAudioRef.isPaused())
+		{
+			// No need for quick fade-out if it's paused anyways
+			soundPtr->mAudioRef.stop();
+		}
+		else
+		{
+			soundPtr->mAudioRef.setVolumeChange(-20.0f);
+		}
 	}
 }
 
@@ -527,47 +511,9 @@ size_t AudioPlayer::getMemoryUsage() const
 	return mAudioSourceManager.getMemoryUsage();
 }
 
-void AudioPlayer::loadPlaybackState(const SavedPlaybackState& playbackState)
-{
-	stopAllSounds();
-
-	for (const SavedAudioState& audioState : playbackState.mAudioStates)
-	{
-		playAudio(audioState.mSfxId, audioState.mChannelId, audioState.mContextId);
-	}
-}
-
-void AudioPlayer::savePlaybackState(SavedPlaybackState& outPlaybackState) const
-{
-	outPlaybackState = SavedPlaybackState();
-
-	for (const PlayingSound& playingSound : mPlayingSounds)
-	{
-		if (nullptr == playingSound.mSourceReg || nullptr == playingSound.mSourceReg->mAudioDefinition)
-		{
-			RMX_ASSERT(false, "Invalid playing sound source registration");
-			continue;
-		}
-
-		SavedAudioState& audioState = vectorAdd(outPlaybackState.mAudioStates);
-		audioState.mSfxId = playingSound.mSourceReg->mAudioDefinition->mKeyId;
-		audioState.mChannelId = playingSound.mChannelId;
-		audioState.mContextId = playingSound.mContextId;
-	}
-}
-
-AudioPlayer::PlayingSound* AudioPlayer::playAudioInternal(SourceRegistration* sourceReg, int contextId)
-{
-	if (nullptr == sourceReg)
-		return nullptr;
-
-	return playAudioInternal(sourceReg, sourceReg->mAudioDefinition->mChannel, contextId);
-}
-
 AudioPlayer::PlayingSound* AudioPlayer::playAudioInternal(SourceRegistration* sourceReg, int channelId, int contextId)
 {
-	if (nullptr == sourceReg)
-		return nullptr;
+	RMX_ASSERT(nullptr != sourceReg, "Got a null pointer for sourceReg");
 
 	// Stop all old sounds of this channel
 	if (channelId != 0xff && sourceReg->mType != SourceRegistration::Type::EMULATION_CONTINUOUS)
@@ -600,6 +546,7 @@ AudioPlayer::PlayingSound* AudioPlayer::playAudioInternal(SourceRegistration* so
 	if (isOverridden)
 	{
 		playingSound->mState = PlayingSound::State::OVERRIDDEN;
+		playingSound->mAudioRef.setPause(true);
 		playingSound->mRelativeVolume = 0.0f;
 		playingSound->mBaseVolume = 1.0f;
 	}
@@ -621,13 +568,6 @@ AudioPlayer::PlayingSound* AudioPlayer::playAudioInternal(SourceRegistration* so
 
 	// Success
 	playingSound->mBaseSourceReg = sourceReg;
-
-	// Now start actual playback (unless overridden)
-	if (!isOverridden)
-	{
-		playingSound->mAudioRef.setPause(false);
-	}
-
 	return playingSound;
 }
 
@@ -683,7 +623,7 @@ AudioPlayer::PlayingSound* AudioPlayer::startOrContinuePlayback(SourceRegistrati
 AudioPlayer::PlayingSound* AudioPlayer::startPlaybackInternal(SourceRegistration& sourceReg, AudioSourceBase& audioSource, float volume, float time, int contextId, int channelId)
 {
 	// Startup audio source and get the audio buffer
-	AudioBuffer* audioBuffer = audioSource.startup();
+	AudioBuffer* audioBuffer = audioSource.startup(0.1f);
 	if (nullptr == audioBuffer)
 		return nullptr;
 
@@ -693,7 +633,6 @@ AudioPlayer::PlayingSound* AudioPlayer::startPlaybackInternal(SourceRegistration
 	options.mStreaming = true;
 	options.mVolume = volume;
 	options.mAudioMixerId = contextId + 0x11;	// Translate "AudioOutBase::Context" to "AudioOutBase::AudioMixerId"
-	options.mStartPaused = true;
 
 	AudioReference audioRef;
 	FTX::Audio->lockAudio();
@@ -724,7 +663,6 @@ AudioPlayer::PlayingSound* AudioPlayer::startPlaybackInternal(SourceRegistration
 		memset(oldData, 0xdd, sizeof(PlayingSound) * mPlayingSounds.size());
 	}
 #endif
-
 	PlayingSound& sound = vectorAdd(mPlayingSounds);
 	sound.mUniqueId = ++mLastUniqueId;
 	sound.mAudioRef = audioRef;
@@ -935,9 +873,6 @@ void AudioPlayer::applyAudioModifierSingle(SoundIterator& iterator, std::string_
 
 			// Remove old playing sound
 			iterator.removeCurrent();
-
-			// Now start actual playback
-			newSound->mAudioRef.setPause(false);
 		}
 	}
 }
@@ -964,7 +899,7 @@ void AudioPlayer::startAutoStreamer(AudioSourceBase& audioSource, float currentT
 	else if (!audioSource.isStreaming())
 	{
 		// Startup the audio source if it's not playing yet
-		audioSource.startup();
+		audioSource.startup(0.0f);
 	}
 
 	AutoStreamer& autoStreamer = vectorAdd(mAutoStreamers);

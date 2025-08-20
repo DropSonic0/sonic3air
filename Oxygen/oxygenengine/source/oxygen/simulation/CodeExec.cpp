@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/simulation/CodeExec.h"
 #include "oxygen/simulation/EmulatorInterface.h"
 #include "oxygen/simulation/LemonScriptProgram.h"
@@ -17,7 +17,6 @@
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/application/GameProfile.h"
 #include "oxygen/platform/PlatformFunctions.h"
-#include "oxygen/simulation/GameRecorder.h"
 
 #include <lemon/program/Function.h>
 #include <lemon/runtime/Runtime.h>
@@ -120,7 +119,9 @@ struct RuntimeExecuteConnector : public lemon::Runtime::ExecuteConnector
 	bool handleExternalCall(uint64 address) override
 	{
 		// Check for address hook at the target address
-		return mCodeExec.tryCallAddressHook((uint32)address);
+		//  -> If it fails, we will just continue after the call
+		mCodeExec.tryCallAddressHook((uint32)address);
+		return true;
 	}
 
 	bool handleExternalJump(uint64 address) override
@@ -160,7 +161,9 @@ struct RuntimeExecuteConnectorDev : public RuntimeExecuteConnector
 	bool handleExternalCall(uint64 address) override
 	{
 		// Check for address hook at the target address
-		return mCodeExec.tryCallAddressHookDev((uint32)address);
+		//  -> If it fails, we will just continue after the call
+		mCodeExec.tryCallAddressHookDev((uint32)address);
+		return true;
 	}
 
 	bool handleExternalJump(uint64 address) override
@@ -185,7 +188,7 @@ CodeExec::CallFrame& CodeExec::CallFrameTracking::pushCallFrame(CallFrame::Type 
 
 CodeExec::CallFrame& CodeExec::CallFrameTracking::pushCallFrameFailed(CallFrame::Type type)
 {
-	const int parentIndex = mCallStack.empty() ? -1 : (int)mCallStack.back();
+	const int parentIndex = mCallFrames.empty() ? -1 : (int)mCallStack.back();
 	CallFrame& callFrame = (mCallFrames.size() == CALL_FRAMES_LIMIT) ? mCallFrames.back() : vectorAdd(mCallFrames);
 	callFrame.mType = type;
 	callFrame.mParentIndex = parentIndex;
@@ -301,9 +304,6 @@ void CodeExec::reset()
 	{
 		mEmulatorInterface.applyRomInjections();
 	}
-
-	// Reset lemon script runtime (especially global variables)
-	mLemonScriptRuntime.getInternalLemonRuntime().resetRuntimeState();
 }
 
 void CodeExec::cleanScriptDebug()
@@ -691,7 +691,7 @@ void CodeExec::runScript(bool executeSingleFunction, CallFrameTracking* callFram
 				if (showMessageBox)
 				{
 					bool gameRecordingSaved = false;
-					if (Application::instance().getSimulation().getGameRecorder().isRecording())
+					if (Configuration::instance().mGameRecorder.mIsRecording)
 					{
 						gameRecordingSaved = (Application::instance().getSimulation().saveGameRecording() != 0);
 					}

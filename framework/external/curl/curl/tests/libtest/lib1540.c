@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -76,8 +76,7 @@ static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userp)
     fwrite(ptr, size, nmemb, stdout);
     return len;
   }
-  if(len)
-    printf("Got bytes but pausing!\n");
+  printf("Got %d bytes but pausing!\n", (int)len);
   st->halted = 1;
   return CURL_WRITEFUNC_PAUSE;
 }
@@ -85,6 +84,7 @@ static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 int test(char *URL)
 {
   CURL *curls = NULL;
+  int i = 0;
   int res = 0;
   struct transfer_status st;
 
@@ -114,5 +114,8 @@ test_cleanup:
   curl_easy_cleanup(curls);
   curl_global_cleanup();
 
-  return (int)res; /* return the final return code */
+  if(res)
+    i = res;
+
+  return i; /* return the final return code */
 }

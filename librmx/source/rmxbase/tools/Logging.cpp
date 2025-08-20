@@ -1,6 +1,6 @@
 /*
 *	rmx Library
-*	Copyright (C) 2008-2025 by Eukaryot
+*	Copyright (C) 2008-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -41,14 +41,20 @@ namespace rmx
 			std::strftime(buf, sizeof(buf), "[%Y-%m-%d %T] ", &tstruct);
 			return buf;
 		}
-	}
 
-
-	void LoggerBase::performLogging(LogLevel logLevel, const std::string& string)
-	{
-		if (logLevel >= mMinLogLevel && logLevel <= mMaxLogLevel)
+		std::string getFilenameString()
 		{
-			log(logLevel, string);
+			time_t now = time(0);
+			struct tm tstruct;
+			char buf[80];
+		#if defined(PLATFORM_WINDOWS)
+			localtime_s(&tstruct, &now);
+		#else
+			tstruct = *localtime(&now);
+		#endif
+			// Format example: "2022-06-29_11-42-48"
+			std::strftime(buf, sizeof(buf), "%Y-%m-%d_%H-%M-%S", &tstruct);
+			return buf;
 		}
 	}
 
@@ -60,22 +66,7 @@ namespace rmx
 
 	void StdCoutLogger::log(LogLevel logLevel, const std::string& string)
 	{
-	#if !defined(PLATFORM_VITA)
-	#if defined(PLATFORM_WINDOWS)
-		// Use different color in console output on Windows
-		const HANDLE handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-		const constexpr WORD defaultColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-		WORD color;
-		switch (logLevel)
-		{
-			case LogLevel::TRACE:	color = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;	break;	// Cyan
-			case LogLevel::WARNING:	color = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;	break;	// Yellow
-			case LogLevel::ERROR:	color = FOREGROUND_RED | FOREGROUND_INTENSITY;						break;	// Red
-			default:				color = defaultColor;												break;	// Gray
-		}
-		SetConsoleTextAttribute(handle, color);
-	#endif
-
+	#if !defined(PLATFORM_VITA)		
 		// Write to std::cout
 		if (mAddTimestamp)
 		{
@@ -91,7 +82,6 @@ namespace rmx
 		{
 			OutputDebugString((string + "\r\n").c_str());
 		}
-		SetConsoleTextAttribute(handle, defaultColor);
 	#elif defined(PLATFORM_ANDROID)
 		{
 			__android_log_print(ANDROID_LOG_INFO, "rmx", "%s", string.c_str());
@@ -116,11 +106,12 @@ namespace rmx
 
 		if (renameExisting && FTX::FileSystem->exists(filename))
 		{
+			const time_t time = FTX::FileSystem->getFileTime(filename);
 			std::wstring directory;
 			std::wstring name;
 			std::wstring extension;
 			FTX::FileSystem->splitPath(filename, &directory, &name, &extension);
-			name += L"_" + String(getTimestampStringForFilename()).toStdWString();
+			name += L"_" + String(detail::getFilenameString()).toStdWString();
 			if (!directory.empty())
 				directory += L'/';
 			FTX::FileSystem->renameFile(filename, directory + name + L'.' + extension);
@@ -161,7 +152,7 @@ namespace rmx
 	{
 		for (LoggerBase* logger : mLoggers)
 		{
-			logger->performLogging(logLevel, string);
+			logger->log(logLevel, string);
 		}
 	}
 

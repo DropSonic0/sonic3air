@@ -24,7 +24,6 @@ public class GameActivity extends SDLActivity
 {
     // Static native methods
     public static native void receivedRomContent(boolean success, byte[] data);
-    public static native void grantedFolderAccess(boolean success, String path);
 
     // Active instance of this class, needed for communication with IntentReceiverActivity
     public static GameActivity instance = null;
@@ -158,41 +157,20 @@ public class GameActivity extends SDLActivity
         super.onActivityResult(requestCode, resultCode, intent);
         Log.i("oxygen", "Got activity result, request code = " + requestCode + ", result code = " + resultCode);
 
-        switch (requestCode)
+        if (requestCode == 0x0000feed)
         {
-            case 0x0000feed:
+            if (null != intent)
             {
-                if (null != intent)
-                {
-                    // File selection returned a result
-                    Uri uri = intent.getData();
-                    Log.i("oxygen", "ROM path from intent = " + uri.getPath());
-                    mRomContent = readRomUri(uri, getContentResolver());
-                    receivedRomContent(null != mRomContent, mRomContent);
-                }
-                else
-                {
-                    // File selection got aborted
-                    receivedRomContent(false, null);
-                }
-                break;
+                // File selection returned a result
+                Uri uri = intent.getData();
+                Log.i("oxygen", "ROM path from intent = " + uri.getPath());
+                mRomContent = readRomUri(uri, getContentResolver());
+                receivedRomContent(null != mRomContent, mRomContent);
             }
-
-            case 0x0000cafe:
+            else
             {
-                if (null != intent)
-                {
-                    // Folder selection returned a result
-                    Uri uri = intent.getData();
-                    Log.i("oxygen", "Selected folder path from intent = " + uri.getPath());
-                    grantedFolderAccess(true, uri.getPath());
-                }
-                else
-                {
-                    // Folder selection got aborted
-                    grantedFolderAccess(false, "");
-                }
-                break;
+                // File selection got aborted
+                receivedRomContent(false, null);
             }
         }
     }
@@ -249,11 +227,5 @@ public class GameActivity extends SDLActivity
         DownloadManager downloadManager = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
         Cursor cursor = downloadManager.query(new DownloadManager.Query().setFilterById(downloadId));
         return (cursor.moveToFirst()) ? cursor : null;
-    }
-
-    public void openFolderAccessDialog()
-    {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-        startActivityForResult(intent, 0x0000cafe);
     }
 }

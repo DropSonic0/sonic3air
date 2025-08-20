@@ -1,18 +1,18 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/file/ZipFileProvider.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
-#include "oxygen/helper/OxygenLogging.h"
+#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/helper/Logging.h"
 #include "oxygen/helper/Utils.h"
 
 
@@ -33,28 +33,25 @@ void ModManager::startup()
 	//  -> Check if there's an "active-mods.json" file and read it
 	if (FTX::FileSystem->exists(mBasePath + L"active-mods.json"))
 	{
-		Json::Value json = OxygenJsonHelper::loadFile(mBasePath + L"active-mods.json");
+		Json::Value json = JsonHelper::loadFile(mBasePath + L"active-mods.json");
 
 		Json::Value activeMods = json["ActiveMods"];
 		const int numMods = activeMods.isArray() ? (int)activeMods.size() : 0;
 		for (int i = 0; i < numMods; ++i)
 		{
-			if (!activeMods[i].isString())
-				continue;
-
 			const std::wstring localPath = String(activeMods[i].asString()).toStdWString();
-			const uint64 hash = rmx::getMurmur2_64(localPath);
 
 			// Search for this mod in the previously found mods
-			Mod** found = mapFind(mModsByLocalDirectoryHash, hash);
-			if (nullptr == found)
+			const uint64 hash = rmx::getMurmur2_64(localPath);
+			const auto it = mModsByLocalDirectoryHash.find(hash);
+			if (it == mModsByLocalDirectoryHash.end())
 			{
 				// Not found... we could make this an error / failed mod
 			}
 			else
 			{
 				// Make this mod active
-				Mod* mod = *found;
+				Mod* mod = it->second;
 				mod->mState = Mod::State::ACTIVE;
 				mActiveMods.emplace_back(mod);
 			}
@@ -97,7 +94,7 @@ void ModManager::saveActiveMods()
 		root["UseLegacyLoading"] = false;
 	}
 
-	OxygenJsonHelper::saveFile(mBasePath + L"active-mods.json", root);
+	JsonHelper::saveFile(mBasePath + L"active-mods.json", root);
 }
 
 void ModManager::setActiveMods(const std::vector<Mod*>& newActiveModsList)
@@ -356,7 +353,7 @@ void ModManager::scanDirectoryRecursive(std::vector<FoundMod>& outFoundMods, con
 		if (directoryName[0] != L'#')
 		{
 			// Check if this directory is itself a mod
-			Json::Value root = OxygenJsonHelper::loadFile(mBasePath + localPath + directoryName + L"/mod.json");
+			Json::Value root = JsonHelper::loadFile(mBasePath + localPath + directoryName + L"/mod.json");
 			if (root.isObject())
 			{
 				// Looks like this directory is meant to be a mod

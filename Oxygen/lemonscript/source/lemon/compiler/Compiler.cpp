@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/compiler/Compiler.h"
 #include "lemon/compiler/Utility.h"
 #include "lemon/compiler/backend/FunctionCompiler.h"
@@ -36,24 +36,15 @@ namespace lemon
 				return -1;
 			}
 		}
-
-		// TODO: This could be more useful if defined in rmx somewhere
-		struct ScopeGuard
-		{
-			template<typename T> explicit ScopeGuard(T&& function) : mFunction(std::move(function)) {}
-			~ScopeGuard() { mFunction(); }
-
-			std::function<void()> mFunction;
-		};
 	}
 
 
 	Compiler::Compiler(Module& module, GlobalsLookup& globalsLookup, const CompileOptions& compileOptions) :
 		mModule(module),
 		mGlobalsLookup(globalsLookup),
-		mCompileOptions(compileOptions),	// Making a copy
-		mTokenProcessing(globalsLookup, module, mCompileOptions),
-		mPreprocessor(mCompileOptions, mTokenProcessing)
+		mCompileOptions(compileOptions),
+		mTokenProcessing(globalsLookup, compileOptions),
+		mPreprocessor(compileOptions, mTokenProcessing)
 	{
 	}
 
@@ -66,12 +57,6 @@ namespace lemon
 
 	bool Compiler::loadScript(const std::wstring& path)
 	{
-		// Set active instance, and reset it when leaving this function
-		RMX_ASSERT(nullptr == mActiveInstance, "Compiler active instance already set");
-		mActiveInstance = this;
-		ScopeGuard guard( []() { mActiveInstance = nullptr; } );
-
-		// Start compilation
 		mErrors.clear();
 		mModule.startCompiling(mGlobalsLookup);
 
@@ -83,71 +68,28 @@ namespace lemon
 
 		// Compile
 		compileSuccess = compileLines(inputLines);
-		if (!compileSuccess)
-			return false;
-
-		// Translate line numbers in warnings
-		for (CompilerWarning& warning : mModule.mWarnings)
-		{
-			for (CompilerWarning::Occurrence& occurrence : warning.mOccurrences)
-			{
-				const auto& translated = mLineNumberTranslation.translateLineNumber(occurrence.mLineNumber);
-				occurrence.mSourceFileInfo = translated.mSourceFileInfo;
-				occurrence.mLineNumber = translated.mLineNumber;
-			}
-		}
-
-		return true;
-	}
-
-	void Compiler::addWarning(CompilerWarning::Code warningCode, std::string_view warningMessage, uint32 lineNumber)
-	{
-		const uint64 messageHash = rmx::getMurmur2_64(warningMessage);
-
-		// Search for that same warning message
-		CompilerWarning* warning = nullptr;
-		for (CompilerWarning& existingWarning : mModule.mWarnings)
-		{
-			if (existingWarning.mMessageHash == messageHash)
-			{
-				warning = &existingWarning;
-				break;
-			}
-		}
-
-		if (nullptr == warning)
-		{
-			// Create new warning
-			warning = &vectorAdd(mModule.mWarnings);
-			warning->mCode = warningCode;
-			warning->mMessage = warningMessage;
-			warning->mMessageHash = messageHash;
-		}
-
-		vectorAdd(warning->mOccurrences).mLineNumber = lineNumber;
+		return compileSuccess;
 	}
 
 	bool Compiler::loadCodeLines(std::vector<std::string_view>& outLines, const std::wstring& path)
 	{
 		// Split into base path and file name
-		WString basePath;
+		WString basepath;
 		WString filename = path;
-		const int pos = filename.findChars(L"/\\", filename.length() - 1, -1);
+		int pos = filename.findChars(L"/\\", filename.length() - 1, -1);
 		if (pos > 0)
 		{
-			basePath = filename.getSubString(0, pos);
-			basePath.add('/');
+			basepath = filename.getSubString(0, pos);
+			basepath.add('/');
 			filename.makeSubString(pos + 1, -1);
 		}
-		mScriptBasePath = basePath;
-		mModule.mScriptBasePath = basePath;
 
 		mScriptFiles.clear();
 		mScriptFiles.reserve(0x200);
 
 		// Recursively load script files
 		std::unordered_set<uint64> includedPathHashes;
-		if (!loadScriptInternal(L"", *filename, outLines, includedPathHashes))
+		if (!loadScriptInternal(*basepath, *filename, outLines, includedPathHashes))
 			return false;
 
 		if (!mCompileOptions.mOutputCombinedSource.empty())
@@ -169,7 +111,7 @@ namespace lemon
 			std::vector<FunctionNode*> functionNodes;
 
 			// Frontend part: Convert input text lines into a syntax tree like structure (built of nodes and tokens)
-			CompilerFrontend frontend(mModule, mGlobalsLookup, mCompileOptions, mLineNumberTranslation, mTokenProcessing, functionNodes);
+			CompilerFrontend frontend(mModule, mGlobalsLookup, mCompileOptions, mLineNumberTranslation, functionNodes);
 			frontend.runCompilerFrontend(rootNode, lines);
 
 			// Optional translation
@@ -189,7 +131,7 @@ namespace lemon
 			const auto& translated = mLineNumberTranslation.translateLineNumber(e.mError.mLineNumber);
 			ErrorMessage& error = vectorAdd(mErrors);
 			error.mMessage = e.what();
-			error.mSourceFileInfo = translated.mSourceFileInfo;
+			error.mFilename = translated.mSourceFileInfo->mFilename;
 			error.mError = e.mError;
 			error.mError.mLineNumber = translated.mLineNumber + 1;	// Add one because line numbers always start at 1 for user display
 		}
@@ -197,10 +139,10 @@ namespace lemon
 		return false;
 	}
 
-	bool Compiler::loadScriptInternal(const std::wstring& localPath, const std::wstring& filename, std::vector<std::string_view>& outLines, std::unordered_set<uint64>& includedPathHashes)
+	bool Compiler::loadScriptInternal(const std::wstring& basepath, const std::wstring& filename, std::vector<std::string_view>& outLines, std::unordered_set<uint64>& includedPathHashes)
 	{
-		const std::wstring localFilePath = localPath + filename;
-		const uint64 pathHash = rmx::getMurmur2_64(localFilePath);
+		const std::wstring filepath = basepath + filename;
+		const uint64 pathHash = rmx::getMurmur2_64(filepath);
 		if (includedPathHashes.count(pathHash) > 0)
 		{
 			// File was already included before, silently ignore the double inclusion
@@ -210,19 +152,19 @@ namespace lemon
 
 		ScriptFile& scriptFile = mScriptFilesPool.createObject();
 		mScriptFiles.push_back(&scriptFile);
-		scriptFile.mLocalPath = localPath;
+		scriptFile.mBasePath = basepath;
 		scriptFile.mFilename = filename;
 		scriptFile.mFirstLine = outLines.size() + 1;
 
-		if (!scriptFile.mContent.loadFile(mScriptBasePath + localFilePath))
+		if (!scriptFile.mContent.loadFile(filepath))
 		{
 			ErrorMessage& error = vectorAdd(mErrors);
-			error.mMessage = "Failed to load script file '" + WString(filename).toStdString() + "' at '" + WString(mScriptBasePath + localPath).toStdString() + "'";
+			error.mMessage = "Failed to load script file '" + WString(filename).toStdString() + "' at '" + WString(basepath).toStdString() + "'";
 			return false;
 		}
 
 		// Register source file at module
-		const SourceFileInfo& sourceFileInfo = mModule.addSourceFileInfo(localPath, filename);
+		const SourceFileInfo& sourceFileInfo = mModule.addSourceFileInfo(basepath, filename);
 
 		// Update line number translation
 		mLineNumberTranslation.push((uint32)outLines.size() + 1, sourceFileInfo, 0);
@@ -252,7 +194,7 @@ namespace lemon
 		{
 			ErrorMessage& error = vectorAdd(mErrors);
 			error.mMessage = e.what();
-			error.mSourceFileInfo = &sourceFileInfo;
+			error.mFilename = filename;
 			error.mError = e.mError;
 			return false;
 		}
@@ -273,12 +215,12 @@ namespace lemon
 				includeFilename.replace('\\', '/');
 
 				// Split into base path and file name
-				String includeBasePath;
+				String includeBasepath;
 				int pos = includeFilename.findChar('/', includeFilename.length()-1, -1);
 				if (pos > 0)
 				{
-					includeBasePath = includeFilename.getSubString(0, pos);
-					includeBasePath.add('/');
+					includeBasepath = includeFilename.getSubString(0, pos);
+					includeBasepath.add('/');
 					includeFilename.makeSubString(pos+1, -1);
 				}
 
@@ -287,16 +229,16 @@ namespace lemon
 				{
 					std::vector<rmx::FileIO::FileEntry> fileEntries;
 					fileEntries.reserve(8);
-					FTX::FileSystem->listFilesByMask(mScriptBasePath + localPath + *includeBasePath.toWString() + L"*.lemon", false, fileEntries);
+					FTX::FileSystem->listFilesByMask(basepath + *includeBasepath.toWString() + L"*.lemon", false, fileEntries);
 					for (const rmx::FileIO::FileEntry& fileEntry : fileEntries)
 					{
-						if (!loadScriptInternal(localPath + *includeBasePath.toWString(), fileEntry.mFilename, outLines, includedPathHashes))
+						if (!loadScriptInternal(basepath + *includeBasepath.toWString(), fileEntry.mFilename, outLines, includedPathHashes))
 							return false;
 					}
 				}
 				else
 				{
-					if (!loadScriptInternal(localPath + *includeBasePath.toWString(), *(includeFilename + ".lemon").toWString(), outLines, includedPathHashes))
+					if (!loadScriptInternal(basepath + *includeBasepath.toWString(), *(includeFilename + ".lemon").toWString(), outLines, includedPathHashes))
 						return false;
 				}
 

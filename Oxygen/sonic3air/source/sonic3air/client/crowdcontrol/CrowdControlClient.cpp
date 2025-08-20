@@ -1,18 +1,17 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/client/crowdcontrol/CrowdControlClient.h"
 
 #include "oxygen/application/Application.h"
 #include "oxygen/simulation/CodeExec.h"
 #include "oxygen/simulation/Simulation.h"
-#include "Portability.h"
 
 
 bool CrowdControlClient::startConnection()
@@ -84,7 +83,7 @@ void CrowdControlClient::evaluateMessage(const Json::Value& message)
 	const StatusCode statusCode = triggerEffect(code);
 
 	// Send back a response
-	const std::string response = "{\"id\":" + to_string_ps3(id) + ",\"status\":" + to_string_ps3((int)statusCode) + "}";
+	const std::string response = "{\"id\":" + std::to_string(id) + ",\"status\":" + std::to_string((int)statusCode) + "}";
 	mSocket.sendData((const uint8*)response.c_str(), response.length() + 1);
 }
 

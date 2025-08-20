@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -42,9 +42,10 @@ struct SDL_semaphore
 };
 
 /* Create a semaphore, initialized with value */
-SDL_sem *SDL_CreateSemaphore(Uint32 initial_value)
+SDL_sem *
+SDL_CreateSemaphore(Uint32 initial_value)
 {
-    SDL_sem *sem = (SDL_sem *)SDL_malloc(sizeof(SDL_sem));
+    SDL_sem *sem = (SDL_sem *) SDL_malloc(sizeof(SDL_sem));
     if (sem) {
         if (sem_init(&sem->sem, 0, initial_value) < 0) {
             SDL_SetError("sem_init() failed");
@@ -57,7 +58,8 @@ SDL_sem *SDL_CreateSemaphore(Uint32 initial_value)
     return sem;
 }
 
-void SDL_DestroySemaphore(SDL_sem *sem)
+void
+SDL_DestroySemaphore(SDL_sem * sem)
 {
     if (sem) {
         sem_destroy(&sem->sem);
@@ -65,7 +67,8 @@ void SDL_DestroySemaphore(SDL_sem *sem)
     }
 }
 
-int SDL_SemTryWait(SDL_sem *sem)
+int
+SDL_SemTryWait(SDL_sem * sem)
 {
     int retval;
 
@@ -79,7 +82,8 @@ int SDL_SemTryWait(SDL_sem *sem)
     return retval;
 }
 
-int SDL_SemWait(SDL_sem *sem)
+int
+SDL_SemWait(SDL_sem * sem)
 {
     int retval;
 
@@ -97,9 +101,10 @@ int SDL_SemWait(SDL_sem *sem)
     return retval;
 }
 
-int SDL_SemWaitTimeout(SDL_sem *sem, Uint32 timeout)
+int
+SDL_SemWaitTimeout(SDL_sem * sem, Uint32 timeout)
 {
-    int retval = 0;
+    int retval;
 #ifdef HAVE_SEM_TIMEDWAIT
 #ifndef HAVE_CLOCK_GETTIME
     struct timeval now;
@@ -123,9 +128,9 @@ int SDL_SemWaitTimeout(SDL_sem *sem, Uint32 timeout)
 
 #ifdef HAVE_SEM_TIMEDWAIT
     /* Setup the timeout. sem_timedwait doesn't wait for
-     * a lapse of time, but until we reach a certain time.
-     * This time is now plus the timeout.
-     */
+    * a lapse of time, but until we reach a certain time.
+    * This time is now plus the timeout.
+    */
 #ifdef HAVE_CLOCK_GETTIME
     clock_gettime(CLOCK_REALTIME, &ts_timeout);
 
@@ -141,7 +146,7 @@ int SDL_SemWaitTimeout(SDL_sem *sem, Uint32 timeout)
 #endif
 
     /* Wrap the second if needed */
-    if (ts_timeout.tv_nsec >= 1000000000) {
+    if (ts_timeout.tv_nsec > 1000000000) {
         ts_timeout.tv_sec += 1;
         ts_timeout.tv_nsec -= 1000000000;
     }
@@ -171,23 +176,21 @@ int SDL_SemWaitTimeout(SDL_sem *sem, Uint32 timeout)
     return retval;
 }
 
-Uint32 SDL_SemValue(SDL_sem *sem)
+Uint32
+SDL_SemValue(SDL_sem * sem)
 {
     int ret = 0;
-
-    if (!sem) {
-        SDL_InvalidParamError("sem");
-        return 0;
+    if (sem) {
+        sem_getvalue(&sem->sem, &ret);
+        if (ret < 0) {
+            ret = 0;
+        }
     }
-
-    sem_getvalue(&sem->sem, &ret);
-    if (ret < 0) {
-        ret = 0;
-    }
-    return (Uint32)ret;
+    return (Uint32) ret;
 }
 
-int SDL_SemPost(SDL_sem *sem)
+int
+SDL_SemPost(SDL_sem * sem)
 {
     int retval;
 

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,7 +20,7 @@
 */
 #include "../../SDL_internal.h"
 
-#ifdef SDL_VIDEO_DRIVER_COCOA
+#if SDL_VIDEO_DRIVER_COCOA
 
 #include "SDL_events.h"
 #include "SDL_timer.h"
@@ -32,10 +32,8 @@
     NSInteger clicked;
     NSWindow *nswindow;
 }
-- (id)initWithParentWindow:(SDL_Window *)window;
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
-- (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
-#endif
+- (id) initWithParentWindow:(SDL_Window *)window;
+- (void) alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 @end
 
 @implementation SDLMessageBoxPresenter
@@ -59,12 +57,11 @@
 - (void)showAlert:(NSAlert*)alert
 {
     if (nswindow) {
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1090
+#ifdef MAC_OS_X_VERSION_10_9
         if ([alert respondsToSelector:@selector(beginSheetModalForWindow:completionHandler:)]) {
-            [alert beginSheetModalForWindow:nswindow
-                      completionHandler:^(NSModalResponse returnCode) {
-                        [NSApp stopModalWithCode:returnCode];
-                      }];
+            [alert beginSheetModalForWindow:nswindow completionHandler:^(NSModalResponse returnCode) {
+                self->clicked = returnCode;
+            }];
         } else
 #endif
         {
@@ -72,23 +69,28 @@
             [alert beginSheetModalForWindow:nswindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
 #endif
         }
-        clicked = [NSApp runModalForWindow:nswindow];
+
+        while (clicked < 0) {
+            SDL_PumpEvents();
+            SDL_Delay(100);
+        }
+
         nswindow = nil;
     } else {
         clicked = [alert runModal];
     }
 }
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
 - (void) alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo
 {
-    [NSApp stopModalWithCode:returnCode];
+    clicked = returnCode;
 }
-#endif
+
 @end
 
 
-static void Cocoa_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid, int *returnValue)
+static void
+Cocoa_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid, int *returnValue)
 {
     NSAlert* alert;
     const SDL_MessageBoxButtonData *buttons = messageboxdata->buttons;
@@ -148,7 +150,8 @@ static void Cocoa_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, i
 }
 
 /* Display a Cocoa message box */
-int Cocoa_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
+int
+Cocoa_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 { @autoreleasepool
 {
     __block int returnValue = 0;

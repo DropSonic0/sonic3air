@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) David Shaw <dshaw@jabberwocky.com>
+# Copyright (C) 2006 - 2022, David Shaw <dshaw@jabberwocky.com>
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -51,11 +51,12 @@
 # Users may override the detected values by doing something like:
 # LIBCURL="-lcurl" LIBCURL_CPPFLAGS="-I/usr/myinclude" ./configure
 #
-# For the sake of sanity, this macro assumes that any libcurl that is found is
-# after version 7.7.2, the first version that included the curl-config script.
-# Note that it is important for people packaging binary versions of libcurl to
-# include this script!  Without curl-config, we can only guess what protocols
-# are available, or use curl_version_info to figure it out at runtime.
+# For the sake of sanity, this macro assumes that any libcurl that is
+# found is after version 7.7.2, the first version that included the
+# curl-config script.  Note that it is very important for people
+# packaging binary versions of libcurl to include this script!
+# Without curl-config, we can only guess what protocols are available,
+# or use curl_version_info to figure it out at runtime.
 
 AC_DEFUN([LIBCURL_CHECK_CONFIG],
 [
@@ -156,7 +157,7 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
 
      if test $_libcurl_try_link = yes ; then
 
-        # we did not find curl-config, so let's see if the user-supplied
+        # we didn't find curl-config, so let's see if the user-supplied
         # link line (or failing that, "-lcurl") is enough.
         LIBCURL=${LIBCURL-"$_libcurl_ldflags -lcurl"}
 
@@ -169,8 +170,8 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
            LIBS="$LIBCURL $LIBS"
 
            AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <curl/curl.h>]],[[
-/* Try to use a few common options to force a failure if we are
-   missing symbols or cannot link. */
+/* Try and use a few common options to force a failure if we are
+   missing symbols or can't link. */
 int x;
 curl_easy_setopt(NULL,CURLOPT_URL,NULL);
 x=CURL_ERROR_SIZE;
@@ -198,10 +199,9 @@ if (x) {;}
            _libcurl_save_libs=$LIBS
            LIBS="$LIBS $LIBCURL"
 
-           AC_CHECK_DECL([curl_free],[],
-              [AC_DEFINE([curl_free],[free],
-                [Define curl_free() as free() if our version of curl lacks curl_free.])],
-              [[#include <curl/curl.h>]])
+           AC_CHECK_FUNC(curl_free,,
+              AC_DEFINE(curl_free,free,
+                [Define curl_free() as free() if our version of curl lacks curl_free.]))
 
            CPPFLAGS=$_libcurl_save_cppflags
            LIBS=$_libcurl_save_libs
@@ -220,14 +220,14 @@ if (x) {;}
 
            if test "x$_libcurl_protocols" = "x" ; then
 
-              # We do not have --protocols, so just assume that all
+              # We don't have --protocols, so just assume that all
               # protocols are available
               _libcurl_protocols="HTTP FTP FILE TELNET LDAP DICT TFTP"
 
               if test x$libcurl_feature_SSL = xyes ; then
                  _libcurl_protocols="$_libcurl_protocols HTTPS"
 
-                 # FTPS was not standards-compliant until version
+                 # FTPS wasn't standards-compliant until version
                  # 7.11.0 (0x070b00 == 461568)
                  if test $_libcurl_version -ge 461568; then
                     _libcurl_protocols="$_libcurl_protocols FTPS"
@@ -271,4 +271,4 @@ if (x) {;}
   fi
 
   unset _libcurl_with
-])
+])dnl

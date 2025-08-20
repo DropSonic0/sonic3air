@@ -10,7 +10,6 @@
 #include "oxygenserver/server/Server.h"
 #include "oxygenserver/Configuration.h"
 
-#include "oxygen_netcore/network/ConnectionManager.h"
 #include "oxygen_netcore/network/LagStopwatch.h"
 #include "oxygen_netcore/serverclient/ProtocolVersion.h"
 
@@ -18,25 +17,6 @@
 #include "Shared.h"
 
 #include <thread>
-
-
-namespace
-{
-	void processIP(std::string& ip)
-	{
-		// Localhost
-		if (ip == "::")
-		{
-			ip = "::1";
-		}
-
-		// Return an IPv6-encoded IPv4 address as actual IPv4
-		else if (rmx::startsWith(ip, "::ffff:"))
-		{
-			ip.erase(0, 7);
-		}
-	}
-}
 
 
 void Server::runServer()
@@ -47,12 +27,12 @@ void Server::runServer()
 
 	// Setup sockets
 	UDPSocket udpSocket;
-	if (!udpSocket.bindToPort(udpPort, SERVER_PROTOCOL_FAMILY))
+	if (!udpSocket.bindToPort(udpPort))
 		RMX_ERROR("UDP socket bind to port " << udpPort << " failed", return);
 	RMX_LOG_INFO("UDP socket bound to port " << udpPort);
 
 	TCPSocket tcpListenSocket;
-	if (!tcpListenSocket.setupServer(tcpPort, SERVER_PROTOCOL_FAMILY))
+	if (!tcpListenSocket.setupServer(tcpPort))
 		RMX_ERROR("TCP socket bind to port " << tcpPort << " failed", return);
 	RMX_LOG_INFO("TCP socket bound to port " << tcpPort);
 
@@ -68,28 +48,34 @@ void Server::runServer()
 		// Fill in available features
 		mCachedServerFeaturesRequest.mResponse.mFeatures.emplace_back(network::GetServerFeaturesRequest::Response::Feature("app-update-check", 1, 1));
 		mCachedServerFeaturesRequest.mResponse.mFeatures.emplace_back(network::GetServerFeaturesRequest::Response::Feature("channel-broadcasting", 1, 1));
-		mCachedServerFeaturesRequest.mResponse.mFeatures.emplace_back(network::GetServerFeaturesRequest::Response::Feature("query-external-address", 1, 1));
 	}
 
 	// Setup sub-systems
 	mVirtualDirectory.startup();
 
 	// Prepare timing
-	uint64 lastTimestamp = ConnectionManager::getCurrentTimestamp();
+	uint64 lastTimestamp = getCurrentTimestamp();
 	mLastCleanupTimestamp = lastTimestamp;
 
 	// Run the main loop
-	mReceivedCloseEvent = false;
-	while (!mReceivedCloseEvent)
+	while (true)
 	{
-		const uint64 currentTimestamp = ConnectionManager::getCurrentTimestamp();
+		const uint64 currentTimestamp = getCurrentTimestamp();
 		const uint64 millisecondsElapsed = currentTimestamp - lastTimestamp;
 		lastTimestamp = currentTimestamp;
 
 		// Check for new packets
-		if (!connectionManager.updateConnectionManager())
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			LAG_STOPWATCH("updateReceivePackets", 2000);
+			if (!updateReceivePackets(connectionManager))
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			}
+		}
+
+		{
+			LAG_STOPWATCH("updateConnections", 2000);
+			connectionManager.updateConnections(currentTimestamp);
 		}
 
 		// Perform cleanup regularly
@@ -100,9 +86,6 @@ void Server::runServer()
 			mLastCleanupTimestamp = currentTimestamp;
 		}
 	}
-
-	connectionManager.terminateAllConnections();
-	RMX_LOG_INFO("Server shutdown");
 }
 
 NetConnection* Server::createNetConnection(ConnectionManager& connectionManager, const SocketAddress& senderAddress)
@@ -126,53 +109,15 @@ void Server::destroyNetConnection(NetConnection& connection)
 	ServerNetConnection& serverNetConnection = static_cast<ServerNetConnection&>(connection);
 	RMX_LOG_INFO("Removing connection with player ID " << serverNetConnection.getHexPlayerID() << " (now " << (mNetConnectionsByPlayerID.size() - 1) << " total connections)");
 
-	mChannels.removePlayerFromAllChannels(serverNetConnection);
-	mNetplaySetup.onDestroyConnection(serverNetConnection);
-
+	serverNetConnection.unregisterPlayer();
 	mNetConnectionsByPlayerID.erase(serverNetConnection.getPlayerID());
 	mNetConnectionPool.destroyObject(serverNetConnection);
-}
-
-bool Server::onReceivedConnectionlessPacket(ConnectionlessPacketEvaluation& evaluation)
-{
-	switch (evaluation.mLowLevelSignature)
-	{
-		case network::GetExternalAddressConnectionless::SIGNATURE:
-		{
-			network::GetExternalAddressConnectionless packet;
-			if (!packet.serializePacket(evaluation.mSerializer, 1))
-				return false;
-
-			if (packet.mPacketVersion == 1)
-			{
-				network::ReplyExternalAddressConnectionless reply;
-				reply.mQueryID = packet.mQueryID;
-				reply.mPacketVersion = packet.mPacketVersion;
-				reply.mIP = evaluation.mSenderAddress.getIP();
-				reply.mPort = evaluation.mSenderAddress.getPort();
-				processIP(reply.mIP);
-				evaluation.mConnectionManager.sendConnectionlessLowLevelPacket(reply, evaluation.mSenderAddress, 0, 0);
-			}
-			else
-			{
-				// Send back an error packet
-				lowlevel::ErrorPacket reply;
-				reply.mErrorCode = lowlevel::ErrorPacket::ErrorCode::UNSUPPORTED_VERSION;
-				evaluation.mConnectionManager.sendConnectionlessLowLevelPacket(reply, evaluation.mSenderAddress, 0, 0);
-			}
-			return true;
-		}
-	}
-
-	return false;
 }
 
 bool Server::onReceivedPacket(ReceivedPacketEvaluation& evaluation)
 {
 	// Go through sub-systems
 	if (mChannels.onReceivedPacket(evaluation))
-		return true;
-	if (mNetplaySetup.onReceivedPacket(evaluation))
 		return true;
 
 	// Failed
@@ -195,25 +140,10 @@ bool Server::onReceivedRequestQuery(ReceivedQueryEvaluation& evaluation)
 			// Nothing more to change, the response is already filled in
 			return evaluation.respond(request);
 		}
-
-		case network::GetExternalAddressRequest::Query::PACKET_TYPE:
-		{
-			using Request = network::GetExternalAddressRequest;
-			Request request;
-			if (!evaluation.readQuery(request))
-				return false;
-
-			// Send back the sender's IP and port as seen from the server
-			request.mResponse.mIP = evaluation.mConnection.getRemoteAddress().getIP();
-			request.mResponse.mPort = evaluation.mConnection.getRemoteAddress().getPort();
-			return evaluation.respond(request);
-		}
 	}
 
 	// Go through sub-systems
 	if (mChannels.onReceivedRequestQuery(evaluation))
-		return true;
-	if (mNetplaySetup.onReceivedRequestQuery(evaluation))
 		return true;
 	if (mUpdateCheck.onReceivedRequestQuery(evaluation))
 		return true;

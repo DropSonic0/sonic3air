@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/mods/ModsMenuEntries.h"
 #include "sonic3air/menu/mods/ModResources.h"
 #include "sonic3air/menu/SharedResources.h"
@@ -74,8 +74,8 @@ void ModMenuEntry::renderEntry(RenderContext& renderContext_)
 			// Draw warning icon
 			static const uint64 spriteKeys[2] =
 			{
-				rmx::constMurmur2_64("small_warning_icon_yellow"),
-				rmx::constMurmur2_64("small_warning_icon_red")
+				rmx::getMurmur2_64("small_warning_icon_yellow"),
+				rmx::getMurmur2_64("small_warning_icon_red")
 			};
 			drawer.drawSprite(Vec2i(renderContext.mVisualRect.x + 212, renderContext.mVisualRect.y + 4), spriteKeys[errorLevel-1], Color(1.0f, 1.0f, 1.0f, renderContext.mBaseColor.a));
 

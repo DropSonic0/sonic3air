@@ -1,8 +1,10 @@
 $! File: build_gnv_curl.com
 $!
+$! $Id$
+$!
 $! All in one build procedure
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2013 - 2022, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -18,6 +20,7 @@ $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
 $! SPDX-License-Identifier: ISC
 $!
+$! 11-Jun-2009	J. Malmberg
 $!-----------------------------------------------------------------------
 $!
 $ @setup_gnv_curl_build.com

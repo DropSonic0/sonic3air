@@ -1,6 +1,6 @@
 /*
 	This script file is part of the Sonic 3 A.I.R. script software distribution.
-	Copyright (C) 2017-2025 by Eukaryot
+	Copyright (C) 2017-2024 by Eukaryot
 
 	Published under the GNU GPLv3 open source software license, see license.txt
 	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -741,10 +741,10 @@ function void fn064a1c()
 //# address-hook(0x064a36) end(0x064a36)
 function void fn064a36()
 {
-#if STANDALONE
-	// Don't let Knuckles wait there so long
-	objA0.animation.timer = min(objA0.animation.timer, 60)
-#endif
+	#if STANDALONE
+		// Don't let Knuckles wait there so long
+		objA0.animation.timer = min(objA0.animation.timer, 60)
+	#endif
 
 	Object.AnimationProgressByLocalA1.CheckEnd_DistinctTimer()
 }

@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen_netcore/oxygen_netcore_pch.h"
+#include "oxygen_netcore/pch.h"
 #include "oxygen_netcore/network/NetConnection.h"
 #include "oxygen_netcore/network/ConnectionListener.h"
 #include "oxygen_netcore/network/ConnectionManager.h"
@@ -14,7 +14,6 @@
 #include "oxygen_netcore/network/LowLevelPackets.h"
 #include "oxygen_netcore/network/HighLevelPacketBase.h"
 #include "oxygen_netcore/network/RequestBase.h"
-#include "Portability.h"
 
 
 uint64 NetConnection::buildSenderKey(const SocketAddress& remoteAddress, uint16 remoteConnectionID)
@@ -29,15 +28,7 @@ NetConnection::NetConnection() :
 
 NetConnection::~NetConnection()
 {
-	if (nullptr != mConnectionManager)
-	{
-		disconnect(DisconnectReason::MANUAL_LOCAL);
-		// Note that this includes "clear" as well
-	}
-	else
-	{
-		clear();
-	}
+	clear();
 }
 
 void NetConnection::clear()
@@ -75,7 +66,7 @@ void NetConnection::setProtocolVersions(uint8 lowLevelProtocolVersion, uint8 hig
 	mHighLevelProtocolVersion = highLevelProtocolVersion;
 }
 
-void NetConnection::setupWithTCPSocket(ConnectionManager& connectionManager, TCPSocket& socketToMove)
+void NetConnection::setupWithTCPSocket(ConnectionManager& connectionManager, TCPSocket& socketToMove, uint64 currentTimestamp)
 {
 	clear();
 
@@ -86,13 +77,13 @@ void NetConnection::setupWithTCPSocket(ConnectionManager& connectionManager, TCP
 	mTCPSocket.swapWith(socketToMove);
 	mRemoteAddress = mTCPSocket.getRemoteAddress();
 
-	mCurrentTimestamp = ConnectionManager::getCurrentTimestamp();
+	mCurrentTimestamp = currentTimestamp;
 	mLastMessageReceivedTimestamp = mCurrentTimestamp;	// Set here just to start with a valid timestamp
 
 	mConnectionManager->addConnection(*this);
 }
 
-bool NetConnection::startConnectTo(ConnectionManager& connectionManager, const SocketAddress& remoteAddress)
+bool NetConnection::startConnectTo(ConnectionManager& connectionManager, const SocketAddress& remoteAddress, uint64 currentTimestamp)
 {
 	clear();
 
@@ -103,7 +94,7 @@ bool NetConnection::startConnectTo(ConnectionManager& connectionManager, const S
 	mRemoteAddress = remoteAddress;
 	mSenderKey = 0;					// Not yet set as it depends on the remote connection ID
 
-	mCurrentTimestamp = ConnectionManager::getCurrentTimestamp();
+	mCurrentTimestamp = currentTimestamp;
 	mLastMessageReceivedTimestamp = mCurrentTimestamp;	// Set here just to start with a valid timestamp
 
 	// Use TCP if UDP is not available
@@ -141,39 +132,20 @@ bool NetConnection::startConnectTo(ConnectionManager& connectionManager, const S
 
 bool NetConnection::isConnectedTo(uint16 localConnectionID, uint16 remoteConnectionID, uint64 senderKey) const
 {
-	return (nullptr != mConnectionManager && (mState == State::ACCEPTED || mState == State::CONNECTED) && localConnectionID == mLocalConnectionID && remoteConnectionID == mRemoteConnectionID && senderKey == mSenderKey);
+	return (nullptr != mConnectionManager && mState == State::CONNECTED && localConnectionID == mLocalConnectionID && remoteConnectionID == mRemoteConnectionID && senderKey == mSenderKey);
 }
 
 void NetConnection::disconnect(DisconnectReason disconnectReason)
 {
-	if (disconnectReason == DisconnectReason::MANUAL_LOCAL && nullptr != mConnectionManager)
-	{
-		// Send a termination packet
-		lowlevel::TerminateConnectionPacket packet;
-		sendLowLevelPacket(packet, mSendBuffer);
-	}
-
 	clear();
 	mState = State::DISCONNECTED;
 	mDisconnectReason = disconnectReason;
 }
 
-bool NetConnection::receivedAnyUniquePacketIDs() const
+bool NetConnection::sendPacket(highlevel::PacketBase& packet, SendFlags::Flags flags)
 {
-	return (mReceivedPacketCache.getLastExtractedUniquePacketID() > 0);
-}
-
-bool NetConnection::sendPacket(highlevel::PacketBase& packet, SendFlags::Flags flags, uint32* outUniquePacketID)
-{
-	if (nullptr != outUniquePacketID)
-	{
-		return sendHighLevelPacket(packet, flags, *outUniquePacketID);
-	}
-	else
-	{
-		uint32 unused;
-		return sendHighLevelPacket(packet, flags, unused);
-	}
+	uint32 unused;
+	return sendHighLevelPacket(packet, flags, unused);
 }
 
 bool NetConnection::sendRequest(highlevel::RequestBase& request)
@@ -203,11 +175,6 @@ bool NetConnection::respondToRequest(highlevel::RequestBase& request, uint32 uni
 	highLevelPacket.mUniqueRequestID = uniqueRequestID;
 	uint32 unused;
 	return sendHighLevelPacket(highLevelPacket, request.getResponsePacket(), SendFlags::NONE, unused);
-}
-
-bool NetConnection::wasPacketReceived(uint32 uniquePacketID) const
-{
-	return mSentPacketCache.wasPacketReceiveConfirmed(uniquePacketID);
 }
 
 bool NetConnection::readPacket(highlevel::PacketBase& packet, VectorBinarySerializer& serializer) const
@@ -271,11 +238,11 @@ void NetConnection::updateConnection(uint64 currentTimestamp)
 	}
 }
 
-void NetConnection::acceptIncomingConnectionUDP(ConnectionManager& connectionManager, uint16 remoteConnectionID, const SocketAddress& remoteAddress, uint64 senderKey)
+void NetConnection::acceptIncomingConnectionUDP(ConnectionManager& connectionManager, uint16 remoteConnectionID, const SocketAddress& remoteAddress, uint64 senderKey, uint64 currentTimestamp)
 {
 	clear();
 
-	mState = State::ACCEPTED;
+	mState = State::CONNECTED;
 	mConnectionManager = &connectionManager;
 	mLocalConnectionID = 0;			// Not yet set, see "addConnection" below
 	mRemoteConnectionID = remoteConnectionID;
@@ -283,7 +250,7 @@ void NetConnection::acceptIncomingConnectionUDP(ConnectionManager& connectionMan
 	mSenderKey = senderKey;
 	RMX_ASSERT(senderKey == buildSenderKey(mRemoteAddress, mRemoteConnectionID), "Previously calculated sender key is the wrong one");
 
-	mCurrentTimestamp = ConnectionManager::getCurrentTimestamp();
+	mCurrentTimestamp = currentTimestamp;
 	mLastMessageReceivedTimestamp = mCurrentTimestamp;	// Because we just received a packet
 
 	RMX_LOG_INFO("Accepting connection via UDP from " << mRemoteAddress.toLoggedString());
@@ -293,12 +260,12 @@ void NetConnection::acceptIncomingConnectionUDP(ConnectionManager& connectionMan
 	sendAcceptConnectionPacket();
 }
 
-void NetConnection::acceptIncomingConnectionTCP(ConnectionManager& connectionManager, uint16 remoteConnectionID)
+void NetConnection::acceptIncomingConnectionTCP(ConnectionManager& connectionManager, uint16 remoteConnectionID, uint64 currentTimestamp)
 {
-	mState = State::ACCEPTED;
+	mState = State::CONNECTED;
 	mRemoteConnectionID = remoteConnectionID;
 
-	mCurrentTimestamp = ConnectionManager::getCurrentTimestamp();
+	mCurrentTimestamp = currentTimestamp;
 	mLastMessageReceivedTimestamp = mCurrentTimestamp;	// Because we just received a packet
 
 	RMX_LOG_INFO("Accepting connection via TCP from " << mRemoteAddress.toLoggedString());
@@ -315,7 +282,7 @@ void NetConnection::sendAcceptConnectionPacket()
 	sendLowLevelPacket(packet, mSendBuffer);
 }
 
-void NetConnection::handleLowLevelPacket(const ReceivedPacket& receivedPacket)
+void NetConnection::handleLowLevelPacket(ReceivedPacket& receivedPacket)
 {
 	// Reset timeout whenever any packet got received
 	mTimeoutStart = mCurrentTimestamp;
@@ -323,10 +290,8 @@ void NetConnection::handleLowLevelPacket(const ReceivedPacket& receivedPacket)
 
 	VectorBinarySerializer serializer(true, receivedPacket.mContent);
 	serializer.skip(6);		// Skip low level signature and connection IDs, they got evaluated already
-
-	// If this is the first packet that the server received after connection was accepted, this turn the connection into a fully connected one
-	if (mState == State::ACCEPTED)
-		mState = State::CONNECTED;
+	if (serializer.getRemaining() <= 0)
+		return;
 
 	switch (receivedPacket.mLowLevelSignature)
 	{
@@ -363,17 +328,6 @@ void NetConnection::handleLowLevelPacket(const ReceivedPacket& receivedPacket)
 
 			// Stop resending the StartConnectionPacket
 			mSentPacketCache.onPacketReceiveConfirmed(0);
-			return;
-		}
-
-		case lowlevel::TerminateConnectionPacket::SIGNATURE:
-		{
-			lowlevel::TerminateConnectionPacket packet;
-			if (!packet.serializePacket(serializer, lowlevel::PacketBase::LOWLEVEL_PROTOCOL_VERSIONS.mMinimum))
-				return;
-
-			// Terminate this connection
-			disconnect(DisconnectReason::MANUAL_REMOTE);
 			return;
 		}
 
@@ -583,9 +537,9 @@ bool NetConnection::sendHighLevelPacket(lowlevel::HighLevelPacket& lowLevelPacke
 	return true;
 }
 
-void NetConnection::handleHighLevelPacket(const ReceivedPacket& receivedPacket, const lowlevel::HighLevelPacket& highLevelPacket, VectorBinarySerializer& serializer, uint32 uniqueResponseID)
+void NetConnection::handleHighLevelPacket(ReceivedPacket& receivedPacket, const lowlevel::HighLevelPacket& highLevelPacket, VectorBinarySerializer& serializer, uint32 uniqueResponseID)
 {
-	const std::string signatureString = "HighLevel_" + to_string_ps3(highLevelPacket.mPacketType);
+	const std::string signatureString = "HighLevel_" + std::to_string(highLevelPacket.mPacketType);
 	LAG_STOPWATCH(signatureString.c_str(), 1000);
 
 	// Is this a tracked packet at all?

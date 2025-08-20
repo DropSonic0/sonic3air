@@ -1,101 +1,116 @@
-# Sonic 3 A.I.R.
+<h1 align="center">
+<img align="center" src="https://sonic3air.org/images/title_sonic3air.png" width="50%"><br>
+Sonic 3 A.I.R. · PSVita Port
+</h1>
+<p align="center">
+  <a href="#setup-instructions-for-players">How to install</a> •
+  <a href="#build-instructions-for-developers">How to compile</a> •
+  <a href="#credits">Credits</a> •
+  <a href="#license">License</a>
+</p>
 
-Source code incl. dependencies for "Sonic 3 - Angel Island Revisited", a fan-made remaster of Sonic 3 & Knuckles.
+Sonic 3 A.I.R. (Angel Island Revisited) is a fan-made remaster of the classic
+Sega game Sonic 3 & Knuckles. This project modernizes the original game by
+adding widescreen support, improved graphics and audio, and new gameplay
+features. It is designed to offer a superior playing experience on modern
+systems while requiring original game data to run. 
 
-Project homepage: https://sonic3air.org/
+This repository contains the PlayStation Vita port of Sonic 3 A.I.R. Consider
+this a "beta" release aimed at collecting player feedback. In the future, the
+port is planned to be merged upstream.
 
+Disclaimer
+----------------
 
-### Disclaimer
+**Sonic 3 A.I.R.** is a non-profit fan game project. It is not affiliated in
+any way with SEGA or Sonic Team, the original creators of Sonic 3 and
+Sonic & Knuckles.
 
-Sonic 3 A.I.R. is a non-profit fan game project. It is not affiliated in any way with SEGA or Sonic Team, the original creators of Sonic 3 and Sonic & Knuckles.
+Sonic the Hedgehog is a trademark of SEGA. All copyrights regarding Sonic
+the Hedgehog, including characters, names, terms, art, and music belong to SEGA.
+All registered trademarks belong to SEGA and Sonic Team.
 
-Sonic the Hedgehog is a trademark of SEGA. All copyrights regarding Sonic the Hedgehog, including characters, names, terms, art, and music belong to SEGA. All registered trademarks belong to SEGA and Sonic Team.
+The developers of Sonic 3 A.I.R. have no intent to infringe said copyrights and
+registered trademarks. No financial gain is made from this project.
 
-The developers of Sonic 3 A.I.R. have no intent to infringe said copyrights and registered trademarks.
-No financial gain is made from this project.
+Any commercial use of this project without SEGA's explicit consent is strictly
+prohibited.
 
-Any commercial use of this project without SEGA's explicit consent is strictly prohibited.
+The original README can be found [here](https://github.com/Eukaryot/sonic3air).
 
+Setup Instructions (For Players)
+----------------
 
-## Repository overview
+In order to properly install the game, you'll have to follow these steps
+precisely:
 
-This repository is split into several different projects:
-* The larger external dependencies (namely SDL2, Ogg/Vorbis, zlib) inside the "framework" directory. These are copies of the respective open source projects, with a few custom changes applied where needed - see the "how-to-build.txt" files in there for details.
-* The librmx libraries that together with the external dependencies build a foundation for my own projects (S3AIR and my private stuff). This primarily consists of rmxbase, a collection of helper and utility classes, and rmxmedia, which is providing a basic game framework built on top of SDL2 & OpenGL.
-* Lemonscript language library, with compiler and runtime environment for script execution.
-* Oxygen Engine, the backbone game engine powering Sonic 3 A.I.R. This includes input, graphics, audio handling, and all the other game application stuff, as well as a simulation environment built around lemonscript that - as far as needed for the purposes of S3AIR - emulates aspects of Sega Genesis hardware. Note that Oxygen can be built as its own application (OxygenApp) that lacks the S3AIR C++ code.
-* S3AIR-specific C++ code, scripts and data in the "Oxygen/sonic3air" directory. Yes, that's what it's named.
+- <u>Legally</u> obtain a compatible Sonic 3 & Knuckles ROM.<br>
+  The instructions on how to do that are available at [sonic3air.org][s3airorg]
 
+- Install [FdFix][fdfix] by copying `fd_fix.skprx` to your taiHEN plugins folder
+  (usually `ur0:tai`) and adding the entry to your `config.txt` under `*KERNEL`:
 
-## How to build
+```
+  *KERNEL
+  ur0:tai/fd_fix.skprx
+```
 
-For information on how to build for different platforms, find the readme files in the respective subdirectories of "Oxygen/sonic3air/build":
-* Windows: "_vstudio"
-* Mac:     "_xcode"
-* Linux:   "_cmake"
-* Android: "_android"
-* Web:     "_emscripten"
-* Switch:  "_make" (unmaintained)
+```diff
+! ⚠️ Don't install `fd_fix.skprx` if you're using the rePatch plugin!
+! ⚠️ rePatch provides the same functionality and they may conflict.
+```
 
-Additional platform ports:
-* Vita: See https://github.com/v-atamanenko/sonic3air
+- Make sure you have `libshacccg.suprx` in the `ur0:/data/` folder on your
+  console. If you don't, use [ShaRKBR33D][shrkbrd] to get it quickly and easily.
 
+- Download the archive with data files (`sonic3air.zip`) from
+  [Releases][latest-release]. Unpack it to the `ux0:/data/sonic3air/` folder
+  on your console.
+  Example of correct resulting path: `ux0:/data/sonic3air/data/scripts.bin`.
 
-## External dependencies
+- Rename your Sonic 3 & Knuckles ROM to `Sonic_Knuckles_wSonic3.bin` and
+  place it in `ux0:data/sonic3air/Sonic_Knuckles_wSonic3.bin`.
 
-External libraries and code used in this project:
-* SDL2 - in "framework/external/sdl"
-* libogg & libvorbis - in "framework/external/ogg-vorbis"
-* zlib incl. minizip - in "framework/external/zlib"
-* libcurl - in "framework/external/curl"
-* Dear ImGui - in "framework/external/imgui"
-* jsoncpp - in "librmx/source/rmxbase/jsoncpp"
-* GLEW - in "librmx/source/rmxmedia/glew"
-* Sound chip emulation related code from Genesis Plus GX - in "Oxygen/oxygenengine/source/oxygen/simulation/sound"
-* Discord Game SDK - in "Oxygen/sonic3air/source/external/discord_game_sdk"
-* xBRZ upscaler shader code - in "Oxygen/oxygenengine/data/shader" and once more in "Oxygen/sonic3air/data/shader"
-* Hqx upscaler shader code & data files - in "Oxygen/oxygenengine/data/shader" and once more in "Oxygen/sonic3air/data/shader"
+- Download and install the VPK from [Releases][latest-release].
 
+- (Optional) Download the remastered audio pack (`audioremaster.bin`) from
+  [Releases][latest-release]. Place it in the `ux0:data/sonic3air/data/` folder.
 
-## Contributors
+Build Instructions (For Developers)
+----------------
 
-Thanks to all contributors!
+Please refer to the [howtobuild.md][howtobuild]
 
-Source code contributions by:
-* Sappharad
-* Heyjoeway
-* Carjem Generations
-* Ultracoolguy
-* gl33ntwine
-* Rinnegatamante
-* MDashK
-
-Remastered soundtrack by:
-* G Spindash
-
-Game scripts & other contributions by:
-* Vinegar
-* Thorn
-* Legobouwer
-* GFX32
-* Dynamic Lemons
-* HazelSpooder
-* iCloudius
-* D.A. Garden
-* Alieneer
-* 3Pills
-* Elsie The Pict
-* TheMushrunt
-* mrgrassman14
-
-Additional thanks:
-* All contributors of the Sonic 3 / Sonic & Knuckles Disassembly (https://github.com/sonicretro/skdisasm), which has proven itself a valuable source of information on S3&K code
+Credits
+----------------
 
 
-## Want to contribute?
+- [Eukaryot][euka] and [contributors][contribs] for the original Sonic 3 A.I.R.
+  project and help with understanding the engine.
+- [MDashK][mdashk] for actually getting this to a playable state and release,
+  numerous fixes and improvements, a lot of testing, and many other things
+  I can't possibly list here.
+- [Rinnegatamante][rinne] for translating shaders, VAOs support in VitaGL,
+  optimization, and more.
+- [Brandonheat8][brandon] for the LiveArea assets.
 
-Here's the bad news: This repository isn't meant for direct distribution. If you have your own changes that you want to share with the world, create a **fork** of this repo, instead of making pull requests. I'd very much appreciate that as I really want to avoid having too much overhead with managing / reviewing code changes made by others. I'd rather use the time to continue with implementing my own ideas into the project.
+License
+----------------
 
-Plus there's a second reason, and that's an important one for me as well: It's about code ownership and software licenses. It's much easier to use the librmx, lemonscript and Oxygen Engine code elsewhere under a different license than GPL if I don't have to ask a larger group of contributors whether they are okay with it. Because there are some plans for possible future projects using these codes as a foundation, maybe even commercial ones where GPL could make things complicated.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See the [LICENSE](LICENSE) file for details.
 
--- Euka
+[s3airorg]: https://sonic3air.org/
+[fdfix]: https://github.com/TheOfficialFloW/FdFix/releases/
+[shrkbrd]: https://github.com/Rinnegatamante/ShaRKBR33D/releases/latest
+[latest-release]: https://github.com/v-atamanenko/sonic3air/releases/latest
+[howtobuild]: https://github.com/v-atamanenko/sonic3air/blob/main/Oxygen/sonic3air/build/_vita/howtobuild.md
+
+[rinne]: https://github.com/Rinnegatamante/
+[brandon]: https://github.com/Brandonheat8
+[o13o]: https://github.com/once13one/
+[mdashk]: https://github.com/MDashK
+[euka]: https://github.com/Eukaryot/
+[contribs]: https://github.com/Eukaryot/sonic3air?tab=readme-ov-file#contributors

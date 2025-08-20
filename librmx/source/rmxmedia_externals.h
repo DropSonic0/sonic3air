@@ -1,6 +1,6 @@
 /*
 *	rmx Library
-*	Copyright (C) 2008-2025 by Eukaryot
+*	Copyright (C) 2008-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -34,10 +34,6 @@
 	#else
 		#include <SDL/SDL.h>
 	#endif
-
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_PS3)
-	#include <SDL2/SDL.h>
-
 #else
 	#include <SDL.h>
 #endif
@@ -50,10 +46,10 @@
 
 #elif defined(PLATFORM_LINUX)
 	#if defined(RMX_LINUX_ENFORCE_GLES2)	// Build option: Use OpenGL ES 2
+		#define ALLOW_LEGACY_OPENGL
 		#define RMX_USE_GLES2
-		#define GL_GLEXT_PROTOTYPES
-		#include <GLES2/gl2.h>
-		#include <GLES2/gl2ext.h>
+		#include <GLES3/gl3.h>		// We need the ES 3 headers for e.g. glBindVertexArray
+		#include <GLES3/gl3ext.h>
 	#else
 		#define RMX_USE_GLEW
 	#endif
@@ -84,26 +80,35 @@
 	#include <glad/glad.h>  // glad library (OpenGL loader)
 	#define RMX_USE_GLAD
 	#define GL_LUMINANCE GL_RED
-
+	
 #elif defined(PLATFORM_VITA)
 	#include <vitaGL.h>
 	#define RMX_USE_GLES2
 
 #elif defined(PLATFORM_PS3)
-	// PS3 uses a software renderer with SDL, no OpenGL configuration needed.
+	#define GL3_PROTOTYPES
+	#include <GL3/gl3.h>
 
 #else
 	#error Unsupported platform
 #endif
 
 
+#if defined(PLATFORM_PS3)
+	#define glClearDepth glClearDepthf
+	#define glDepthRange glDepthRangef
+#endif
+
+
 #if defined(RMX_USE_GLES2) && !defined(__EMSCRIPTEN__)
-	#if !defined(PLATFORM_LINUX) && !defined(__vita__)
-		#define GL_RGB8				 GL_RGB
-		#define GL_RGBA8			 GL_RGBA
-		#define glGenVertexArrays	 glGenVertexArraysOES
-		#define glDeleteVertexArrays glDeleteVertexArraysOES
-		#define glBindVertexArray	 glBindVertexArrayOES
+	#if !defined(PLATFORM_LINUX)
+		#if !defined(__vita__)
+			#define GL_RGB8				 GL_RGB
+			#define GL_RGBA8			 GL_RGBA
+			#define glGenVertexArrays	 glGenVertexArraysOES
+			#define glDeleteVertexArrays 	 glDeleteVertexArraysOES
+			#define glBindVertexArray	 glBindVertexArrayOES
+		#endif
 	#endif
 	#define glClearDepth glClearDepthf
 	#define glDepthRange glDepthRangef

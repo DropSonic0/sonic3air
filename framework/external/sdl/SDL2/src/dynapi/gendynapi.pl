@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #  Simple DirectMedia Layer
-#  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+#  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 #
 #  This software is provided 'as-is', without any express or implied
 #  warranty.  In no event will the authors be held liable for any damages
@@ -50,13 +50,8 @@ open(SDL_DYNAPI_PROCS_H, '>>', $sdl_dynapi_procs_h) or die("Can't open $sdl_dyna
 open(SDL_DYNAPI_OVERRIDES_H, '>>', $sdl_dynapi_overrides_h) or die("Can't open $sdl_dynapi_overrides_h: $!\n");
 open(SDL2_EXPORTS, '>>', $sdl2_exports) or die("Can't open $sdl2_exports: $!\n");
 
-# Ordered for reproducible builds
 opendir(HEADERS, 'include') or die("Can't open include dir: $!\n");
-my @entries = readdir(HEADERS);
-closedir(HEADERS);
-# Sort the entries
-@entries = sort @entries;
-foreach my $d (@entries) {
+while (my $d = readdir(HEADERS)) {
     next if not $d =~ /\.h\Z/;
     my $header = "include/$d";
     open(HEADER, '<', $header) or die("Can't open $header: $!\n");
@@ -147,6 +142,7 @@ foreach my $d (@entries) {
     }
     close(HEADER);
 }
+closedir(HEADERS);
 
 close(SDL_DYNAPI_PROCS_H);
 close(SDL_DYNAPI_OVERRIDES_H);

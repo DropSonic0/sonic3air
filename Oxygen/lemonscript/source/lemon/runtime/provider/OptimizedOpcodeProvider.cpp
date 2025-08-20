@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/runtime/provider/OptimizedOpcodeProvider.h"
 #include "lemon/runtime/RuntimeFunction.h"
 #include "lemon/runtime/RuntimeOpcodeContext.h"
@@ -69,10 +69,11 @@ namespace lemon
 
 		static void exec_OPT_SET_VARIABLE_VALUE_USER_DISCARD(const RuntimeOpcodeContext context)
 		{
-			const uint32 variableId = context.getParameter<uint32>();
-			UserDefinedVariable& variable = static_cast<UserDefinedVariable&>(context.mControlFlow->getProgram().getGlobalVariableByID(variableId));
-			variable.mSetter(*context.mControlFlow);	// This is supposed to read the value to set from the value stack (but also leave it there)
 			--context.mControlFlow->mValueStackPtr;
+			const int64 value = *context.mControlFlow->mValueStackPtr;
+			const uint32 variableId = context.getParameter<uint32>();
+			GlobalVariable& variable = static_cast<GlobalVariable&>(context.mControlFlow->getProgram().getGlobalVariableByID(variableId));
+			variable.setValue(value);
 		}
 
 		template<typename T>

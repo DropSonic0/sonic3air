@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -12,7 +12,7 @@
 
 #include <lemon/compiler/PreprocessorDefinition.h>
 
-class JsonSerializer;
+class JsonHelper;
 
 
 class Configuration
@@ -28,10 +28,9 @@ public:
 
 	enum class WindowMode
 	{
-		WINDOWED,					// Windowed mode
-		FULLSCREEN_BORDERLESS,		// Borderless fullscreen window
-		FULLSCREEN_DESKTOP,			// Fullscreen window with Desktop resolution
-		FULLSCREEN_EXCLUSIVE		// Real exclusive fullscreen
+		WINDOWED,
+		BORDERLESS_FULLSCREEN,
+		EXCLUSIVE_FULLSCREEN
 	};
 
 	enum class FrameSyncType
@@ -43,42 +42,16 @@ public:
 		_NUM
 	};
 
-	struct GameServerBase
-	{
-		std::string mServerHostName;
-		int mServerPortUDP = 21094;		// Used by most platforms
-		int mServerPortTCP = 21095;		// Used only as a fallback for UDP
-		int mServerPortWSS = 21096;		// Used by the web version
-	};
-
-	struct ExternalCodeEditor
-	{
-		std::string mActiveType;			// Can be "custom", "vscode", "npp", or empty
-		std::wstring mVisualStudioCodePath;
-		std::wstring mNotepadPlusPlusPath;
-		std::wstring mCustomEditorPath;
-		std::wstring mCustomEditorArgs = L"--file \"{file}\" --line {line}";
-	};
-
 	struct DevModeSettings
 	{
 		bool mEnabled = false;
-		float mGameViewScale = 1.0f;
-		Vec2f mGameViewAlignment;
-		float mUIScale = 1.0f;
-		Color mUIAccentColor = Color(0.2f, 0.5f, 0.8f);
-		std::vector<std::string> mOpenUIWindows;
-		bool mMainWindowOpen = true;
-		bool mUseTabsInMainWindow = true;
-		int mActiveMainWindowTab = 0;
-		ExternalCodeEditor mExternalCodeEditor;
-		bool mApplyModSettingsAfterLoadState = false;
 	};
 
 	struct GameRecorder
 	{
 		int mRecordingMode = -1;		// -1 = Auto, 0 = Recording disabled, 1 = Recording enabled
-		bool mEnablePlayback = false;
+		bool mIsRecording = false;
+		bool mIsPlayback = false;
 		int mPlaybackStartFrame = 0;
 		bool mPlaybackIgnoreKeys = false;
 	};
@@ -115,8 +88,6 @@ public:
 		GLOBAL = 2		// "settings_global.json"
 	};
 
-	static const int NUM_PLAYERS = 4;
-
 public:
 	inline static bool hasInstance()		 { return (nullptr != mSingleInstance); }
 	inline static Configuration& instance()  { return *mSingleInstance; }
@@ -133,18 +104,16 @@ public:
 
 	inline void setSettingsReadOnly(bool enable)  { mSettingsReadOnly = enable; }
 
+	void evaluateGameRecording();
+
 protected:
 	virtual void preLoadInitialization() = 0;
-	virtual bool loadConfigurationInternal(JsonSerializer& jsonSerializer) = 0;
-	virtual bool loadSettingsInternal(JsonSerializer& jsonSerializer, SettingsType settingsType) = 0;
-	virtual void saveSettingsInternal(JsonSerializer& jsonSerializer, SettingsType settingsType) = 0;
+	virtual bool loadConfigurationInternal(JsonHelper& jsonHelper) = 0;
+	virtual bool loadSettingsInternal(JsonHelper& jsonHelper, SettingsType settingsType) = 0;
+	virtual void saveSettingsInternal(Json::Value& root, SettingsType settingsType) = 0;
 
 private:
-	void loadConfigurationProperties(JsonSerializer& jsonSerializer);
-
-	void serializeStandardSettings(JsonSerializer& serializer);
-	void serializeDevMode(JsonSerializer& serializer);
-
+	void loadConfigurationProperties(JsonHelper& rootHelper);
 	void saveSettingsInput(const std::wstring& filename) const;
 
 public:
@@ -163,12 +132,11 @@ public:
 	std::wstring mSaveStatesDir;
 	std::wstring mSaveStatesDirLocal;
 	std::wstring mAnalysisDir;
-	std::wstring mPersistentDataBasePath;
+	std::wstring mPersistentDataFilename;
 
 	// General
 	bool   mFailSafeMode = false;
 	int	   mPlatformFlags = -1;
-	int    mNumPlayers = 2;			// Can be up to InputManager::NUM_PLAYERS = 4
 
 	// Game
 	std::wstring mLoadSaveState;
@@ -183,11 +151,11 @@ public:
 
 	// Video
 	WindowMode mWindowMode = WindowMode::WINDOWED;
-#if defined(PLATFORM_VITA)
-	Vec2i mWindowSize = Vec2i(960, 544);
-#else
-	Vec2i mWindowSize = Vec2i(1200, 672);
-#endif
+	#if defined(PLATFORM_VITA)
+		Vec2i mWindowSize = Vec2i(960, 544);
+	#else
+		Vec2i mWindowSize = Vec2i(1200, 672);
+	#endif
 	Vec2i mGameScreen = Vec2i(400, 224);
 	int   mDisplayIndex = 0;
 	RenderMethod mRenderMethod = RenderMethod::UNDEFINED;
@@ -208,9 +176,9 @@ public:
 	// Input
 	std::vector<InputConfig::DeviceDefinition> mInputDeviceDefinitions;
 	VirtualGamepad mVirtualGamepad;
-	std::string mPreferredGamepad[NUM_PLAYERS];
+	std::string mPreferredGamepad[2];
 	int mAutoAssignGamepadPlayerIndex = 0;	// Default is player 1 (who has index 0)
-	float mControllerRumbleIntensity[NUM_PLAYERS] = { 0 };
+	float mControllerRumbleIntensity[2] = { 0, 0 };
 
 	// Input recorder
 	std::wstring mInputRecorderInput;
@@ -218,9 +186,6 @@ public:
 
 	// Misc
 	bool mMirrorMode = false;
-
-	// Game server
-	GameServerBase mGameServerBase;
 
 	// Internal
 	bool mForceCompileScripts = false;
@@ -239,6 +204,6 @@ protected:
 	Json::Value mSettingsJsons[3];	// Uses SettingsType as key
 
 private:
-	static inline Configuration* mSingleInstance;
+	static Configuration* mSingleInstance;
 	bool mSettingsReadOnly = false;
 };

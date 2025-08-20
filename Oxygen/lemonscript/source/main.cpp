@@ -103,20 +103,17 @@ namespace lemon
 }
 
 
-void logValue(ControlFlow& controlFlow)
+void logValue(int64 value)
 {
-	const int64 value = controlFlow.readValueStack<int64>(-1);		// Read the value, but don't remove it from stack
 	std::cout << rmx::hexString(value, 8) << std::endl;
 }
 
-void logValueStr(ControlFlow& controlFlow)
+void logValueStr(int64 key)
 {
-	const uint64 key = controlFlow.readValueStack<uint64>(-1);		// Read the value, but don't remove it from stack
-
 	Runtime* runtime = Runtime::getActiveRuntime();
 	RMX_CHECK(nullptr != runtime, "No lemon script runtime active", return);
 
-	const FlyweightString* storedString = runtime->resolveStringByKey(key);
+	const FlyweightString* storedString = runtime->resolveStringByKey((uint64)key);
 	RMX_CHECK(nullptr != storedString, "Unable to resolve format string", return);
 
 	std::cout << storedString->getString() << std::endl;
@@ -124,19 +121,11 @@ void logValueStr(ControlFlow& controlFlow)
 
 void debugLog(AnyTypeWrapper param)
 {
-	if (param.mType == &PredefinedDataTypes::UINT_8 || param.mType == &PredefinedDataTypes::INT_8)
+	if (param.mType == &PredefinedDataTypes::UINT_8)
 	{
 		std::cout << rmx::hexString(param.mValue.get<uint8>(), 2) << std::endl;
 	}
-	else if (param.mType == &PredefinedDataTypes::UINT_16 || param.mType == &PredefinedDataTypes::INT_16)
-	{
-		std::cout << rmx::hexString(param.mValue.get<uint16>(), 4) << std::endl;
-	}
-	else if (param.mType == &PredefinedDataTypes::UINT_32 || param.mType == &PredefinedDataTypes::INT_32)
-	{
-		std::cout << rmx::hexString(param.mValue.get<uint32>(), 8) << std::endl;
-	}
-	else if (param.mType == &PredefinedDataTypes::UINT_64 || param.mType == &PredefinedDataTypes::INT_64 || param.mType == &PredefinedDataTypes::CONST_INT)
+	else if (param.mType == &PredefinedDataTypes::UINT_64)
 	{
 		std::cout << rmx::hexString(param.mValue.get<uint64>(), 8) << std::endl;
 	}
@@ -174,14 +163,14 @@ void logFloat(float value)
 uint32 valueD0 = 0;
 uint32 valueA0 = 0;
 
-void getterD0(ControlFlow& controlFlow)
+uint32 getterD0()
 {
-	controlFlow.pushValueStack(valueD0);
+	return valueD0;
 }
 
-void setterD0(ControlFlow& controlFlow)
+void setterD0(int64 value)
 {
-	valueD0 = controlFlow.readValueStack<uint32>(-1);	// Read the value, but don't remove it from stack
+	valueD0 = (uint32)value;
 }
 
 int64* accessA0()

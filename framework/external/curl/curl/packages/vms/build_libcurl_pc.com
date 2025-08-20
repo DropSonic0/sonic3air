@@ -1,8 +1,10 @@
 $! File: build_libcurl_pc.com
 $!
+$! $Id:$
+$!
 $! Build the libcurl.pc file from the libcurl.pc.in file
 $!
-$! Copyright (C) John Malmberg
+$! Copyright 2013 - 2022, John Malmberg
 $!
 $! Permission to use, copy, modify, and/or distribute this software for any
 $! purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +19,8 @@ $! ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 $! OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $!
 $! SPDX-License-Identifier: ISC
+$!
+$! 15-Jun-2013  J. Malmberg
 $!
 $!===========================================================================
 $!

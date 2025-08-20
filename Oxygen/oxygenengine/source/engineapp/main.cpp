@@ -7,10 +7,9 @@
 */
 
 #define RMX_LIB
-#include "engineapp/engineapp_pch.h"
+#include "engineapp/pch.h"
 #include "engineapp/EngineDelegate.h"
 
-#include "oxygen/application/ArgumentsReader.h"
 #include "oxygen/platform/PlatformFunctions.h"
 
 
@@ -27,18 +26,20 @@ int main(int argc, char** argv)
 {
 	EngineMain::earlySetup();
 
-	ArgumentsReader arguments;
-	arguments.read(argc, argv);
-
 	// Make sure we're in the correct working directory
-	PlatformFunctions::changeWorkingDirectory(arguments.mExecutableCallPath);
+	if (argc > 0)
+	{
+		WString wstr;
+		wstr.fromUTF8(std::string(argv[0]));
+		PlatformFunctions::changeWorkingDirectory(wstr.toStdWString());
+	}
 
 	// Create engine delegate and angine main instance
 	{
 		EngineDelegate myDelegate;
-		EngineMain myMain(myDelegate, arguments);
+		EngineMain myMain(myDelegate);
 
-		myMain.execute();
+		myMain.execute(argc, argv);
 	}
 
 	return 0;

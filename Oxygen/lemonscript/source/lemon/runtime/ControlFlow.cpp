@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/runtime/ControlFlow.h"
 #include "lemon/runtime/Runtime.h"
 #include "lemon/runtime/RuntimeFunction.h"
@@ -56,32 +56,19 @@ namespace lemon
 		}
 	}
 
-	void ControlFlow::getCurrentExecutionLocation(Location& outLocation) const
+	void ControlFlow::getLastStepLocation(Location& outLocation) const
 	{
-		if (!mCallStack.empty() && &mRuntime == Runtime::getActiveRuntime())
+		if (!mCallStack.empty())
 		{
 			const State& state = mCallStack.back();
 			outLocation.mFunction = state.mRuntimeFunction->mFunction;
-
-			// Don't use the state's program counter, as it can be slightly out-dated
-			//  -> Instead, get the actual program counter directly from the runtime
-			//  -> However, this is only valid during actual code execution
-			outLocation.mProgramCounter = state.mRuntimeFunction->translateFromRuntimeProgramCounter((const uint8*)mRuntime.getCurrentOpcode());
+			outLocation.mProgramCounter = state.mRuntimeFunction->translateFromRuntimeProgramCounter(state.mProgramCounter);
 		}
 		else
 		{
 			outLocation.mFunction = nullptr;
 			outLocation.mProgramCounter = 0;
 		}
-	}
-
-	const ScriptFunction* ControlFlow::getCurrentFunction() const
-	{
-		if (mCallStack.empty())
-			return nullptr;
-
-		const RuntimeFunction* runtimeFunction = mCallStack.back().mRuntimeFunction;
-		return (nullptr != runtimeFunction) ? runtimeFunction->mFunction : nullptr;
 	}
 
 }

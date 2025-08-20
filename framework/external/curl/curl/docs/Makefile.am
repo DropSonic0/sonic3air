@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -24,25 +24,26 @@
 
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
-if BUILD_DOCS
-# if we disable man page building, ignore these
-MK_CA_DOCS = mk-ca-bundle.1
-CURLCONF_DOCS = curl-config.1
-endif
+# EXTRA_DIST breaks with $(abs_builddir) so build it using this variable
+# but distribute it (using the relative file name) in the next variable
+man_MANS = $(abs_builddir)/curl.1
+noinst_man_MANS = curl.1 mk-ca-bundle.1
+dist_man_MANS = curl-config.1
+GENHTMLPAGES = curl.html curl-config.html mk-ca-bundle.html
+PDFPAGES = curl.pdf curl-config.pdf mk-ca-bundle.pdf
+MANDISTPAGES = curl.1.dist curl-config.1.dist
 
-man_MANS = curl-config.1
-CURLPAGES = curl-config.md mk-ca-bundle.md
+HTMLPAGES = $(GENHTMLPAGES)
 
-SUBDIRS = . cmdline-opts libcurl
-DIST_SUBDIRS = $(SUBDIRS) examples
+# Build targets in this file (.) before cmdline-opts to ensure that
+# the curl.1 rule below runs first
+SUBDIRS = . cmdline-opts
+DIST_SUBDIRS = $(SUBDIRS) examples libcurl
 
-if BUILD_DOCS
-CLEANFILES = mk-ca-bundle.1 curl-config.1
-endif
+CLEANFILES = $(GENHTMLPAGES) $(PDFPAGES) $(MANDISTPAGES) curl.1
 
 EXTRA_DIST =                                    \
- $(CURLPAGES)                                   \
- $(CURLCONF_DOCS)                               \
+ $(noinst_man_MANS)                             \
  ALTSVC.md                                      \
  BINDINGS.md                                    \
  BUFREF.md                                      \
@@ -54,16 +55,10 @@ EXTRA_DIST =                                    \
  CODE_OF_CONDUCT.md                             \
  CODE_REVIEW.md                                 \
  CODE_STYLE.md                                  \
- CLIENT-READERS.md                              \
- CLIENT-WRITERS.md                              \
- CONNECTION-FILTERS.md                          \
  CONTRIBUTE.md                                  \
  CURL-DISABLE.md                                \
- CURLDOWN.md                                    \
  DEPRECATE.md                                   \
- DISTROS.md                                     \
  DYNBUF.md                                      \
- EARLY-RELEASE.md                               \
  EXPERIMENTAL.md                                \
  FAQ                                            \
  FEATURES.md                                    \
@@ -76,7 +71,7 @@ EXTRA_DIST =                                    \
  HTTP3.md                                       \
  HYPER.md                                       \
  INSTALL                                        \
- INSTALL-CMAKE.md                               \
+ INSTALL.cmake                                  \
  INSTALL.md                                     \
  INTERNALS.md                                   \
  KNOWN_BUGS                                     \
@@ -89,35 +84,47 @@ EXTRA_DIST =                                    \
  RELEASE-PROCEDURE.md                           \
  RUSTLS.md                                      \
  ROADMAP.md                                     \
- SECURITY-ADVISORY.md                           \
- SPONSORS.md                                    \
+ SECURITY-PROCESS.md                            \
  SSL-PROBLEMS.md                                \
  SSLCERTS.md                                    \
  THANKS                                         \
  TODO                                           \
  TheArtOfHttpScripting.md                       \
  URL-SYNTAX.md                                  \
- VERSIONS.md                                    \
- VULN-DISCLOSURE-POLICY.md                      \
- WEBSOCKET.md
+ VERSIONS.md
 
-CD2NROFF = $(top_srcdir)/scripts/cd2nroff $< >$@
+MAN2HTML= roffit $< >$@
 
-CD2 = $(CD2_$(V))
-CD2_0 = @echo "  RENDER " $@;
-CD2_1 =
-CD2_ = $(CD2_0)
+SUFFIXES = .1 .html .pdf
 
-SUFFIXES = .1 .md
+# $(abs_builddir) is to disable VPATH when searching for this file, which
+# would otherwise find the copy in $(srcdir) which breaks the $(HUGE)
+# rule in src/Makefile.am in out-of-tree builds that references the file in the
+# build directory.
+#
+# First, seed the used copy of curl.1 with the prebuilt copy (in an out-of-tree
+# build), then run make recursively to rebuild it only if its dependencies
+# have changed.
+$(abs_builddir)/curl.1:
+	if test "$(top_builddir)x" != "$(top_srcdir)x" -a -e "$(srcdir)/curl.1"; then \
+		$(INSTALL_DATA) "$(srcdir)/curl.1" $@; fi
+	cd cmdline-opts && $(MAKE)
 
-all: $(MK_CA_DOCS)
+html: $(HTMLPAGES)
+	cd libcurl && $(MAKE) html
 
-.md.1:
-	$(CD2)$(CD2NROFF)
+pdf: $(PDFPAGES)
+	cd libcurl && $(MAKE) pdf
 
-curl-config.1: curl-config.md
+.1.html:
+	$(MAN2HTML)
 
-mk-ca-bundle.1: mk-ca-bundle.md
+.1.pdf:
+	@(foo=`echo $@ | sed -e 's/\.[0-9]$$//g'`; \
+	groff -Tps -man $< >$$foo.ps; \
+	ps2pdf $$foo.ps $@; \
+	rm $$foo.ps; \
+	echo "converted $< to $@")
 
 distclean:
 	rm -f $(CLEANFILES)

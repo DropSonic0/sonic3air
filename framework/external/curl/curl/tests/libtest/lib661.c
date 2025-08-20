@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -51,15 +51,11 @@ int test(char *URL)
    test_setopt(curl, CURLOPT_IGNORE_CONTENT_LENGTH, 1L);
    test_setopt(curl, CURLOPT_FTP_FILEMETHOD, (long) CURLFTPMETHOD_SINGLECWD);
    res = curl_easy_perform(curl);
-   if(res != CURLE_REMOTE_FILE_NOT_FOUND)
-     goto test_cleanup;
 
-   curl_free(newURL);
+   free(newURL);
    newURL = aprintf("%s/folderB/661", URL);
    test_setopt(curl, CURLOPT_URL, newURL);
    res = curl_easy_perform(curl);
-   if(res != CURLE_REMOTE_FILE_NOT_FOUND)
-     goto test_cleanup;
 
    /* test: CURLFTPMETHOD_NOCWD with absolute path should
       never emit CWD (for both new and reused easy handle) */
@@ -71,32 +67,26 @@ int test(char *URL)
      goto test_cleanup;
    }
 
-   curl_free(newURL);
+   free(newURL);
    newURL = aprintf("%s/folderA/661", URL);
    test_setopt(curl, CURLOPT_URL, newURL);
    test_setopt(curl, CURLOPT_VERBOSE, 1L);
    test_setopt(curl, CURLOPT_IGNORE_CONTENT_LENGTH, 1L);
    test_setopt(curl, CURLOPT_FTP_FILEMETHOD, (long) CURLFTPMETHOD_NOCWD);
    res = curl_easy_perform(curl);
-   if(res != CURLE_REMOTE_FILE_NOT_FOUND)
-     goto test_cleanup;
 
    /* curve ball: CWD /folderB before reusing connection with _NOCWD */
-   curl_free(newURL);
+   free(newURL);
    newURL = aprintf("%s/folderB/661", URL);
    test_setopt(curl, CURLOPT_URL, newURL);
    test_setopt(curl, CURLOPT_FTP_FILEMETHOD, (long) CURLFTPMETHOD_SINGLECWD);
    res = curl_easy_perform(curl);
-   if(res != CURLE_REMOTE_FILE_NOT_FOUND)
-     goto test_cleanup;
 
-   curl_free(newURL);
+   free(newURL);
    newURL = aprintf("%s/folderA/661", URL);
    test_setopt(curl, CURLOPT_URL, newURL);
    test_setopt(curl, CURLOPT_FTP_FILEMETHOD, (long) CURLFTPMETHOD_NOCWD);
    res = curl_easy_perform(curl);
-   if(res != CURLE_REMOTE_FILE_NOT_FOUND)
-     goto test_cleanup;
 
    /* test: CURLFTPMETHOD_NOCWD with home-relative path should
       not emit CWD for first FTP access after login */
@@ -121,8 +111,6 @@ int test(char *URL)
    test_setopt(curl, CURLOPT_FTP_FILEMETHOD, (long) CURLFTPMETHOD_NOCWD);
    test_setopt(curl, CURLOPT_QUOTE, slist);
    res = curl_easy_perform(curl);
-   if(res)
-     goto test_cleanup;
 
    /* test: CURLFTPMETHOD_SINGLECWD with home-relative path should
       not emit CWD for first FTP access after login */
@@ -140,8 +128,6 @@ int test(char *URL)
    test_setopt(curl, CURLOPT_FTP_FILEMETHOD, (long) CURLFTPMETHOD_SINGLECWD);
    test_setopt(curl, CURLOPT_QUOTE, slist);
    res = curl_easy_perform(curl);
-   if(res)
-     goto test_cleanup;
 
    /* test: CURLFTPMETHOD_NOCWD with home-relative path should
       not emit CWD for second FTP access when not needed +
@@ -157,10 +143,8 @@ int test(char *URL)
 
 test_cleanup:
 
-   if(res)
-     fprintf(stderr, "test encountered error %d\n", res);
    curl_slist_free_all(slist);
-   curl_free(newURL);
+   free(newURL);
    curl_easy_cleanup(curl);
    curl_global_cleanup();
 

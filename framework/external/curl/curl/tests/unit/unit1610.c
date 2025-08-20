@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -27,7 +27,7 @@
 
 static CURLcode unit_setup(void)
 {
-  CURLcode res = CURLE_OK;
+  int res = CURLE_OK;
   global_init(CURL_GLOBAL_ALL);
   return res;
 }
@@ -39,9 +39,7 @@ static void unit_stop(void)
 
 UNITTEST_START
 
-#if !defined(CURL_DISABLE_AWS) || !defined(CURL_DISABLE_DIGEST_AUTH) \
-    || defined(USE_LIBSSH2)
-
+#ifndef CURL_DISABLE_CRYPTO_AUTH
   const char string1[] = "1";
   const char string2[] = "hello-you-fool";
   unsigned char output[SHA256_DIGEST_LENGTH];

@@ -1,6 +1,6 @@
 /*
 	This script file is part of the Sonic 3 A.I.R. script software distribution.
-	Copyright (C) 2017-2025 by Eukaryot
+	Copyright (C) 2017-2024 by Eukaryot
 
 	Published under the GNU GPLv3 open source software license, see license.txt
 	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -15,10 +15,10 @@
 //# address-hook(0x03da00) end(0x03da22)
 function void MHZLeavesEffect.Update()
 {
-#if STANDALONE
-	if (debug_mode.state)
-		return
-#endif
+	#if STANDALONE
+		if (debug_mode.state)
+			return
+	#endif
 
 	if (u8[0xfffff7c0] < 0x10)
 	{

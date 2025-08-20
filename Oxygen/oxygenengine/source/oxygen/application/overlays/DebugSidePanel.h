@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -60,7 +60,7 @@ public:
 	virtual void update(float timeElapsed) override;
 	virtual void render() override;
 
-	inline const std::vector<CustomDebugSidePanelCategory*>& getCustomCategories() const  { return mCustomCategories; }
+	DebugSidePanelCategory& createGameCategory(size_t identifier, const std::string& header, char shortCharacter, const std::function<void(DebugSidePanelCategory&,Builder&,uint64)>& callback);
 
 	bool setupCustomCategory(std::string_view header, char shortCharacter);
 	bool addOption(std::string_view text, bool defaultValue);
@@ -75,8 +75,7 @@ private:
 private:
 	Font mSmallFont;
 
-	std::vector<DebugSidePanelCategory*> mCategories;			// All categories, including teh custom ones
-	std::vector<CustomDebugSidePanelCategory*> mCustomCategories;
+	std::vector<DebugSidePanelCategory*> mCategories;
 	size_t mActiveCategoryIndex = 0;
 
 	CustomDebugSidePanelCategory* mSetupCustomCategory = nullptr;

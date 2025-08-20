@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -11,7 +11,6 @@
 #include "oxygen/simulation/bindings/LemonScriptBindings.h"
 
 #include <lemon/compiler/PreprocessorDefinition.h>
-#include <lemon/program/FunctionWrapper.h>
 
 
 class EmulatorInterface;
@@ -61,24 +60,10 @@ public:
 	void getCallStackWithLabels(CallStackWithLabels& outCallStack) const;
 	const lemon::Function* getCurrentFunction() const;
 
-	lemon::AnyBaseValue getGlobalVariableValue(lemon::FlyweightString variableName, const lemon::DataTypeDefinition* dataType);
-	void setGlobalVariableValue(lemon::FlyweightString variableName, lemon::AnyBaseValue value, const lemon::DataTypeDefinition* dataType);
+	int64 getGlobalVariableValue_int64(lemon::FlyweightString variableName);
+	void setGlobalVariableValue_int64(lemon::FlyweightString variableName, int64 value);
 
-	template<typename T>
-	T getGlobalVariableValue(lemon::FlyweightString variableName)
-	{
-		return getGlobalVariableValue(variableName, lemon::traits::getDataType<T>()).template get<T>();
-	}
-
-	template<typename T>
-	void setGlobalVariableValue(lemon::FlyweightString variableName, T value)
-	{
-		lemon::AnyBaseValue valueToSet;
-		valueToSet.set<T>(value);
-		setGlobalVariableValue(variableName, valueToSet, lemon::traits::getDataType<T>());
-	}
-
-	void getCurrentExecutionLocation(const lemon::ScriptFunction*& outFunction, size_t& outProgramCounter) const;
+	void getLastStepLocation(const lemon::ScriptFunction*& outFunction, size_t& outProgramCounter) const;
 	std::string getOwnCurrentScriptLocationString() const;
 
 private:

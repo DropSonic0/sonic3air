@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/helper/TextInputHandler.h"
 #include "oxygen/platform/PlatformFunctions.h"
 
@@ -109,7 +109,7 @@ void TextInputHandler::keyboard(const rmx::KeyboardEvent& ev)
 				{
 					const size_t rangeStart = std::min(*mMarkedRangeStart, mCursorPosition);
 					const size_t rangeEnd = std::max(*mMarkedRangeStart, mCursorPosition);
-					const std::wstring_view markedText = std::wstring_view(mText).substr(rangeStart, rangeEnd - rangeStart);
+					const std::wstring markedText = std::wstring(mText).substr(rangeStart, rangeEnd - rangeStart);
 					PlatformFunctions::copyToClipboard(markedText);
 
 					if (ev.key == 'x')

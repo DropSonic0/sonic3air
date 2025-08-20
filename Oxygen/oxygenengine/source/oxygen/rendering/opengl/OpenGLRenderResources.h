@@ -1,6 +1,6 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -10,41 +10,31 @@
 
 #ifdef RMX_WITH_OPENGL_SUPPORT
 
+#include "oxygen/rendering/utils/PaletteBitmap.h"
 #include "oxygen/rendering/utils/BufferTexture.h"
-#include "oxygen/drawing/opengl/OpenGLDrawerResources.h"
+#include "oxygen/drawing/opengl/OpenGLTexture.h"
 
-class Palette;
-class PaletteBase;
 class RenderParts;
 
 
 class OpenGLRenderResources
 {
 public:
-	OpenGLRenderResources(RenderParts& renderParts, OpenGLDrawerResources& drawerResources);
+	OpenGLRenderResources(RenderParts& renderParts);
 
 	void initialize();
 	void refresh();
 	void clearAllCaches();
 
-	inline RenderParts& getRenderParts() const  { return mRenderParts; }
-
-	inline const OpenGLTexture& getMainPaletteTexture() const  { return mMainPalette.mTexture; }
-	const OpenGLTexture& getPaletteTexture(const PaletteBase* primaryPalette, const PaletteBase* secondaryPalette);
-
-	inline const BufferTexture& getPatternCacheTexture() const  { return mPatternCacheTexture; }
-
-	const BufferTexture& getPlanePatternsTexture(int planeIndex) const;
-
 	const BufferTexture& getHScrollOffsetsTexture(int scrollOffsetsIndex) const;
 	const BufferTexture& getVScrollOffsetsTexture(int scrollOffsetsIndex) const;
 
-private:
+public:
 	RenderParts& mRenderParts;
-	OpenGLDrawerResources& mDrawerResources;
 
 	// Palette
-	OpenGLDrawerResources::PaletteData mMainPalette;
+	Bitmap		  mPaletteBitmap;
+	OpenGLTexture mPaletteTexture;
 
 	// Patterns
 	PaletteBitmap mPatternCacheBitmap;

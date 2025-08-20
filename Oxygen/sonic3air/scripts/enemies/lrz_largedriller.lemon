@@ -1,6 +1,6 @@
 /*
 	This script file is part of the Sonic 3 A.I.R. script software distribution.
-	Copyright (C) 2017-2025 by Eukaryot
+	Copyright (C) 2017-2024 by Eukaryot
 
 	Published under the GNU GPLv3 open source software license, see license.txt
 	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -216,10 +216,10 @@ function void fn090352()
 	objA0.countdown_value = 0xbf
 	objA0.countdown_callback = 0x090368
 
-#if STANDALONE
-	// No need to wait that long actually...
-	objA0.countdown_value = 0x0f
-#endif
+	#if STANDALONE
+		// No need to wait that long actually...
+		objA0.countdown_value = 0x0f
+	#endif
 }
 
 

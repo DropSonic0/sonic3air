@@ -1,14 +1,14 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/audio/AudioCollection.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/JsonHelper.h"
 
 
 namespace
@@ -75,7 +75,6 @@ void AudioCollection::clear()
 	mAudioDefinitions.clear();
 	for (size_t i = 0; i < (size_t)Package::_NUM; ++i)
 		mNumSourcesByPackageType[i] = 0;
-	++mChangeCounter;
 }
 
 void AudioCollection::clearPackage(Package package)
@@ -102,12 +101,11 @@ void AudioCollection::clearPackage(Package package)
 		}
 	}
 	mNumSourcesByPackageType[(size_t)package] = 0;
-	++mChangeCounter;
 }
 
 bool AudioCollection::loadFromJson(const std::wstring& basepath, const std::wstring& filename, Package package)
 {
-	const Json::Value jsonRoot = OxygenJsonHelper::loadFile(basepath + L'/' + filename);
+	const Json::Value jsonRoot = JsonHelper::loadFile(basepath + L'/' + filename);
 	if (jsonRoot.empty())
 		return false;
 
@@ -274,7 +272,6 @@ bool AudioCollection::loadFromJson(const std::wstring& basepath, const std::wstr
 		}
 	}
 
-	++mChangeCounter;
 	return true;
 }
 
@@ -293,7 +290,6 @@ void AudioCollection::determineActiveSourceRegistrations(bool preferOriginalSoun
 		}
 		audioDefinition.mActiveSource = bestSourceReg;
 	}
-	++mChangeCounter;
 }
 
 const AudioCollection::AudioDefinition* AudioCollection::getAudioDefinition(uint64 keyId) const

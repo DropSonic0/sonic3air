@@ -30,14 +30,14 @@ void main()
 in vec2 uv0;
 out vec4 FragColor;
 
-uniform sampler2D MainTexture;
+uniform sampler2D Texture;
 #ifdef USE_TINT_COLOR
 	uniform vec4 TintColor;
 #endif
 
 void main()
 {
-	vec4 color = texture(MainTexture, uv0);
+	vec4 color = texture(Texture, uv0);
 #ifdef USE_TINT_COLOR
 	color *= TintColor;
 #endif

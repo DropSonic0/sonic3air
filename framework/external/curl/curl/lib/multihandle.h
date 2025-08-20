@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -79,10 +79,6 @@ typedef enum {
 /* value for MAXIMUM CONCURRENT STREAMS upper limit */
 #define INITIAL_MAX_CONCURRENT_STREAMS ((1U << 31) - 1)
 
-/* Curl_multi SSL backend-specific data; declared differently by each SSL
-   backend */
-struct multi_ssl_backend_data;
-
 /* This is the struct known as CURLM on the outside */
 struct Curl_multi {
   /* First a simple identifier to easier detect if a user mix up
@@ -93,16 +89,14 @@ struct Curl_multi {
   struct Curl_easy *easyp;
   struct Curl_easy *easylp; /* last node */
 
-  unsigned int num_easy; /* amount of entries in the linked list above. */
-  unsigned int num_alive; /* amount of easy handles that are added but have
-                             not yet reached COMPLETE state */
+  int num_easy; /* amount of entries in the linked list above. */
+  int num_alive; /* amount of easy handles that are added but have not yet
+                    reached COMPLETE state */
 
   struct Curl_llist msglist; /* a list of messages from completed transfers */
 
   struct Curl_llist pending; /* Curl_easys that are in the
                                 MSTATE_PENDING state */
-  struct Curl_llist msgsent; /* Curl_easys that are in the
-                                MSTATE_MSGSENT state */
 
   /* callback function and user data pointer for the *socket() API */
   curl_socket_callback socket_cb;
@@ -124,17 +118,6 @@ struct Curl_multi {
      times of all currently set timers */
   struct Curl_tree *timetree;
 
-  /* buffer used for transfer data, lazy initialized */
-  char *xfer_buf; /* the actual buffer */
-  size_t xfer_buf_len;      /* the allocated length */
-  /* buffer used for upload data, lazy initialized */
-  char *xfer_ulbuf; /* the actual buffer */
-  size_t xfer_ulbuf_len;      /* the allocated length */
-
-#if defined(USE_SSL)
-  struct multi_ssl_backend_data *ssl_backend_data;
-#endif
-
   /* 'sockhash' is the lookup hash for socket descriptor => easy handles (note
      the pluralis form, there can be more than one easy handle waiting on the
      same actual socket) */
@@ -142,6 +125,9 @@ struct Curl_multi {
 
   /* Shared connection cache (bundles)*/
   struct conncache conn_cache;
+
+  long maxconnects; /* if >0, a fixed limit of the maximum number of entries
+                       we're allowed to grow the connection cache to */
 
   long max_host_connections; /* if >0, a fixed limit of the maximum number
                                 of connections per host */
@@ -154,6 +140,8 @@ struct Curl_multi {
   void *timer_userp;
   struct curltime timer_lastcall; /* the fixed time for the timeout for the
                                     previous callback */
+  unsigned int max_concurrent_streams;
+
 #ifdef USE_WINSOCK
   WSAEVENT wsa_event; /* winsock event used for waits */
 #else
@@ -162,27 +150,16 @@ struct Curl_multi {
                                    0 is used for read, 1 is used for write */
 #endif
 #endif
-  unsigned int max_concurrent_streams;
-  unsigned int maxconnects; /* if >0, a fixed limit of the maximum number of
-                               entries we're allowed to grow the connection
-                               cache to */
-#define IPV6_UNKNOWN 0
-#define IPV6_DEAD    1
-#define IPV6_WORKS   2
-  unsigned char ipv6_up;       /* IPV6_* defined */
-  BIT(multiplexing);           /* multiplexing wanted */
-  BIT(recheckstate);           /* see Curl_multi_connchanged */
-  BIT(in_callback);            /* true while executing a callback */
+  /* multiplexing wanted */
+  bool multiplexing;
+  bool recheckstate; /* see Curl_multi_connchanged */
+  bool in_callback;            /* true while executing a callback */
+  bool ipv6_works;
 #ifdef USE_OPENSSL
-  BIT(ssl_seeded);
+  bool ssl_seeded;
 #endif
-  BIT(dead); /* a callback returned error, everything needs to crash and
+  bool dead; /* a callback returned error, everything needs to crash and
                 burn */
-  BIT(xfer_buf_borrowed);      /* xfer_buf is currently being borrowed */
-  BIT(xfer_ulbuf_borrowed);      /* xfer_buf is currently being borrowed */
-#ifdef DEBUGBUILD
-  BIT(warned);                 /* true after user warned of DEBUGBUILD */
-#endif
 };
 
 #endif /* HEADER_CURL_MULTIHANDLE_H */

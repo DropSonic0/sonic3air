@@ -1,9 +1,11 @@
 # File: gnv_curl_configure.sh
 #
+# $Id$
+#
 # Set up and run the configure script for Curl so that it can find the
 # proper options for VMS.
 #
-# Copyright (C) John Malmberg
+# Copyright 2013 - 2022, John Malmberg
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -19,6 +21,8 @@
 #
 # SPDX-License-Identifier: ISC
 #
+# 06-Jun-2009	J. Malmberg
+# 28-Dec-2012	J. Malmberg	Update for Bash 4.2.39
 #==========================================================================
 #
 # POSIX exit mode is needed for Unix shells.

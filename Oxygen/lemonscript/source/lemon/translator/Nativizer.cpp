@@ -1,19 +1,18 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/translator/Nativizer.h"
 #include "lemon/translator/NativizerInternal.h"
 #include "lemon/translator/SourceCodeWriter.h"
 #include "lemon/program/Module.h"
 #include "lemon/program/OpcodeHelper.h"
 #include "lemon/runtime/OpcodeProcessor.h"
-#include <sstream>
 
 
 namespace lemon
@@ -254,9 +253,7 @@ namespace lemon
 				const size_t chunks = (bytes + 0x7fff) / 0x8000;
 				for (size_t i = 0; i < chunks; ++i)
 				{
-                    std::stringstream identifier_ss;
-                    identifier_ss << "emptyEntries" << i;
-                    const std::string identifier = identifier_ss.str();
+					const std::string identifier = "emptyEntries" + std::to_string(i);
 					const size_t restBytes = std::min<size_t>(bytes - i * 0x8000, 0x8000);
 					writeBinaryBlob(writer, identifier, &data[i * 0x8000], restBytes);
 					writer.writeLine("dict.addEmptyEntries(reinterpret_cast<const uint64*>(" + identifier + "), " + rmx::hexString(restBytes / 8, 2) + ");");

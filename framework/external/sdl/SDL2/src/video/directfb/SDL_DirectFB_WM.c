@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,7 +20,7 @@
 */
 #include "../../SDL_internal.h"
 
-#ifdef SDL_VIDEO_DRIVER_DIRECTFB
+#if SDL_VIDEO_DRIVER_DIRECTFB
 
 #include "SDL_DirectFB_video.h"
 #include "SDL_DirectFB_window.h"
@@ -51,7 +51,8 @@ static DFB_Theme theme_none = {
     NULL
 };
 
-static void DrawTriangle(IDirectFBSurface * s, int down, int x, int y, int w)
+static void
+DrawTriangle(IDirectFBSurface * s, int down, int x, int y, int w)
 {
     int x1, x2, x3;
     int y1, y2, y3;
@@ -74,18 +75,19 @@ static void DrawTriangle(IDirectFBSurface * s, int down, int x, int y, int w)
     s->FillTriangle(s, x1, y1, x2, y2, x3, y3);
 }
 
-static void LoadFont(_THIS, SDL_Window * window)
+static void
+LoadFont(_THIS, SDL_Window * window)
 {
     SDL_DFB_DEVICEDATA(_this);
     SDL_DFB_WINDOWDATA(window);
 
-    if (windata->font) {
+    if (windata->font != NULL) {
         SDL_DFB_RELEASE(windata->font);
         windata->font = NULL;
         SDL_DFB_CHECK(windata->window_surface->SetFont(windata->window_surface, windata->font));
     }
 
-    if (windata->theme.font)
+    if (windata->theme.font != NULL)
     {
         DFBFontDescription fdesc;
 
@@ -99,7 +101,8 @@ static void LoadFont(_THIS, SDL_Window * window)
     }
 }
 
-static void DrawCraption(_THIS, IDirectFBSurface * s, int x, int y, char *text)
+static void
+DrawCraption(_THIS, IDirectFBSurface * s, int x, int y, char *text)
 {
     DFBSurfaceTextFlags flags;
 
@@ -108,7 +111,8 @@ static void DrawCraption(_THIS, IDirectFBSurface * s, int x, int y, char *text)
     s->DrawString(s, text, -1, x, y, flags);
 }
 
-void DirectFB_WM_RedrawLayout(_THIS, SDL_Window * window)
+void
+DirectFB_WM_RedrawLayout(_THIS, SDL_Window * window)
 {
     SDL_DFB_WINDOWDATA(window);
     IDirectFBSurface *s = windata->window_surface;
@@ -176,7 +180,8 @@ void DirectFB_WM_RedrawLayout(_THIS, SDL_Window * window)
     windata->wm_needs_redraw = 0;
 }
 
-DFBResult DirectFB_WM_GetClientSize(_THIS, SDL_Window * window, int *cw, int *ch)
+DFBResult
+DirectFB_WM_GetClientSize(_THIS, SDL_Window * window, int *cw, int *ch)
 {
     SDL_DFB_WINDOWDATA(window);
     IDirectFBWindow *dfbwin = windata->dfbwin;
@@ -190,7 +195,8 @@ DFBResult DirectFB_WM_GetClientSize(_THIS, SDL_Window * window, int *cw, int *ch
     return DFB_OK;
 }
 
-void DirectFB_WM_AdjustWindowLayout(SDL_Window * window, int flags, int w, int h)
+void
+DirectFB_WM_AdjustWindowLayout(SDL_Window * window, int flags, int w, int h)
 {
     SDL_DFB_WINDOWDATA(window);
 
@@ -235,7 +241,8 @@ enum
     WM_POS_BOTTOM = 0x40,
 };
 
-static int WMIsClient(DFB_WindowData * p, int x, int y)
+static int
+WMIsClient(DFB_WindowData * p, int x, int y)
 {
     x -= p->client.x;
     y -= p->client.y;
@@ -246,7 +253,8 @@ static int WMIsClient(DFB_WindowData * p, int x, int y)
     return 1;
 }
 
-static int WMPos(DFB_WindowData * p, int x, int y)
+static int
+WMPos(DFB_WindowData * p, int x, int y)
 {
     int pos = WM_POS_NONE;
 
@@ -276,7 +284,8 @@ static int WMPos(DFB_WindowData * p, int x, int y)
     return pos;
 }
 
-int DirectFB_WM_ProcessEvent(_THIS, SDL_Window * window, DFBWindowEvent * evt)
+int
+DirectFB_WM_ProcessEvent(_THIS, SDL_Window * window, DFBWindowEvent * evt)
 {
     SDL_DFB_WINDOWDATA(window);
     SDL_Window *grabbed_window = SDL_GetGrabbedWindow();
@@ -317,7 +326,7 @@ int DirectFB_WM_ProcessEvent(_THIS, SDL_Window * window, DFBWindowEvent * evt)
                 SDL_FALLTHROUGH;
             default:
                 windata->wm_grab = pos;
-                if (grabbed_window)
+                if (grabbed_window != NULL)
                     DirectFB_SetWindowMouseGrab(_this, grabbed_window, SDL_FALSE);
                 DirectFB_SetWindowMouseGrab(_this, window, SDL_TRUE);
                 windata->wm_lastx = evt->cx;
@@ -350,7 +359,7 @@ int DirectFB_WM_ProcessEvent(_THIS, SDL_Window * window, DFBWindowEvent * evt)
                 }
             }
             DirectFB_SetWindowMouseGrab(_this, window, SDL_FALSE);
-            if (grabbed_window)
+            if (grabbed_window != NULL)
                 DirectFB_SetWindowMouseGrab(_this, grabbed_window, SDL_TRUE);
             windata->wm_grab = WM_POS_NONE;
             return 1;

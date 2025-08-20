@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/TimeAttackResultsMenu.h"
 #include "sonic3air/menu/GameApp.h"
 #include "sonic3air/menu/SharedResources.h"
@@ -22,7 +22,7 @@ namespace
 {
 	String formatTime(int hundreds, bool allowShortSpace = false)
 	{
-		// Misusing the degree character 'ï¿½' = 0xb0 for a short space; the font has to support this
+		// Misusing the degree character '°' = 0xb0 for a short space; the font has to support this
 		// TODO: Maybe use a different character for this...?
 		return String(0, "%d'%c%02d\"%02d", hundreds / 6000, allowShortSpace ? (char)0xb0 : ' ', (hundreds / 100) % 60, hundreds % 100);
 	}
@@ -117,7 +117,7 @@ void TimeAttackResultsMenu::render()
 			GameApp::instance().enableStillImageBlur(true, 0.5f);
 		}
 
-		Recti rect(mRect.width - global::mTimeAttackResultsBG.getWidth(), 0, global::mTimeAttackResultsBG.getWidth(), global::mTimeAttackResultsBG.getHeight());
+		Recti rect(roundToInt(mRect.width) - global::mTimeAttackResultsBG.getWidth(), 0, global::mTimeAttackResultsBG.getWidth(), global::mTimeAttackResultsBG.getHeight());
 		drawer.drawRect(rect, global::mTimeAttackResultsBG);
 
 		const String text = String("Your time:   ") + formatTime(mYourTime, true);

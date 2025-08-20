@@ -1,18 +1,17 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/data/TimeAttackData.h"
 #include "sonic3air/data/SharedDatabase.h"
 
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
-#include "Portability.h"
+#include "oxygen/helper/JsonHelper.h"
 
 
 std::map<uint32, TimeAttackData::Table> TimeAttackData::mTables;
@@ -61,14 +60,14 @@ TimeAttackData::Table& TimeAttackData::loadTable(uint16 zoneAndAct, uint8 catego
 		timeAttackTable = &createTable(zoneAndAct, category);
 
 		// Read JSON
-		Json::Value root = OxygenJsonHelper::loadFile(filename);
+		Json::Value root = JsonHelper::loadFile(filename);
 		Json::Value& records = root["Records"];
 
 		for (const Json::Value& rec : records)
 		{
 			const Json::Value file = rec["File"];
 			const Json::Value time = rec["Time"];
-			if (file.isString() && time.isString())
+			if (file.isString())
 			{
 				Entry& entry = vectorAdd(timeAttackTable->mEntries);
 				entry.mFilename = *String(file.asString()).toWString();
@@ -95,7 +94,7 @@ void TimeAttackData::saveTable(uint16 zoneAndAct, uint8 category, const std::wst
 		rec["Time"] = TimeAttackData::getTimeString(entry.mTime);
 	}
 
-	OxygenJsonHelper::saveFile(filename, root);
+	JsonHelper::saveFile(filename, root);
 }
 
 std::wstring TimeAttackData::getSavePath(uint16 zoneAndAct, uint8 category, std::wstring* outRecBaseFilename)
@@ -104,7 +103,7 @@ std::wstring TimeAttackData::getSavePath(uint16 zoneAndAct, uint8 category, std:
 	if (nullptr == currentZone)
 		return L"";
 
-	const std::string zoneAndActName = currentZone->mShortName + to_string_ps3((zoneAndAct & 0x01) + 1);
+	const std::string zoneAndActName = currentZone->mShortName + std::to_string((zoneAndAct & 0x01) + 1);
 	const std::string characterName = REC_PATH_CHAR_NAMES.at(category);
 
 	if (nullptr != outRecBaseFilename)

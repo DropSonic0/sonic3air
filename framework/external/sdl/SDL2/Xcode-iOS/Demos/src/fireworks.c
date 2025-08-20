@@ -52,9 +52,9 @@ void spawnTrailFromEmitter(struct particle *emitter);
 void spawnEmitterParticle(GLfloat x, GLfloat y);
 void explodeEmitter(struct particle *emitter);
 void initializeParticles(void);
-void initializeTexture(void);
+void initializeTexture();
 int nextPowerOfTwo(int x);
-void drawParticles(void);
+void drawParticles();
 void stepParticles(double deltaTime);
 
 /*  helper function (used in texture loading)
@@ -84,16 +84,14 @@ stepParticles(double deltaTime)
         /* is the particle actually active, or is it marked for deletion? */
         if (curr->isActive) {
             /* is the particle off the screen? */
-            if (curr->y > screen_h) {
+            if (curr->y > screen_h)
                 curr->isActive = 0;
-            } else if (curr->y < 0) {
+            else if (curr->y < 0)
                 curr->isActive = 0;
-            }
-            if (curr->x > screen_w) {
+            if (curr->x > screen_w)
                 curr->isActive = 0;
-            } else if (curr->x < 0) {
+            else if (curr->x < 0)
                 curr->isActive = 0;
-            }
 
             /* step velocity, then step position */
             curr->yvel += ACCEL * deltaMilliseconds;
@@ -135,17 +133,15 @@ stepParticles(double deltaTime)
                 }
 
                 /* if we're a dust particle, shrink our size */
-                if (curr->type == dust) {
+                if (curr->type == dust)
                     curr->size -= deltaMilliseconds * 0.010f;
-                }
 
             }
 
             /* if we're still active, pack ourselves in the array next
                to the last active guy (pack the array tightly) */
-            if (curr->isActive) {
+            if (curr->isActive)
                 *(slot++) = *curr;
-            }
         }                       /* endif (curr->isActive) */
         curr++;
     }
@@ -159,7 +155,7 @@ stepParticles(double deltaTime)
     This draws all the particles shown on screen
 */
 void
-drawParticles(void)
+drawParticles()
 {
 
     /* draw the background */
@@ -192,9 +188,8 @@ explodeEmitter(struct particle *emitter)
     int i;
     for (i = 0; i < 200; i++) {
 
-        if (num_active_particles >= MAX_PARTICLES) {
+        if (num_active_particles >= MAX_PARTICLES)
             return;
-        }
 
         /* come up with a random angle and speed for new particle */
         float theta = randomFloat(0, 2.0f * 3.141592);
@@ -231,9 +226,8 @@ void
 spawnTrailFromEmitter(struct particle *emitter)
 {
 
-    if (num_active_particles >= MAX_PARTICLES) {
+    if (num_active_particles >= MAX_PARTICLES)
         return;
-    }
 
     /* select the particle at the slot at the end of our array */
     struct particle *p = &particles[num_active_particles];
@@ -268,9 +262,8 @@ void
 spawnEmitterParticle(GLfloat x, GLfloat y)
 {
 
-    if (num_active_particles >= MAX_PARTICLES) {
+    if (num_active_particles >= MAX_PARTICLES)
         return;
-    }
 
     /* find particle at endpoint of array */
     struct particle *p = &particles[num_active_particles];
@@ -324,7 +317,7 @@ initializeParticles(void)
     loads the particle texture
  */
 void
-initializeTexture(void)
+initializeTexture()
 {
 
     int bpp;                    /* texture bits per pixel */
@@ -334,7 +327,7 @@ initializeTexture(void)
                                            to format passed into OpenGL */
 
     bmp_surface = SDL_LoadBMP("stroke.bmp");
-    if (!bmp_surface) {
+    if (bmp_surface == NULL) {
         fatalError("could not load stroke.bmp");
     }
 

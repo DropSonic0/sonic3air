@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/rendering/parts/PatternManager.h"
 #include "oxygen/rendering/utils/RenderUtils.h"
 #include "oxygen/simulation/EmulatorInterface.h"
@@ -89,7 +89,7 @@ void PatternManager::dumpAsPaletteBitmap(PaletteBitmap& output) const
 		for (int x = 0; x < 512; ++x)
 		{
 			const int patternIndex = (x/8) + (y/8) * 64;
-			output[x+y*512] = mPatternCache[patternIndex].mFlipVariation[0].mPixels[(x%8) + (y%8) * 8] + getLastUsedAtex((uint16)patternIndex);
+			output.mData[x+y*512] = mPatternCache[patternIndex].mFlipVariation[0].mPixels[(x%8) + (y%8) * 8] + getLastUsedAtex((uint16)patternIndex);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,13 +20,15 @@
 */
 #include "../../SDL_internal.h"
 
-#if SDL_VIDEO_RENDER_SW
+#if SDL_VIDEO_RENDER_SW && !SDL_RENDER_DISABLED
 
 #include "SDL_draw.h"
 #include "SDL_blendfillrect.h"
 
-static int SDL_BlendFillRect_RGB555(SDL_Surface *dst, const SDL_Rect *rect,
-                                    SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+
+static int
+SDL_BlendFillRect_RGB555(SDL_Surface * dst, const SDL_Rect * rect,
+                         SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     unsigned inva = 0xff - a;
 
@@ -50,8 +52,9 @@ static int SDL_BlendFillRect_RGB555(SDL_Surface *dst, const SDL_Rect *rect,
     return 0;
 }
 
-static int SDL_BlendFillRect_RGB565(SDL_Surface *dst, const SDL_Rect *rect,
-                                    SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+static int
+SDL_BlendFillRect_RGB565(SDL_Surface * dst, const SDL_Rect * rect,
+                         SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     unsigned inva = 0xff - a;
 
@@ -75,8 +78,9 @@ static int SDL_BlendFillRect_RGB565(SDL_Surface *dst, const SDL_Rect *rect,
     return 0;
 }
 
-static int SDL_BlendFillRect_RGB888(SDL_Surface *dst, const SDL_Rect *rect,
-                                    SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+static int
+SDL_BlendFillRect_RGB888(SDL_Surface * dst, const SDL_Rect * rect,
+                         SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     unsigned inva = 0xff - a;
 
@@ -100,8 +104,9 @@ static int SDL_BlendFillRect_RGB888(SDL_Surface *dst, const SDL_Rect *rect,
     return 0;
 }
 
-static int SDL_BlendFillRect_ARGB8888(SDL_Surface *dst, const SDL_Rect *rect,
-                                      SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+static int
+SDL_BlendFillRect_ARGB8888(SDL_Surface * dst, const SDL_Rect * rect,
+                           SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     unsigned inva = 0xff - a;
 
@@ -125,8 +130,9 @@ static int SDL_BlendFillRect_ARGB8888(SDL_Surface *dst, const SDL_Rect *rect,
     return 0;
 }
 
-static int SDL_BlendFillRect_RGB(SDL_Surface *dst, const SDL_Rect *rect,
-                                 SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+static int
+SDL_BlendFillRect_RGB(SDL_Surface * dst, const SDL_Rect * rect,
+                      SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     SDL_PixelFormat *fmt = dst->format;
     unsigned inva = 0xff - a;
@@ -175,8 +181,9 @@ static int SDL_BlendFillRect_RGB(SDL_Surface *dst, const SDL_Rect *rect,
     }
 }
 
-static int SDL_BlendFillRect_RGBA(SDL_Surface *dst, const SDL_Rect *rect,
-                                  SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+static int
+SDL_BlendFillRect_RGBA(SDL_Surface * dst, const SDL_Rect * rect,
+                       SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     SDL_PixelFormat *fmt = dst->format;
     unsigned inva = 0xff - a;
@@ -206,8 +213,9 @@ static int SDL_BlendFillRect_RGBA(SDL_Surface *dst, const SDL_Rect *rect,
     }
 }
 
-int SDL_BlendFillRect(SDL_Surface *dst, const SDL_Rect *rect,
-                      SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+int
+SDL_BlendFillRect(SDL_Surface * dst, const SDL_Rect * rect,
+                  SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     SDL_Rect clipped;
 
@@ -272,12 +280,13 @@ int SDL_BlendFillRect(SDL_Surface *dst, const SDL_Rect *rect,
     }
 }
 
-int SDL_BlendFillRects(SDL_Surface *dst, const SDL_Rect *rects, int count,
-                       SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+int
+SDL_BlendFillRects(SDL_Surface * dst, const SDL_Rect * rects, int count,
+                   SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
     SDL_Rect rect;
     int i;
-    int (*func)(SDL_Surface * dst, const SDL_Rect *rect,
+    int (*func)(SDL_Surface * dst, const SDL_Rect * rect,
                 SDL_BlendMode blendMode, Uint8 r, Uint8 g, Uint8 b, Uint8 a) = NULL;
     int status = 0;
 
@@ -343,6 +352,6 @@ int SDL_BlendFillRects(SDL_Surface *dst, const SDL_Rect *rects, int count,
     return status;
 }
 
-#endif /* SDL_VIDEO_RENDER_SW */
+#endif /* SDL_VIDEO_RENDER_SW && !SDL_RENDER_DISABLED */
 
 /* vi: set ts=4 sw=4 expandtab: */

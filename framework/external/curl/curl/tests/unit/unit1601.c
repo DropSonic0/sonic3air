@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -37,9 +37,7 @@ static void unit_stop(void)
 
 UNITTEST_START
 
-#if (defined(USE_CURL_NTLM_CORE) && !defined(USE_WINDOWS_SSPI)) \
-    || !defined(CURL_DISABLE_DIGEST_AUTH)
-
+#ifndef CURL_DISABLE_CRYPTO_AUTH
   const char string1[] = "1";
   const char string2[] = "hello-you-fool";
   unsigned char output[MD5_DIGEST_LEN];

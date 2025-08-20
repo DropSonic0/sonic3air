@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/GameLoader.h"
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/application/GameProfile.h"
@@ -14,7 +14,7 @@
 #include "oxygen/application/input/InputManager.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/application/video/VideoOut.h"
-#include "oxygen/helper/OxygenLogging.h"
+#include "oxygen/helper/Logging.h"
 #include "oxygen/platform/PlatformFunctions.h"
 #include "oxygen/rendering/RenderResources.h"
 #include "oxygen/resources/FontCollection.h"
@@ -139,7 +139,7 @@ GameLoader::UpdateResult GameLoader::updateLoading()
 
 			// Load sprites
 			RMX_LOG_INFO("Loading sprites");
-			VideoOut::instance().getRenderResources().loadSprites();
+			VideoOut::instance().getRenderResources().loadSpriteCache();
 
 			// Load resources
 			RMX_LOG_INFO("Resource cache loading...");
@@ -151,7 +151,7 @@ GameLoader::UpdateResult GameLoader::updateLoading()
 
 			// Load persistent data
 			RMX_LOG_INFO("Persistent data loading...");
-			PersistentData::instance().loadFromBasePath(Configuration::instance().mPersistentDataBasePath);
+			PersistentData::instance().loadFromFile(Configuration::instance().mPersistentDataFilename);
 
 			// Load audio definitions
 			EngineMain::instance().getAudioOut().handleGameLoaded();

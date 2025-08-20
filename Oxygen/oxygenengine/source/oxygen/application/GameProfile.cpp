@@ -1,21 +1,21 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/GameProfile.h"
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/JsonHelper.h"
 
 
 bool GameProfile::loadOxygenProjectFromFile(const std::wstring& filename)
 {
 	// Open file
-	const Json::Value root = OxygenJsonHelper::loadFile(filename);
+	const Json::Value root = JsonHelper::loadFile(filename);
 	if (root.isNull())
 		return false;
 
@@ -94,7 +94,7 @@ bool GameProfile::loadOxygenProjectFromJson(const Json::Value& jsonRoot)
 		{
 			for (auto it = romCheckJson.begin(); it != romCheckJson.end(); ++it)
 			{
-				OxygenJsonHelper jsonHelper(*it);
+				JsonHelper jsonHelper(*it);
 				RomInfo& romInfo = vectorAdd(mRomInfos);
 
 				jsonHelper.tryReadString("SteamGameName", romInfo.mSteamGameName);
@@ -155,7 +155,7 @@ bool GameProfile::loadOxygenProjectFromJson(const Json::Value& jsonRoot)
 			for (auto it = dataPackagesJson.begin(); it != dataPackagesJson.end(); ++it)
 			{
 				const std::string key = it.key().asString();
-				OxygenJsonHelper jsonHelper(*it);
+				JsonHelper jsonHelper(*it);
 
 				DataPackage& dataPackage = vectorAdd(mDataPackages);
 				dataPackage.mFilename = String(key).toStdWString();

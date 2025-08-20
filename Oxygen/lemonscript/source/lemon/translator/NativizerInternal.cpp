@@ -1,17 +1,17 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/translator/NativizerInternal.h"
 #include "lemon/translator/SourceCodeWriter.h"
 #include "lemon/program/Function.h"
 #include "lemon/program/OpcodeHelper.h"
-#include "Portability.h"
+
 
 // Optimization switch for the nativizer code output:
 //  - Level 0 creates basic nativization by translating opcodes into lines of C++ code
@@ -91,7 +91,7 @@ namespace lemon
 		}
 		if (value != 0)
 		{
-			line += to_string_ps3(value);
+			line += std::to_string(value);
 		}
 		line += ")";
 	}
@@ -104,7 +104,7 @@ namespace lemon
 			{
 				const std::string& dataTypeString = getDataTypeString(node.mDataType);
 				line += "context.writeValueStack<" + dataTypeString + ">(";
-				line += to_string_ps3((int)node.mValue);
+				line += std::to_string((int)node.mValue);
 				line += ", ";
 				closeParenthesis = true;
 				break;
@@ -178,17 +178,17 @@ namespace lemon
 				const AnyBaseValue constant(node.mValue);
 				switch (node.mDataType)
 				{
-					case BaseType::INT_8:	line += to_string_ps3(constant.get<int8>());			break;
-					case BaseType::INT_16:	line += to_string_ps3(constant.get<int16>());			break;
-					case BaseType::INT_32:	line += to_string_ps3(constant.get<int32>());			break;
-					case BaseType::INT_64:	line += to_string_ps3(constant.get<int64>()) + "ll";	break;
-					case BaseType::UINT_8:	line += to_string_ps3(constant.get<uint8>());			break;
-					case BaseType::UINT_16:	line += to_string_ps3(constant.get<uint16>());			break;
-					case BaseType::UINT_32:	line += to_string_ps3(constant.get<uint32>());			break;
-					case BaseType::UINT_64:	line += to_string_ps3(constant.get<uint64>()) + "ull";	break;
-					case BaseType::FLOAT:	line += to_string_ps3(constant.get<float>()) + 'f';	break;
-					case BaseType::DOUBLE:	line += to_string_ps3(constant.get<double>());			break;
-					default:				line += to_string_ps3(constant.get<uint32>());			break;
+					case BaseType::INT_8:	line += std::to_string(constant.get<int8>());			break;
+					case BaseType::INT_16:	line += std::to_string(constant.get<int16>());			break;
+					case BaseType::INT_32:	line += std::to_string(constant.get<int32>());			break;
+					case BaseType::INT_64:	line += std::to_string(constant.get<int64>()) + "ll";	break;
+					case BaseType::UINT_8:	line += std::to_string(constant.get<uint8>());			break;
+					case BaseType::UINT_16:	line += std::to_string(constant.get<uint16>());			break;
+					case BaseType::UINT_32:	line += std::to_string(constant.get<uint32>());			break;
+					case BaseType::UINT_64:	line += std::to_string(constant.get<uint64>()) + "ull";	break;
+					case BaseType::FLOAT:	line += std::to_string(constant.get<float>()) + 'f';	break;
+					case BaseType::DOUBLE:	line += std::to_string(constant.get<double>());			break;
+					default:				line += std::to_string(constant.get<uint32>());			break;
 				}
 				break;
 			}
@@ -203,7 +203,7 @@ namespace lemon
 			{
 				const std::string& dataTypeString = getDataTypeString(node.mDataType);
 				line += "context.readValueStack<" + dataTypeString + ">(";
-				line += to_string_ps3((int)node.mValue);
+				line += std::to_string((int)node.mValue);
 				line += ")";
 				break;
 			}
@@ -879,7 +879,7 @@ namespace lemon
 		std::string line = "// First occurrence: ";
 		line.append(function.getName().getString());
 		if (firstOpcode.mLineNumber != 0)
-			line = line + ", line " + to_string_ps3(firstOpcode.mLineNumber - function.mSourceBaseLineOffset + 1);
+			line = line + ", line " + std::to_string(firstOpcode.mLineNumber - function.mSourceBaseLineOffset + 1);
 		writer.writeLine(line);
 
 		writer.writeLine("static void exec_" + rmx::hexString(hash, 16, "") + "(const RuntimeOpcodeContext context)");
@@ -898,7 +898,7 @@ namespace lemon
 
 		if (mFinalStackPosition != 0)
 		{
-			writer.writeLine("context.moveValueStack(" + to_string_ps3(mFinalStackPosition) + ");");
+			writer.writeLine("context.moveValueStack(" + std::to_string(mFinalStackPosition) + ");");
 		}
 
 		writer.endBlock();

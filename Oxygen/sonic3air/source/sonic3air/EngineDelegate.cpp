@@ -1,17 +1,16 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/EngineDelegate.h"
 #include "sonic3air/ConfigurationImpl.h"
 #include "sonic3air/audio/AudioOut.h"
 #include "sonic3air/menu/GameApp.h"
-#include "sonic3air/menu/MenuBackground.h"
 #include "sonic3air/menu/SharedResources.h"
 #include "sonic3air/version.inc"
 #if 0
@@ -204,36 +203,6 @@ bool EngineDelegate::useDeveloperFeatures()
 void EngineDelegate::onActiveModsChanged()
 {
 	mGame.onActiveModsChanged();
-}
-
-void EngineDelegate::onStartNetplayGame(bool isHost)
-{
-	mGame.startIntoDataSelect();
-	GameApp::instance().onStartGame();
-	GameApp::instance().getMenuBackground().setGameStartedMenu();
-
-	// Switch to using the alternative game settings
-	if (!isHost)
-		mConfiguration.mActiveGameSettings = &mConfiguration.mAlternativeGameSettings;
-}
-
-void EngineDelegate::onStopNetplayGame(bool isHost)
-{
-	mConfiguration.mActiveGameSettings = &mConfiguration.mLocalGameSettings;
-}
-
-void EngineDelegate::serializeGameSettings(VectorBinarySerializer& serializer)
-{
-	if (serializer.isReading())
-	{
-		// Always read into alternative game settings
-		mConfiguration.mAlternativeGameSettings.serialize(serializer);
-	}
-	else
-	{
-		// Save whatever is the current game settings
-		mConfiguration.mActiveGameSettings->serialize(serializer);
-	}
 }
 
 void EngineDelegate::onGameRecordingHeaderLoaded(const std::string& buildString, const std::vector<uint8>& buffer)

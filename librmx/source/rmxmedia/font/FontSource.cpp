@@ -1,6 +1,6 @@
 /*
 *	rmx Library
-*	Copyright (C) 2008-2025 by Eukaryot
+*	Copyright (C) 2008-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -87,25 +87,11 @@ bool FontSourceStd::fillGlyphInfo(FontSource::GlyphInfo& info)
 
 /* ----- FontSourceBitmap ------------------------------------------------------------------------------------------- */
 
-FontSourceBitmap::FontSourceBitmap(const std::wstring& jsonFilename, bool showErrors)
+FontSourceBitmap::FontSourceBitmap(const String& jsonFilename)
 {
 	// Read JSON file
-	Json::Value root;
-	{
-		std::vector<uint8> content;
-		if (!FTX::FileSystem->readFile(jsonFilename, content))
-		{
-			RMX_CHECK(showErrors, "Failed to load bitmap font JSON file at '" << WString(jsonFilename).toStdString() << "': File not found", );
-			return;
-		}
-
-		root = rmx::JsonHelper::loadFromMemory(content);
-		if (root.isNull())
-		{
-			RMX_CHECK(showErrors, "Failed to load bitmap font JSON file at '" << WString(jsonFilename).toStdString() << "': Error loading JSON content", );
-			return;
-		}
-	}
+	Json::Value root = rmx::JsonHelper::loadFile(*jsonFilename.toWString());
+	RMX_CHECK(!root.isNull(), "Failed to load bitmap font JSON file at '" << *jsonFilename << "'", return);
 
 	rmx::JsonHelper rootHelper(root);
 	rootHelper.tryReadInt("ascender", mAscender);
@@ -114,17 +100,17 @@ FontSourceBitmap::FontSourceBitmap(const std::wstring& jsonFilename, bool showEr
 	rootHelper.tryReadInt("space", mSpaceBetweenCharacters);
 
 	// Load bitmap
-	std::wstring parentPath;
-	rmx::FileIO::splitPath(jsonFilename, &parentPath, nullptr, nullptr);
+	std::string parentPath;
+	rmx::FileIO::splitPath(*jsonFilename, &parentPath, nullptr, nullptr);
 
 	std::string textureName;
 	rootHelper.tryReadString("texture", textureName);
-	RMX_CHECK(!textureName.empty(), "Texture field is missing or empty in bitmap font JSON file at '" << WString(jsonFilename).toStdString() << "'", );
+	RMX_CHECK(!textureName.empty(), "Texture field is missing or empty in bitmap font JSON file at '" << *jsonFilename << "'", );
 
-	Bitmap bitmap;
-	if (!bitmap.load(parentPath + L"/" + String(textureName).toStdWString()))
+	Bitmap bitmap(parentPath + "/" + textureName);
+	if (bitmap.empty())
 	{
-		RMX_CHECK(showErrors, "Failed to load font bitmap from '" << WString(parentPath).toStdString() << "/" << textureName << "' (referenced in '" << WString(jsonFilename).toStdString() << "')", );
+		RMX_ERROR("Failed to load font bitmap from '" << parentPath << "/" << textureName << "' (referenced in '" << *jsonFilename << "')", );
 		return;
 	}
 

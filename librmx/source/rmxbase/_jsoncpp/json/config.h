@@ -5,7 +5,6 @@
 
 #ifndef JSON_CONFIG_H_INCLUDED
 #define JSON_CONFIG_H_INCLUDED
-#include "PlatformDefinitions.h"
 #include <cstddef>
 #include <cstdint>
 #include <istream>
@@ -62,9 +61,6 @@
 extern JSON_API int msvc_pre1900_c99_snprintf(char* outBuf, size_t size,
                                               const char* format, ...);
 #define jsoncpp_snprintf msvc_pre1900_c99_snprintf
-#elif defined(PLATFORM_PS3)
-#include "ps3_compat.h"
-#define jsoncpp_snprintf ::snprintf
 #else
 #define jsoncpp_snprintf std::snprintf
 #endif

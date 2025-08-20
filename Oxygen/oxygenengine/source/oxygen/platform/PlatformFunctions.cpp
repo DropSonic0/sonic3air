@@ -1,19 +1,17 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/platform/PlatformFunctions.h"
 #include "oxygen/helper/HighResolutionTimer.h"
-#include "oxygen/helper/OxygenLogging.h"
+#include "oxygen/helper/Logging.h"
 
 #include <thread>
-#include <unistd.h>
-#include <sched.h>
 
 #ifdef PLATFORM_WINDOWS
 	#include <CleanWindowsInclude.h>
@@ -174,33 +172,61 @@ namespace
 
 
 
-void PlatformFunctions::preciseDelay(double sleepTimeLeft)
+void PlatformFunctions::preciseDelay(double milliseconds)
 {
-#if defined(PLATFORM_PS3)
-	// Use usleep for PS3, which takes microseconds
-	if (sleepTimeLeft > 0.0)
-	{
-		usleep((useconds_t)(sleepTimeLeft * 1000.0));
-	}
-#else
-	// Original high-resolution sleep for other platforms
-	auto start = std::chrono::high_resolution_clock::now();
-	auto end = start + std::chrono::duration<double, std::milli>(sleepTimeLeft);
+	// This function is based on work by Sewer56, and used with his permission here
+	//  -> For the original, see https://github.com/Sewer56/sonic3air
 
-	while (std::chrono::high_resolution_clock::now() < end)
+	const double timerGranularity = getTimerGranularityMilliseconds();	// As a side effect, this function sets the optimal timer granularity
+
+	HighResolutionTimer timer;
+	timer.start();
+	while (true)
 	{
-		sleepTimeLeft = std::chrono::duration<double, std::milli>(end - std::chrono::high_resolution_clock::now()).count();
-		if (sleepTimeLeft > 2.0)
+		const double timeLeft = milliseconds - timer.getSecondsSinceStart() * 1000.0;
+		if (timeLeft <= 0.0)
+			break;
+
+		const double sleepTimeLeft = timeLeft - timerGranularity;
+
+		// Don't spin on mobile platforms, accept some imprecision to avoid battery drain
+		#if defined(PLATFORM_WINDOWS) || defined(PLATFORM_MACOS) || defined(PLATFORM_LINUX)
 		{
+			// Spin if below granularity
+			if (sleepTimeLeft < 0.0)
+			{
+				double lastYieldTimeMs = std::numeric_limits<double>::max();
+				while (true)
+				{
+					const double timeLeft = milliseconds - timer.getSecondsSinceStart() * 1000.0;
+					if (timeLeft <= 0.0)
+						break;
+
+					if (timeLeft > lastYieldTimeMs)		// Otherwise it's essentially busy waiting
+					{
+						HighResolutionTimer yieldTimer;
+						yieldTimer.start();
+						std::this_thread::yield();
+						lastYieldTimeMs = yieldTimer.getSecondsSinceStart();
+					}
+				}
+				break;
+			}
+		}
+		#endif
+
+		// Is the remaining time rounded down to full milliseconds above the timer granularity?
+		if (sleepTimeLeft >= 1.0)
+		{
+			// Sleep the thread if above granularity
 			std::this_thread::sleep_for(std::chrono::milliseconds((int)sleepTimeLeft));
 		}
 		else
 		{
-			// Yield for the last 2ms
+			// Yield the thread if below granularity
 			std::this_thread::yield();
 		}
 	}
-#endif
 }
 
 double PlatformFunctions::getTimerGranularityMilliseconds()
@@ -427,7 +453,7 @@ PlatformFunctions::DialogResult PlatformFunctions::showDialogBox(rmx::ErrorSever
 		default:							type |= MB_ICONINFORMATION;	break;
 	}
 
-	const int result = MessageBoxA((HWND)FTX::Video->getNativeWindowHandle(), text.c_str(), caption.c_str(), type);
+	const int result = MessageBoxA(nullptr, text.c_str(), caption.c_str(), type);
 	switch (result)
 	{
 		case IDOK:		return DialogResult::OK;
@@ -556,18 +582,6 @@ void PlatformFunctions::openURLExternal(const std::string& url)
 #endif
 }
 
-bool PlatformFunctions::openApplicationExternal(const std::wstring& path, const std::wstring& arguments, const std::wstring& directory)
-{
-#if defined(PLATFORM_WINDOWS)
-	return ::ShellExecuteW(nullptr, L"open", path.c_str(), arguments.c_str(), directory.c_str(), SW_SHOW);
-#elif defined(PLATFORM_LINUX)
-	return system(*WString(path + L" " + arguments).toUTF8());
-#else
-	// Not implemented for other platforms
-	return false;
-#endif
-}
-
 bool PlatformFunctions::isDebuggerPresent()
 {
 #ifdef PLATFORM_WINDOWS
@@ -579,30 +593,61 @@ bool PlatformFunctions::isDebuggerPresent()
 
 bool PlatformFunctions::hasClipboardSupport()
 {
-#if defined(PLATFORM_WINDOWS) || defined(PLATFORM_MAC) || defined(PLATFORM_LINUX)
+#ifdef PLATFORM_WINDOWS
 	return true;
 #else
 	return false;
 #endif
 }
 
-bool PlatformFunctions::copyToClipboard(const std::string& string)
-{
-	return (SDL_SetClipboardText(string.c_str()) == 0);
-}
-
 bool PlatformFunctions::copyToClipboard(std::wstring_view string)
 {
-	return (SDL_SetClipboardText(*WString(string).toUTF8()) == 0);
+#ifdef PLATFORM_WINDOWS
+	if (OpenClipboard(nullptr))
+	{
+		const std::string str = WString(string).toStdString();
+		HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, str.length() + 1);
+		if (nullptr != handle)
+		{
+			LPTSTR lockedText = (LPTSTR)GlobalLock(handle);
+			if (nullptr != lockedText)
+			{
+				memcpy(lockedText, (LPCTSTR)str.c_str(), str.length() + 1);
+				GlobalUnlock(handle);
+
+				EmptyClipboard();
+				SetClipboardData(CF_TEXT, handle);
+				CloseClipboard();
+				return true;
+			}
+		}
+	}
+#endif
+	return false;
 }
+
 
 bool PlatformFunctions::pasteFromClipboard(WString& outString)
 {
-	if (!SDL_HasClipboardText())
-		return false;
-
-	char* utf8String = SDL_GetClipboardText();
-	outString.fromUTF8(std::string(utf8String));
-	SDL_free(utf8String);
-	return !outString.empty();
+#ifdef PLATFORM_WINDOWS
+	bool result = false;
+	if (IsClipboardFormatAvailable(CF_TEXT) && OpenClipboard(nullptr))
+	{
+		HGLOBAL handle = GetClipboardData(CF_TEXT);
+		if (nullptr != handle)
+		{
+			char* text = static_cast<char*>(GlobalLock(handle));
+			if (nullptr != text)
+			{
+				outString = WString(text);
+				GlobalUnlock(handle);
+				result = true;
+			}
+		}
+		CloseClipboard();
+	}
+	return result;
+#else
+	return false;
+#endif
 }

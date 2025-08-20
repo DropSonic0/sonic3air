@@ -1,19 +1,20 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/SharedResources.h"
 #include "sonic3air/data/SharedDatabase.h"
 
 #include "oxygen/application/EngineMain.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/JsonHelper.h"
+#include "oxygen/rendering/utils/PaletteBitmap.h"
 #include "oxygen/resources/FontCollection.h"
 
 
@@ -41,6 +42,7 @@ namespace global
 	DrawerTexture mAchievementsFrame;
 	DrawerTexture mTimeAttackResultsBG;
 
+	std::map<ZoneActPreviewKey, uint64> mZoneActPreviewSpriteKeys;
 	std::map<uint32, DrawerTexture> mAchievementImage;
 	std::map<uint32, DrawerTexture> mSecretImage;
 
@@ -119,6 +121,26 @@ namespace global
 		FileHelper::loadTexture(mOptionsTopBar, L"data/images/menu/options_topbar_bg.png");
 		FileHelper::loadTexture(mAchievementsFrame, L"data/images/menu/achievements_frame.png");
 		FileHelper::loadTexture(mTimeAttackResultsBG, L"data/images/menu/timeattack_results_screen.png");
+
+		const std::vector<SharedDatabase::Zone>& zones = SharedDatabase::getAllZones();
+		for (const SharedDatabase::Zone& zone : zones)
+		{
+			const uint8 acts = std::max(zone.mActsNormal, zone.mActsTimeAttack);
+			if (acts == 0)
+				continue;
+
+			ZoneActPreviewKey key;
+			key.mZone = zone.mInternalIndex;
+			for (uint8 act = 0; act < acts; ++act)
+			{
+				key.mAct = act;
+				for (uint8 image = 0; image < 2; ++image)
+				{
+					key.mImage = image;
+					mZoneActPreviewSpriteKeys[key] = rmx::getMurmur2_64(String(0, "%s_act%d%c", zone.mShortName.substr(0, 6).c_str(), act + 1, 'a' + image));
+				}
+			}
+		}
 
 		for (const SharedDatabase::Achievement& achievement : SharedDatabase::getAchievements())
 		{

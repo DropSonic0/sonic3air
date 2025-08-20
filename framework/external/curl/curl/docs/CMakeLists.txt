@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -22,9 +22,5 @@
 #
 ###########################################################################
 #add_subdirectory(examples)
-if(BUILD_LIBCURL_DOCS)
-  add_subdirectory(libcurl)
-endif()
-if(ENABLE_CURL_MANUAL AND BUILD_CURL_EXE)
-  add_subdirectory(cmdline-opts)
-endif()
+add_subdirectory(libcurl)
+add_subdirectory(cmdline-opts)

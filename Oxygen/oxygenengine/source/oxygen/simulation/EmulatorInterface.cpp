@@ -1,16 +1,15 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/simulation/EmulatorInterface.h"
 #include "oxygen/application/Configuration.h"
 #include "oxygen/application/GameProfile.h"
-#include "oxygen/resources/RawDataCollection.h"
 #include "oxygen/resources/ResourcesCache.h"
 
 
@@ -137,7 +136,7 @@ void RuntimeMemory::clear()
 
 void RuntimeMemory::applyRomInjections()
 {
-	RawDataCollection::instance().applyRomInjections(mRom, sizeof(mRom));
+	ResourcesCache::instance().applyRomInjections(mRom, sizeof(mRom));
 }
 
 

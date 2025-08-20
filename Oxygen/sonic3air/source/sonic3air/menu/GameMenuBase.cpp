@@ -1,18 +1,17 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "sonic3air/sonic3air_pch.h"
+#include "sonic3air/pch.h"
 #include "sonic3air/menu/GameMenuBase.h"
 #include "sonic3air/menu/SharedResources.h"
 #include "sonic3air/audio/AudioOut.h"
 
 #include "oxygen/application/input/InputManager.h"
-#include "Portability.h"
 
 
 void GameMenuEntry::performRenderEntry(RenderContext& renderContext)
@@ -52,14 +51,14 @@ GameMenuEntry& GameMenuEntry::addOptions(const OptionsConfig::Setting& setting)
 GameMenuEntry& GameMenuEntry::addNumberOptions(int minValue, int maxValue, int step)
 {
 	for (int value = minValue; value <= maxValue; value += step)
-		addOptionRef(to_string_ps3(value), value);
+		addOptionRef(std::to_string(value), value);
 	return *this;
 }
 
 GameMenuEntry& GameMenuEntry::addPercentageOptions(int minValue, int maxValue, int step)
 {
 	for (int value = minValue; value <= maxValue; value += step)
-		addOptionRef(to_string_ps3(value) + '%', value);
+		addOptionRef(std::to_string(value) + '%', value);
 	return *this;
 }
 
@@ -287,8 +286,6 @@ void GameMenuEntries::insertCopy(const GameMenuEntry& toCopy, size_t index)
 
 void GameMenuEntries::insertByReference(GameMenuEntry& entry, size_t index)
 {
-	if (index > mEntries.size())
-		index = mEntries.size();
 	mEntries.insert(mEntries.begin() + index, &entry);
 }
 
@@ -409,11 +406,11 @@ bool GameMenuEntries::changeSelectedIndex(int change, bool loop)
 	const int originalIndex = mSelectedEntryIndex;
 	if (change < 0)
 	{
-		mSelectedEntryIndex = (int)getPreviousInteractableIndex(mSelectedEntryIndex, loop);
+		mSelectedEntryIndex = getPreviousInteractableIndex(mSelectedEntryIndex, loop);
 	}
 	else if (change > 0)
 	{
-		mSelectedEntryIndex = (int)getNextInteractableIndex(mSelectedEntryIndex, loop);
+		mSelectedEntryIndex = getNextInteractableIndex(mSelectedEntryIndex, loop);
 	}
 	return (mSelectedEntryIndex != originalIndex);
 }
@@ -533,16 +530,4 @@ GameMenuBase::~GameMenuBase()
 void GameMenuBase::update(float timeElapsed)
 {
 	GuiBase::update(timeElapsed);
-}
-
-bool GameMenuBase::updateFadeIn(float timeStep)
-{
-	mVisibility = saturate(mVisibility + timeStep);
-	return (mVisibility >= 1.0f);
-}
-
-bool GameMenuBase::updateFadeOut(float timeStep)
-{
-	mVisibility = saturate(mVisibility - timeStep);
-	return (mVisibility <= 0.0f);
 }

@@ -1,11 +1,13 @@
 # File: make_gnv_curl_install.sh
 #
+# $Id$
+#
 # Set up and run the make script for Curl.
 #
 # This makes the library, the curl binary and attempts an install.
 # A search list should be set up for GNU (GNV$GNU).
 #
-# Copyright (C) John Malmberg
+# Copyright 2013 - 2022, John Malmberg
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -21,6 +23,7 @@
 #
 # SPDX-License-Identifier: ISC
 #
+# 06-Jun-2009	J. Malmberg
 #==========================================================================
 #
 #

@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/rendering/software/SoftwareRenderer.h"
 #include "oxygen/rendering/software/SoftwareBlur.h"
 #include "oxygen/rendering/Geometry.h"
@@ -20,7 +20,6 @@
 #if defined(PLATFORM_VITA)
 	#include <psp2/kernel/clib.h>
 #endif
-
 
 namespace detail
 {
@@ -72,13 +71,13 @@ namespace detail
 			const PatternManager::CacheItem::Pattern& pattern = mPatternCache[patternIndex & 0x07ff].mFlipVariation[(patternIndex >> 11) & 3];
 			uint64* dst = (uint64*)&mContent[mPosition + x];
 			const uint64* srcPatternPixels = (uint64*)&pattern.mPixels[mPatternPixelOffset];
-
-		#if !defined(PLATFORM_VITA)
-			*dst = *srcPatternPixels;
-		#else
-			// This fixes a crash
-			sceClibMemcpy(dst, srcPatternPixels, sizeof(*dst));
-		#endif
+			
+			#if !defined(PLATFORM_VITA)
+				*dst = *srcPatternPixels;
+			#else
+				// This fixes a crash
+				sceClibMemcpy(dst, srcPatternPixels, sizeof(*dst));
+			#endif
 
 			const uint16 patternBits = (patternIndex & 0xe000);		// Includes priority bit and atex
 			if (mLastPatternBits != patternBits)
@@ -150,7 +149,6 @@ void SoftwareRenderer::clearGameScreen()
 
 void SoftwareRenderer::renderGameScreen(const std::vector<Geometry*>& geometries)
 {
-	startRendering();
 	Bitmap& gameScreenBitmap = mGameScreenTexture.accessBitmap();
 
 	// Clear the screen
@@ -167,16 +165,23 @@ void SoftwareRenderer::renderGameScreen(const std::vector<Geometry*>& geometries
 	}
 
 	// Check if sprite masking needed
-	const bool usingSpriteMask = isUsingSpriteMask(geometries);
+	bool usingSpriteMask = false;
+	{
+		for (const Geometry* geometry : geometries)
+		{
+			if (geometry->getType() == Geometry::Type::SPRITE && geometry->as<SpriteGeometry>().mSpriteInfo.getType() == RenderItem::Type::SPRITE_MASK)
+			{
+				usingSpriteMask = true;
+				break;
+			}
+		}
+	}
 
 	// Render geometries
 	{
 		uint16 lastRenderQueue = 0xffff;
 		for (size_t i = 0; i < geometries.size(); ++i)
 		{
-			if (!progressRendering())
-				break;
-
 			const uint16 renderQueue = geometries[i]->mRenderQueue;
 			if (usingSpriteMask && lastRenderQueue < 0x8000 && renderQueue >= 0x8000)
 			{
@@ -210,40 +215,63 @@ void SoftwareRenderer::renderDebugDraw(int debugDrawMode, const Recti& rect)
 	Bitmap& gameScreenBitmap = mGameScreenTexture.accessBitmap();
 	const Vec2i oldSize = gameScreenBitmap.getSize();
 
-	// First render to palette bitmap
-	static PaletteBitmap paletteBitmap;
-	const bool highlightPrioPatterns = (FTX::keyState(SDLK_LSHIFT) != 0);
-	mRenderParts.getPlaneManager().dumpAsPaletteBitmap(paletteBitmap, debugDrawMode, highlightPrioPatterns);
-
-	const Vec2i bitmapSize = paletteBitmap.getSize();
-	mGameScreenTexture.setupAsRenderTarget(bitmapSize.x, bitmapSize.y);
-	gameScreenBitmap.create(bitmapSize);
-
-	// Convert from palette bitmap to RGBA
+	Vec2i bitmapSize;
+	if (debugDrawMode <= PlaneManager::PLANE_A)
 	{
-		const uint32* palette = mRenderParts.getPaletteManager().getMainPalette(0).getRawColors();
-		const uint8* src = paletteBitmap.getData();
-		uint32* dst = gameScreenBitmap.getData();
-
-		for (int k = 0; k < paletteBitmap.getPixelCount(); ++k)
-		{
-			uint8 index = *src;
-			if (index & 0x80)
-			{
-				*dst = 0xff000000 | ((palette[index & 0x7f] & 0x00fcfcfc) >> 2);
-			}
-			else
-			{
-				*dst = 0xff000000 | palette[index];
-			}
-			++src;
-			++dst;
-		}
+		bitmapSize = mRenderParts.getPlaneManager().getPlayfieldSizeInPixels();
 	}
-	mGameScreenTexture.bitmapUpdated();
+	else
+	{
+		bitmapSize.set(512, 256);
+	}
+	mGameScreenTexture.setupAsRenderTarget(bitmapSize.x, bitmapSize.y);
+	gameScreenBitmap.create(bitmapSize.x, bitmapSize.y, 0);
 
 	mCurrentViewport.set(0, 0, bitmapSize.x, bitmapSize.y);
 	mFullViewport = true;
+
+	// Render to bitmap
+	{
+		const PlaneManager& planeManager = mRenderParts.getPlaneManager();
+		const PaletteManager& paletteManager = mRenderParts.getPaletteManager();
+		const PatternManager& patternManager = mRenderParts.getPatternManager();
+		const uint32* palettes[2] = { paletteManager.getPalette(0).getData(), paletteManager.getPalette(1).getData() };
+		const PatternManager::CacheItem* patternCache = patternManager.getPatternCache();
+		const uint16 numPatternsPerLine = (uint16)(bitmapSize.x / 8);
+		const bool highlightPrioPatterns = (FTX::keyState(SDLK_LSHIFT) != 0);
+
+		for (int y = 0; y < bitmapSize.y; ++y)
+		{
+			uint32* destRGBA = gameScreenBitmap.getPixelPointer(0, y);
+			const uint32* palette = (y < paletteManager.mSplitPositionY) ? palettes[0] : palettes[1];
+
+			for (int x = 0; x < bitmapSize.x; )
+			{
+				const uint16 patternIndex = planeManager.getPatternAtIndex(debugDrawMode, (x / 8) + (y / 8) * numPatternsPerLine);
+				const PatternManager::CacheItem::Pattern& pattern = patternCache[patternIndex & 0x07ff].mFlipVariation[(patternIndex >> 11) & 3];
+				const uint8* srcPatternPixels = &pattern.mPixels[(x & 0x07) + (y & 0x07) * 8];
+				const uint8 atex = (patternIndex >> 9) & 0x30;
+
+				for (int k = 0; k < 8; ++k)
+				{
+					const uint8 colorIndex = srcPatternPixels[k];
+					destRGBA[x+k] = 0xff000000 | palette[colorIndex + atex];
+				}
+
+				const bool lowerBrightness = (highlightPrioPatterns && (patternIndex & 0x8000) == 0);
+				if (lowerBrightness)
+				{
+					for (int k = 0; k < 8; ++k)
+					{
+						destRGBA[x+k] = 0xff000000 | ((destRGBA[x+k] & 0x00fcfcfc) >> 2);
+					}
+				}
+
+				x += 8;
+			}
+		}
+	}
+	mGameScreenTexture.bitmapUpdated();
 
 	drawer.setWindowRenderTarget(FTX::screenRect());
 	drawer.setBlendMode(BlendMode::OPAQUE);
@@ -276,8 +304,7 @@ void SoftwareRenderer::renderGeometry(const Geometry& geometry)
 		case Geometry::Type::RECT:
 		{
 			const RectGeometry& rg = static_cast<const RectGeometry&>(geometry);
-			const Recti rect = Recti::getIntersection(rg.mRect, mCurrentViewport);
-			mBlitter.blitColor(Blitter::OutputWrapper(mGameScreenTexture.accessBitmap(), rect), rg.mColor, BlendMode::ALPHA);
+			mBlitter.blitColor(Blitter::OutputWrapper(mGameScreenTexture.accessBitmap(), rg.mRect), rg.mColor, BlendMode::ALPHA);
 			break;
 		}
 
@@ -291,7 +318,7 @@ void SoftwareRenderer::renderGeometry(const Geometry& geometry)
 			blitterOptions.mTintColor = &tg.mTintColor;
 			blitterOptions.mAddedColor = &tg.mAddedColor;
 
-			mBlitter.blitSprite(Blitter::OutputWrapper(mGameScreenTexture.accessBitmap(), mCurrentViewport), Blitter::SpriteWrapper(tg.mDrawerTexture.accessBitmap(), Vec2i()), tg.mRect.getPos(), blitterOptions);
+			mBlitter.blitSprite(Blitter::OutputWrapper(mGameScreenTexture.accessBitmap()), Blitter::SpriteWrapper(tg.mDrawerTexture.accessBitmap(), Vec2i()), tg.mRect.getPos(), blitterOptions);
 			break;
 		}
 
@@ -325,7 +352,6 @@ void SoftwareRenderer::renderPlane(const PlaneGeometry& geometry)
 
 	Recti rect(0, 0, mGameResolution.x, mGameResolution.y);
 	rect.intersect(geometry.mActiveRect);
-	rect.intersect(mCurrentViewport);
 	const int minX = rect.x;
 	const int maxX = rect.x + rect.width;
 	const int minY = rect.y;
@@ -414,9 +440,9 @@ void SoftwareRenderer::renderPlane(const PlaneGeometry& geometry)
 			int endX = maxX;
 			if (scrollNoRepeat)
 			{
-				if (vx > 0x0800)
+				if (vx < 0)
 				{
-					startX += 0x1000 - vx;
+					startX -= vx;
 					vx = 0;
 				}
 				else if (endX > startX + (positionMaskH - vx))
@@ -514,7 +540,7 @@ void SoftwareRenderer::renderPlane(const PlaneGeometry& geometry)
 	{
 		BufferedPlaneData& bufferedPlaneData = mBufferedPlaneData[foundFittingBufferedPlaneDataIndex];
 
-		const uint32* palettes[2] = { paletteManager.getMainPalette(0).getRawColors(), paletteManager.getMainPalette(1).getRawColors() };
+		const uint32* palettes[2] = { paletteManager.getPalette(0).getData(), paletteManager.getPalette(1).getData() };
 		const bool isBackground = (geometry.mPlaneIndex == PlaneManager::PLANE_B && !geometry.mPriorityFlag);
 
 		const std::vector<BufferedPlaneData::PixelBlock>& blocks = geometry.mPriorityFlag ? bufferedPlaneData.mPrioBlocks : bufferedPlaneData.mNonPrioBlocks;
@@ -571,14 +597,14 @@ void SoftwareRenderer::renderSprite(const SpriteGeometry& geometry)
 			const renderitems::VdpSpriteInfo& sprite = static_cast<const renderitems::VdpSpriteInfo&>(geometry.mSpriteInfo);
 
 			const PaletteManager& paletteManager = mRenderParts.getPaletteManager();
-			const uint32* palettes[2] = { paletteManager.getMainPalette(0).getRawColors(), paletteManager.getMainPalette(1).getRawColors() };
+			const uint32* palettes[2] = { paletteManager.getPalette(0).getData(), paletteManager.getPalette(1).getData() };
 			const PatternManager::CacheItem* patternCache = mRenderParts.getPatternManager().getPatternCache();
 
 			const uint8 depthValue = (sprite.mPriorityFlag) ? 0x80 : 0;
 			const bool useTintColor = (sprite.mTintColor != Color::WHITE || sprite.mAddedColor != Color::TRANSPARENT);
 
 			Recti rect(sprite.mInterpolatedPosition.x, sprite.mInterpolatedPosition.y, sprite.mSize.x * 8, sprite.mSize.y * 8);
-			rect = Recti::getIntersection(rect, mCurrentViewport);
+			rect.intersect(mCurrentViewport);
 
 			const int minX = rect.x;
 			const int maxX = rect.x + rect.width;
@@ -645,10 +671,10 @@ void SoftwareRenderer::renderSprite(const SpriteGeometry& geometry)
 
 			// Build blitter options
 			Blitter::Options blitterOptions;
-			Vec4f tintColor = spriteBase.mTintColor;		// Using Vec4f instead of Color to prevent clamp into [0.0f, 1.0f]
-			Vec4f addedColor = spriteBase.mAddedColor;
+			Color tintColor = spriteBase.mTintColor;
+			Color addedColor = spriteBase.mAddedColor;
 			{
-				if (spriteBase.mUseGlobalComponentTint)
+				if (spriteBase.mUseGlobalComponentTint && !isPaletteSprite)
 				{
 					paletteManager.applyGlobalComponentTint(tintColor, addedColor);
 				}
@@ -672,16 +698,13 @@ void SoftwareRenderer::renderSprite(const SpriteGeometry& geometry)
 				const PaletteSprite& paletteSprite = *static_cast<PaletteSprite*>(spriteInfo.mCacheItem->mSprite);
 				const PaletteBitmap& paletteBitmap = spriteInfo.mUseUpscaledSprite ? paletteSprite.getUpscaledBitmap() : paletteSprite.getBitmap();
 				const Blitter::IndexedSpriteWrapper spriteWrapper(paletteBitmap.getData(), paletteBitmap.getSize(), -paletteSprite.mOffset);
-
-				const PaletteBase& primaryPalette = (nullptr == spriteInfo.mPrimaryPalette) ? paletteManager.getMainPalette(0) : *spriteInfo.mPrimaryPalette;
-				const Blitter::PaletteWrapper paletteWrapper(primaryPalette.getRawColors() + spriteInfo.mAtex, primaryPalette.getSize() - spriteInfo.mAtex);
+				const Blitter::PaletteWrapper paletteWrapper(paletteManager.getPalette(0).getData() + spriteInfo.mAtex, paletteManager.getPalette(0).getSize() - spriteInfo.mAtex);
 
 				// Handle screen palette split
 				const int splitY = paletteManager.mSplitPositionY;
 				if (splitY < mGameResolution.y)
 				{
-					const PaletteBase& secondaryPalette = (nullptr == spriteInfo.mSecondaryPalette) ? paletteManager.getMainPalette(1) : *spriteInfo.mSecondaryPalette;
-					const Blitter::PaletteWrapper paletteWrapper2(secondaryPalette.getRawColors() + spriteInfo.mAtex, secondaryPalette.getSize() - spriteInfo.mAtex);
+					const Blitter::PaletteWrapper paletteWrapper2(paletteManager.getPalette(1).getData() + spriteInfo.mAtex, paletteManager.getPalette(1).getSize() - spriteInfo.mAtex);
 
 					Recti targetRect = Recti::getIntersection(mCurrentViewport, Recti(0, 0, mGameResolution.x, splitY));
 					mBlitter.blitIndexed(Blitter::OutputWrapper(gameScreenBitmap, targetRect), spriteWrapper, paletteWrapper, spriteInfo.mInterpolatedPosition, blitterOptions);
@@ -736,7 +759,6 @@ void SoftwareRenderer::renderSprite(const SpriteGeometry& geometry)
 
 		case RenderItem::Type::RECTANGLE:
 		case RenderItem::Type::TEXT:
-		case RenderItem::Type::VIEWPORT:
 		case RenderItem::Type::INVALID:
 			break;
 	}

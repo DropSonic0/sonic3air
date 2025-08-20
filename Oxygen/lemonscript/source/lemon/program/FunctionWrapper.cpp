@@ -1,46 +1,18 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "lemon/lemon_pch.h"
+#include "lemon/pch.h"
 #include "lemon/program/FunctionWrapper.h"
 #include "lemon/program/Program.h"
 
 
 namespace lemon
 {
-
-	AnyTypeWrapper::AnyTypeWrapper(uint64 value) :
-		mValue(value),
-		mType(traits::getDataType<uint64>())
-	{
-	}
-
-	void AnyTypeWrapper::pushToStack(ControlFlow& controlFlow) const
-	{
-		controlFlow.pushValueStack(mValue);
-		controlFlow.pushValueStack(mType->getID());
-	}
-
-	void AnyTypeWrapper::popFromStack(ControlFlow& controlFlow)
-	{
-		const uint16 dataTypeId = controlFlow.popValueStack<uint16>();
-		mType = controlFlow.getProgram().getDataTypeByID(dataTypeId);
-		mValue = controlFlow.popValueStack<AnyBaseValue>();
-	}
-
-	void AnyTypeWrapper::readFromStack(ControlFlow& controlFlow)
-	{
-		const uint16 dataTypeId = controlFlow.readValueStack<uint16>(-1);
-		mType = controlFlow.getProgram().getDataTypeByID(dataTypeId);
-		mValue = controlFlow.readValueStack<AnyBaseValue>(-2);
-	}
-
-
 	namespace traits
 	{
 		template<> const DataTypeDefinition* getDataType<void>()			{ return &PredefinedDataTypes::VOID; }
@@ -79,16 +51,18 @@ namespace lemon
 		template<>
 		void pushStackGeneric(AnyTypeWrapper value, const NativeFunction::Context context)
 		{
-			value.pushToStack(context.mControlFlow);
+			context.mControlFlow.pushValueStack(value.mValue);
+			context.mControlFlow.pushValueStack(value.mType->getID());
 		};
 
 		template<>
 		AnyTypeWrapper popStackGeneric(const NativeFunction::Context context)
 		{
 			AnyTypeWrapper result;
-			result.popFromStack(context.mControlFlow);
+			const uint16 dataTypeId = context.mControlFlow.popValueStack<uint16>();
+			result.mType = context.mControlFlow.getProgram().getDataTypeByID(dataTypeId);
+			result.mValue = context.mControlFlow.popValueStack<AnyBaseValue>();
 			return result;
 		}
 	}
-
 }

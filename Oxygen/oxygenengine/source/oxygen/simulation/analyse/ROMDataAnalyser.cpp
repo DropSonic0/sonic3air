@@ -1,15 +1,15 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/simulation/analyse/ROMDataAnalyser.h"
 #include "oxygen/application/Configuration.h"
-#include "oxygen/helper/OxygenJsonHelper.h"
+#include "oxygen/helper/JsonHelper.h"
 
 
 ROMDataAnalyser::ROMDataAnalyser()
@@ -138,7 +138,7 @@ void ROMDataAnalyser::loadDataFromJSONs(std::wstring_view filepath)
 			continue;
 
 		const std::wstring filename = std::wstring(filepath) + fileEntry->mFilename;
-		Json::Value root = OxygenJsonHelper::loadFile(filename);
+		Json::Value root = JsonHelper::loadFile(filename);
 		if (root.isNull())
 			continue;
 
@@ -189,7 +189,7 @@ void ROMDataAnalyser::saveDataToJSONs(std::wstring_view filepath)
 
 		// Save file
 		const std::wstring filename = std::wstring(filepath) + L"romdata_" + *String(category.mName).toWString() + L".json";
-		OxygenJsonHelper::saveFile(filename, root);
+		JsonHelper::saveFile(filename, root);
 
 	#if 0
 		if (category.mName == "TableLookup")

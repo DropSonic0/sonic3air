@@ -1,19 +1,19 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 
 #if defined(PLATFORM_ANDROID)
 
 	#include "oxygen/platform/AndroidJavaInterface.h"
 	#include "oxygen/application/Configuration.h"
 	#include "oxygen/helper/FileHelper.h"
-#include "oxygen/helper/OxygenLogging.h"
+	#include "oxygen/helper/Logging.h"
 	#include "oxygen/platform/PlatformFunctions.h"
 
 	#include <jni.h>
@@ -45,16 +45,6 @@
 
 			FileHelper::extractZipFile(String(str).toStdWString(), Configuration::instance().mAppDataPath + L"apkContent/");
 			env->ReleaseStringUTFChars(path, str);
-		}
-
-		JNIEXPORT void JNICALL Java_org_eukaryot_sonic3air_GameActivity_grantedFolderAccess(JNIEnv* env, jclass jclazz, jboolean success, jstring path)
-		{
-			const char* str = env->GetStringUTFChars(path, 0);
-			RMX_LOG_INFO("C++ folder access path = " << str);
-
-			// Example result: "/tree/primary:S3AIR_Savedata" (the path does not include a trailing slash)
-
-			// TODO: Store the path somewhere, or call whoever might be interested in the result
 		}
 	}
 
@@ -110,7 +100,7 @@
 		int callIntMethod(const char* methodName, uint64 a)
 		{
 			jmethodID methodId = mEnv->GetMethodID(mActivityClass, methodName, "(J)I");
-			return mEnv->CallIntMethod(mActivity, methodId, (jlong)a);
+            return mEnv->CallIntMethod(mActivity, methodId, (jlong)a);
 		}
 
 		uint64 callLongMethod(const char* methodName, uint64 a)
@@ -203,11 +193,6 @@
 			// Finished
 			outCurrentBytes = outTotalBytes;
 		}
-	}
-
-	void AndroidJavaInterface::openFolderAccessDialog()
-	{
-		JNICallHelper().callVoidMethod("openFolderAccessDialog");
 	}
 
 #endif

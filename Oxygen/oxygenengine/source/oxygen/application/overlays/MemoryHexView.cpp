@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/application/overlays/MemoryHexView.h"
 #include "oxygen/application/video/VideoOut.h"
 #include "oxygen/application/EngineMain.h"
@@ -23,7 +23,7 @@ MemoryHexView::~MemoryHexView()
 
 void MemoryHexView::initialize()
 {
-	setRect(Recti(5, 480, 720, 100));
+	setRect(5, 480, 720, 100);
 
 	// Debug output font
 	mFont.setSize(15.0f);
@@ -38,14 +38,14 @@ void MemoryHexView::keyboard(const rmx::KeyboardEvent& ev)
 {
 	GuiBase::keyboard(ev);
 
-	if (ev.state && !FTX::System->wasEventConsumed())
+	if (ev.state)
 	{
 		switch (ev.key)
 		{
 			case 'i':
 			{
 				mLines = (mLines == 0) ? 2 : (mLines < 16) ? (mLines * 2) : 0;
-				mRect.height = 20 + 20 * mLines;
+				mRect.height = (float)(20 + 20 * mLines);
 				break;
 			}
 
@@ -78,7 +78,7 @@ void MemoryHexView::render()
 
 		drawer.drawRect(mRect, Color(0.0f, 0.0f, 0.0f, 0.6f));
 
-		Recti rect = getRect();
+		Rectf rect = getRect();
 		rect.y += 10;
 		for (uint32 y = 0; y < mLines; ++y)
 		{

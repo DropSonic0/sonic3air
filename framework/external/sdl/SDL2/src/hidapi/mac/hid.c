@@ -21,8 +21,6 @@
  ********************************************************/
 #include "../../SDL_internal.h"
 
-#include "SDL_hints.h"
-
 /* See Apple Technical Note TN2187 for details on IOHidManager. */
 
 #include <IOKit/hid/IOHIDManager.h>
@@ -504,7 +502,7 @@ int HID_API_EXPORT hid_exit(void)
 	return 0;
 }
 
-static void process_pending_events(void) {
+static void process_pending_events() {
 	SInt32 res;
 	do {
 		res = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.001, FALSE);
@@ -519,7 +517,6 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 	CFSetRef device_set;
 	IOHIDDeviceRef *device_array;
 	int i;
-	const char *hint = SDL_GetHint(SDL_HINT_HIDAPI_IGNORE_DEVICES);
 	
 	/* Set up the HID Manager if it hasn't been done */
 	if (hid_init() < 0)
@@ -570,19 +567,9 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 		dev_vid = get_vendor_id(dev);
 		dev_pid = get_product_id(dev);
 		
-		/* See if there are any devices we should skip in enumeration */
-		if (hint) {
-			char vendor_match[16], product_match[16];
-			SDL_snprintf(vendor_match, sizeof(vendor_match), "0x%.4x/0x0000", dev_vid);
-			SDL_snprintf(product_match, sizeof(product_match), "0x%.4x/0x%.4x", dev_vid, dev_pid);
-			if (SDL_strcasestr(hint, vendor_match) || SDL_strcasestr(hint, product_match)) {
-				continue;
-			}
-		}
-
 		/* Check the VID/PID against the arguments */
-		if ((vendor_id == 0x0 || dev_vid == vendor_id) &&
-		    (product_id == 0x0 || dev_pid == product_id)) {
+		if ((vendor_id == 0x0 && product_id == 0x0) ||
+		    (vendor_id == dev_vid && product_id == dev_pid)) {
 			struct hid_device_info *tmp;
 
 			/* VID/PID match. Create the record. */
@@ -772,7 +759,7 @@ static void *read_thread(void *param)
 	while (!dev->shutdown_thread && !dev->disconnected) {
 		code = CFRunLoopRunInMode(dev->run_loop_mode, 1000/*sec*/, FALSE);
 		/* Return if the device has been disconnected */
-		if (code == kCFRunLoopRunFinished || code == kCFRunLoopRunStopped) {
+		if (code == kCFRunLoopRunFinished) {
 			dev->disconnected = 1;
 			break;
 		}
@@ -819,12 +806,10 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path, int bExclusive)
 	/* Set up the HID Manager if it hasn't been done */
 	if (hid_init() < 0)
 		return NULL;
-
-#if 0 /* We have a path because the IOHIDManager is already updated */
+	
 	/* give the IOHIDManager a chance to update itself */
 	process_pending_events();
-#endif
-
+	
 	device_set = IOHIDManagerCopyDevices(hid_mgr);
 	if (!device_set)
 		return NULL;
@@ -855,7 +840,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path, int bExclusive)
 				
 				/* Create the Run Loop Mode for this device.
 				 printing the reference seems to work. */
-				snprintf(str, sizeof(str), "HIDAPI_%p", os_dev);
+				sprintf(str, "HIDAPI_%p", os_dev);
 				dev->run_loop_mode = 
 				CFStringCreateWithCString(NULL, str, kCFStringEncodingASCII);
 				
@@ -957,9 +942,7 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
 	size_t len = 0;
 	if (rpt != NULL) {
 		len = (length < rpt->len)? length: rpt->len;
-		if (data != NULL) {
-			memcpy(data, rpt->data, len);
-		}
+		memcpy(data, rpt->data, len);
 		dev->input_reports = rpt->next;
 		free(rpt->data);
 		free(rpt);

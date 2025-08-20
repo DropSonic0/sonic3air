@@ -1,12 +1,12 @@
 /*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
-*	Copyright (C) 2017-2025 by Eukaryot
+*	Copyright (C) 2017-2024 by Eukaryot
 *
 *	Published under the GNU GPLv3 open source software license, see license.txt
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/resources/FontCollection.h"
 #include "oxygen/application/modding/ModManager.h"
 #include "oxygen/rendering/RenderResources.h"
@@ -172,9 +172,8 @@ Font* FontCollection::getFontByKey(uint64 keyHash)
 Font* FontCollection::createFontByKey(std::string_view key)
 {
 	// First check if the font exists already
-	const uint64 keyHash = rmx::getMurmur2_64(key);
 	{
-		Font* font = getFontByKey(keyHash);
+		Font* font = getFontByKey(rmx::getMurmur2_64(key));
 		if (nullptr != font)
 			return font;
 	}
@@ -196,7 +195,6 @@ Font* FontCollection::createFontByKey(std::string_view key)
 	}
 
 	registerManagedFontInternal(font, *collectedFont);
-	mFontsByKeyHash[keyHash] = &font;
 	return &font;
 }
 
@@ -208,25 +206,11 @@ bool FontCollection::registerManagedFont(Font& font, std::string_view key)
 		return false;
 
 	registerManagedFontInternal(font, *collectedFont);
-
-	// Add to list of managed fonts as well
-	ManagedFont& managedFont = vectorAdd(mAllManagedFonts);
-	managedFont.mFont = &font;
-	managedFont.mKey = key;
 	return true;
 }
 
 void FontCollection::clear()
 {
-	for (auto& [key, collectedFont] : mCollectedFonts)
-	{
-		for (Font* font : collectedFont.mManagedFonts)
-		{
-			font->injectFontSource(nullptr);
-		}
-		delete collectedFont.mFontSource;
-	}
-
 	mCollectedFonts.clear();
 	mFontsByKeyHash.clear();
 	mFontPool.clear();
@@ -238,18 +222,7 @@ void FontCollection::reloadAll()
 	clear();
 	loadDefinitionsFromPath(L"data/font/", nullptr);
 
-	// Load mod fonts
 	collectFromMods();
-
-	// Re-register managed fonts
-	{
-		std::vector<ManagedFont> managedFonts;
-		managedFonts.swap(mAllManagedFonts);
-		for (const ManagedFont& managedFont : managedFonts)
-		{
-			registerManagedFont(*managedFont.mFont, managedFont.mKey);
-		}
-	}
 }
 
 void FontCollection::collectFromMods()
@@ -357,15 +330,13 @@ void FontCollection::updateLoadedFonts()
 		for (int index = (int)collectedFont.mDefinitions.size() - 1; index >= 0; --index)
 		{
 			const Definition& definition = collectedFont.mDefinitions[index];
-			collectedFont.mFontSource = new FontSourceBitmap(definition.mDefinitionFile);
+			collectedFont.mFontSource = new FontSourceBitmap(WString(definition.mDefinitionFile).toString());
 			if (collectedFont.mFontSource->isValid())
 			{
 				collectedFont.mLoadedDefinitionIndex = index;
 				break;
 			}
-
 			// If loading failed, try the next definition
-			SAFE_DELETE(collectedFont.mFontSource);
 		}
 
 		// Update the font source in all font instances (note that it might also be a null pointer)
@@ -377,6 +348,7 @@ void FontCollection::updateLoadedFonts()
 		// If loading failed for all definitions, remove the collected font instance
 		if (collectedFont.mLoadedDefinitionIndex == -1 && collectedFont.mManagedFonts.size() <= 1)
 		{
+			delete &collectedFont;
 			keysToRemove.push_back(key);
 		}
 	}
@@ -384,7 +356,6 @@ void FontCollection::updateLoadedFonts()
 	for (uint64 key : keysToRemove)
 	{
 		mCollectedFonts.erase(key);
-		mFontsByKeyHash.erase(key);
 	}
 
 	// Invalidate cached printed texts

@@ -1,4 +1,4 @@
- /*
+/*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
 *	Copyright (C) 2017-2024 by Eukaryot
 *
@@ -6,7 +6,7 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
-#include "oxygen/oxygen_pch.h"
+#include "oxygen/pch.h"
 #include "oxygen/file/FilePackage.h"
 #include "oxygen/helper/Utils.h"
 
@@ -171,9 +171,8 @@ void FilePackage::createFilePackage(const std::wstring& packageFilename, const s
 		entryHeaderSize = output.size() - PackageHeader::HEADER_SIZE;
 		*(uint32*)&output[headerSizePosition] = (uint32)entryHeaderSize;
 
-		for (auto it = packedFiles.begin(); it != packedFiles.end(); ++it)
+		for (auto& [key, packedFile] : packedFiles)
 		{
-			auto& packedFile = it->second;
 			const uint32 position = (uint32)output.size();
 			serializer.write(&packedFile.mContent[0], packedFile.mContent.size());
 			*(uint32*)&output[packedFile.mPositionInFile] = position;

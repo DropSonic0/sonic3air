@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -24,8 +24,6 @@
 #include "curlcheck.h"
 
 #include "hostip.h"
-
-#ifndef CURL_DISABLE_SHUFFLE_DNS
 
 CURLcode Curl_shuffle_addr(struct Curl_easy *data,
                            struct Curl_addrinfo **addr);
@@ -49,7 +47,7 @@ static void unit_stop(void)
 }
 
 UNITTEST_START
-
+{
   int i;
   CURLcode code;
   struct Curl_addrinfo *addrhead = addrs;
@@ -73,17 +71,6 @@ UNITTEST_START
 
   abort_unless(addrhead != addrs, "addresses are not being reordered");
 
-UNITTEST_STOP
-
-#else
-static CURLcode unit_setup(void)
-{
-  return CURLE_OK;
+  return 0;
 }
-static void unit_stop(void)
-{
-}
-UNITTEST_START
 UNITTEST_STOP
-
-#endif

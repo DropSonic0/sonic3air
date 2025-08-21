@@ -55,7 +55,10 @@
     "ERROR:  Visual Studio 12 (2013) with _MSC_VER=1800 is the oldest supported compiler with sufficient C++11 capabilities"
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
+#if defined(PLATFORM_PS3)
+#include "rmxbase/ps3_stdio.h"
+#define jsoncpp_snprintf ::snprintf
+#elif defined(_MSC_VER) && _MSC_VER < 1900
 // As recommended at
 // https://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
 extern JSON_API int msvc_pre1900_c99_snprintf(char* outBuf, size_t size,

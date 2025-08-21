@@ -19,6 +19,17 @@
 	#pragma comment (lib, "Mswsock.lib")
 	#pragma comment (lib, "AdvApi32.lib")
 
+#elif defined(PLATFORM_PS3)
+	#include <net/net.h>
+	#include <netinet/in.h>
+	#include <sys/socket.h>
+	#include <sys/select.h>
+	#include <arpa/inet.h>
+	#include <netdb.h>
+	#include <unistd.h>
+	#include <fcntl.h>
+	#define SOCKET s32
+	#define INVALID_SOCKET -1
 #else
 	// Use POSIX sockets
 	#include <sys/socket.h>
@@ -33,7 +44,7 @@
 
 #endif
 
-#ifdef __vita__
+#if defined(__vita__) || defined(PLATFORM_PS3)
 	#define SOMAXCONN 4096
 #endif
 
@@ -43,10 +54,12 @@ void Sockets::startupSockets()
 	if (mIsInitialized)
 		return;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	WSADATA wsaData;
 	const int result = ::WSAStartup((WORD)0x0202, &wsaData);
 	RMX_CHECK(result == 0, "WSAStartup failed with error: " << result, );
+#elif defined(PLATFORM_PS3)
+	netInitialize();
 #endif
 	mIsInitialized = true;
 }
@@ -56,15 +69,17 @@ void Sockets::shutdownSockets()
 	if (!mIsInitialized)
 		return;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	::WSACleanup();
+#elif defined(PLATFORM_PS3)
+	netDeinitialize();
 #endif
 	mIsInitialized = false;
 }
 
 bool Sockets::resolveToIP(const std::string& hostName, std::string& outIP)
 {
-#if defined(__EMSCRIPTEN__) || defined(__vita__)
+#if defined(__EMSCRIPTEN__) || defined(__vita__) || defined(PLATFORM_PS3)
 	// Just return the input
 	outIP = hostName;
 	return true;
@@ -154,7 +169,7 @@ void SocketAddress::assureSockAddr() const
 	{
 		memset(&mSockAddr, 0, sizeof(mSockAddr));
 		bool success = false;
-	#if !defined(PLATFORM_SWITCH)	// The IPv6 part won't compile on Switch, but isn't really needed there anyways
+	#if !defined(PLATFORM_SWITCH) && !defined(PLATFORM_PS3)
 		{
 			// IPv6
 			sockaddr_in6& addr = *reinterpret_cast<sockaddr_in6*>(&mSockAddr);
@@ -169,7 +184,11 @@ void SocketAddress::assureSockAddr() const
 			sockaddr_in& addr = *reinterpret_cast<sockaddr_in*>(&mSockAddr);
 			addr.sin_family = AF_INET;
 			addr.sin_port = htons(mPort);
+#if defined(PLATFORM_PS3)
+			inet_aton(mIP.c_str(), &addr.sin_addr);
+#else
 			inet_pton(addr.sin_family, mIP.c_str(), &addr.sin_addr);
+#endif
 		}
 		mHasSockAddr = true;
 	}
@@ -182,9 +201,13 @@ void SocketAddress::assureIpPort() const
 		if (mHasSockAddr)
 		{
 			char myIP[512];
-			inet_ntop(reinterpret_cast<sockaddr_storage&>(mSockAddr).ss_family, &(reinterpret_cast<sockaddr_in&>(mSockAddr).sin_addr), myIP, sizeof(myIP));
+#if defined(PLATFORM_PS3)
+			strcpy(myIP, inet_ntoa(reinterpret_cast<const sockaddr_in&>(mSockAddr).sin_addr));
+#else
+			inet_ntop(reinterpret_cast<const sockaddr_in&>(mSockAddr).sin_addr, myIP, sizeof(myIP));
+#endif
 			mIP = myIP;
-			mPort = ntohs(reinterpret_cast<sockaddr_in&>(mSockAddr).sin_port);
+			mPort = ntohs(reinterpret_cast<const sockaddr_in&>(mSockAddr).sin_port);
 		}
 		else
 		{
@@ -200,7 +223,7 @@ struct TCPSocket::Internal
 {
 	SOCKET mSocket = INVALID_SOCKET;
 	SocketAddress mRemoteAddress;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(PLATFORM_PS3)
 	bool mIsBlockingSocket = true;
 #endif
 };
@@ -229,11 +252,17 @@ void TCPSocket::close()
 	if (!isValid())
 		return;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	int status = ::shutdown(mInternal->mSocket, SD_BOTH);
 	if (status == 0)
 	{
 		status = ::closesocket(mInternal->mSocket);
+	}
+#elif defined(PLATFORM_PS3)
+	s32 status = netShutdown(mInternal->mSocket, SHUT_RDWR);
+	if (status == 0)
+	{
+		status = netClose(mInternal->mSocket);
 	}
 #else
 	int status = shutdown(mInternal->mSocket, SHUT_RDWR);
@@ -271,6 +300,28 @@ bool TCPSocket::setupServer(uint16 serverPort)
 		close();
 	}
 
+#if defined(PLATFORM_PS3)
+	mInternal->mSocket = netSocket(AF_INET, SOCK_STREAM, 0);
+	if (mInternal->mSocket < 0) {
+		close();
+		return false;
+	}
+
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(serverPort);
+	addr.sin_addr.s_addr = INADDR_ANY;
+
+	if (netBind(mInternal->mSocket, (sockaddr*)&addr, sizeof(addr)) < 0) {
+		close();
+		return false;
+	}
+
+	if (netListen(mInternal->mSocket, SOMAXCONN) < 0) {
+		close();
+		return false;
+	}
+#else
 	addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -335,12 +386,25 @@ bool TCPSocket::setupServer(uint16 serverPort)
 		u_long mode = 1;
 		ioctlsocket(mInternal->mSocket, FIONBIO, &mode);
 	#endif
-
+#endif
 	return true;
 }
 
 bool TCPSocket::acceptConnection(TCPSocket& outSocket)
 {
+#if defined(PLATFORM_PS3)
+	sockaddr senderAddr;
+	socklen_t senderAddrSize = sizeof(sockaddr);
+	outSocket.mInternal->mSocket = netAccept(mInternal->mSocket, &senderAddr, &senderAddrSize);
+	if (outSocket.mInternal->mSocket < 0) {
+		outSocket.mInternal->mSocket = INVALID_SOCKET;
+		return false;
+	}
+	memcpy(outSocket.mInternal->mRemoteAddress.accessSockAddr(), &senderAddr, senderAddrSize);
+	outSocket.mInternal->mRemoteAddress.onSockAddrSet();
+	return true;
+
+#else
 	fd_set socketSet;
 	FD_ZERO(&socketSet);
 	FD_SET(mInternal->mSocket, &socketSet);
@@ -390,6 +454,7 @@ bool TCPSocket::acceptConnection(TCPSocket& outSocket)
 
 	outSocket.mInternal->mRemoteAddress.onSockAddrSet();
 	return true;
+#endif
 }
 
 bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort)
@@ -403,6 +468,23 @@ bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort)
 		close();
 	}
 
+#if defined(PLATFORM_PS3)
+	mInternal->mSocket = netSocket(AF_INET, SOCK_STREAM, 0);
+	if (mInternal->mSocket < 0) {
+		return false;
+	}
+
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(serverPort);
+	inet_aton(serverAddress.c_str(), &addr.sin_addr);
+
+	if (netConnect(mInternal->mSocket, (sockaddr*)&addr, sizeof(addr)) < 0) {
+		close();
+		return false;
+	}
+	return true;
+#else
 	// Resolve the server address
 	addrinfo* addressInfos = nullptr;
 	{
@@ -438,6 +520,7 @@ bool TCPSocket::connectTo(const std::string& serverAddress, uint16 serverPort)
 
 	::freeaddrinfo(addressInfos);
 	return (mInternal->mSocket != INVALID_SOCKET);
+#endif
 }
 
 bool TCPSocket::sendData(const uint8* data, size_t length)
@@ -445,7 +528,11 @@ bool TCPSocket::sendData(const uint8* data, size_t length)
 	if (!isValid())
 		return false;
 
+#if defined(PLATFORM_PS3)
+	const int result = netSend(mInternal->mSocket, (const char*)data, (int)length, 0);
+#else
 	const int result = ::send(mInternal->mSocket, (const char*)data, (int)length, 0);
+#endif
 	return (result >= 0);
 }
 
@@ -462,7 +549,7 @@ bool TCPSocket::receiveBlocking(ReceiveResult& outReceiveResult)
 	if (!isValid())
 		return false;
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(PLATFORM_PS3)
 	if (!mInternal->mIsBlockingSocket)
 	{
 		// Set to blocking
@@ -481,7 +568,7 @@ bool TCPSocket::receiveNonBlocking(ReceiveResult& outReceiveResult)
 	if (!isValid())
 		return false;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	// Check if there's pending data at all
 	uint32 pendingDataSize = 0;
 	if (::ioctlsocket(mInternal->mSocket, FIONREAD, (u_long*)(&pendingDataSize)) == 0)
@@ -491,7 +578,8 @@ bool TCPSocket::receiveNonBlocking(ReceiveResult& outReceiveResult)
 			return receiveInternal(outReceiveResult);
 		}
 	}
-
+#elif defined(PLATFORM_PS3)
+	return receiveInternal(outReceiveResult);
 #else
 	if (mInternal->mIsBlockingSocket)
 	{
@@ -501,7 +589,6 @@ bool TCPSocket::receiveNonBlocking(ReceiveResult& outReceiveResult)
 		mInternal->mIsBlockingSocket = false;
 	}
 	receiveInternal(outReceiveResult);
-
 #endif
 
 	// Return true as there was no error
@@ -516,7 +603,11 @@ bool TCPSocket::receiveInternal(ReceiveResult& outReceiveResult)
 		const constexpr size_t CHUNK_SIZE = 0x1000;
 		outReceiveResult.mBuffer.resize(bytesRead + CHUNK_SIZE);
 
+#if defined(PLATFORM_PS3)
+		const int result = netRecv(mInternal->mSocket, (char*)&outReceiveResult.mBuffer[bytesRead], CHUNK_SIZE, 0);
+#else
 		const int result = ::recv(mInternal->mSocket, (char*)&outReceiveResult.mBuffer[bytesRead], CHUNK_SIZE, 0);
+#endif
 		if (result > 0)
 		{
 			bytesRead += result;
@@ -536,11 +627,14 @@ bool TCPSocket::receiveInternal(ReceiveResult& outReceiveResult)
 		}
 		else
 		{
-		#ifdef _WIN32
+		#if defined(_WIN32)
 			const int errorCode = WSAGetLastError();
 			if (errorCode == WSAECONNRESET)		// Ignore this error, see https://stackoverflow.com/questions/30749423/is-winsock-error-10054-wsaeconnreset-normal-with-udp-to-from-localhost
 				return true;
 			RMX_ERROR("recv failed with error: " << errorCode, );
+		#elif defined(PLATFORM_PS3)
+			if (net_errno == NET_EAGAIN) return true;
+			RMX_ERROR("recv failed with error: " << net_errno, );
 		#else
 			RMX_ERROR("recv failed with error: " << result, );
 		#endif
@@ -554,7 +648,7 @@ struct UDPSocket::Internal
 {
 	SOCKET mSocket = INVALID_SOCKET;
 	uint16 mLocalPort = 0;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(PLATFORM_PS3)
 	bool mIsBlockingSocket = true;
 #endif
 };
@@ -579,11 +673,17 @@ void UDPSocket::close()
 	if (!isValid())
 		return;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	int result = shutdown(mInternal->mSocket, SD_BOTH);
 	if (result == 0)
 	{
 		result = closesocket(mInternal->mSocket);
+	}
+#elif defined(PLATFORM_PS3)
+	s32 result = netShutdown(mInternal->mSocket, SHUT_RDWR);
+	if (result == 0)
+	{
+		result = netClose(mInternal->mSocket);
 	}
 #else
 	int result = shutdown(mInternal->mSocket, SHUT_RDWR);
@@ -608,6 +708,22 @@ bool UDPSocket::bindToPort(uint16 port)
 		close();
 	}
 
+#if defined(PLATFORM_PS3)
+	mInternal->mSocket = netSocket(AF_INET, SOCK_DGRAM, 0);
+	if (mInternal->mSocket < 0) {
+		return false;
+	}
+
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	addr.sin_addr.s_addr = INADDR_ANY;
+
+	if (netBind(mInternal->mSocket, (sockaddr*)&addr, sizeof(addr)) < 0) {
+		close();
+		return false;
+	}
+#else
 	addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -649,12 +765,18 @@ bool UDPSocket::bindToPort(uint16 port)
 	}
 
 	::freeaddrinfo(addressInfo);
+#endif
 	mInternal->mLocalPort = port;
 
 	// Setup socket options
 	int bufsize = MAX_DATAGRAM_SIZE * 8;	// This would be 256 KB, enough to hold multiple large datagrams
+#if defined(PLATFORM_PS3)
+	netSetSockOpt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize, sizeof(bufsize));
+	netSetSockOpt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize, sizeof(bufsize));
+#else
 	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize, sizeof(bufsize));
 	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize, sizeof(bufsize));
+#endif
 	return true;
 }
 
@@ -670,7 +792,11 @@ bool UDPSocket::bindToAnyPort()
 	}
 
 	// Create a socket
+#if defined(PLATFORM_PS3)
+	mInternal->mSocket = netSocket(AF_INET, SOCK_DGRAM, 0);
+#else
 	mInternal->mSocket = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+#endif
 	if (mInternal->mSocket < 0)
 	{
 		RMX_ERROR("socket failed with error: " << mInternal->mSocket, );
@@ -682,8 +808,13 @@ bool UDPSocket::bindToAnyPort()
 
 	// Setup socket options
 	int bufsize = 0x20000;
+#if defined(PLATFORM_PS3)
+	netSetSockOpt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize, sizeof(bufsize));
+	netSetSockOpt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize, sizeof(bufsize));
+#else
 	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_SNDBUF, (const char*)&bufsize, sizeof(bufsize));
 	::setsockopt(mInternal->mSocket, SOL_SOCKET, SO_RCVBUF, (const char*)&bufsize, sizeof(bufsize));
+#endif
 	return true;
 }
 
@@ -692,7 +823,11 @@ bool UDPSocket::sendData(const uint8* data, size_t length, const SocketAddress& 
 	if (!isValid())
 		return false;
 
+#if defined(PLATFORM_PS3)
+	const int result = netSendTo(mInternal->mSocket, (const char*)data, (int)length, 0, (sockaddr*)destinationAddress.getSockAddr(), (int)sizeof(sockaddr));
+#else
 	const int result = ::sendto(mInternal->mSocket, (const char*)data, (int)length, 0, (sockaddr*)destinationAddress.getSockAddr(), (int)sizeof(sockaddr));
+#endif
 	if (result >= 0)
 		return true;
 
@@ -719,7 +854,7 @@ bool UDPSocket::receiveBlocking(ReceiveResult& outReceiveResult)
 	if (!isValid())
 		return false;
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(PLATFORM_PS3)
 	if (!mInternal->mIsBlockingSocket)
 	{
 		// Set to blocking
@@ -738,7 +873,7 @@ bool UDPSocket::receiveNonBlocking(ReceiveResult& outReceiveResult)
 	if (!isValid())
 		return false;
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	// Check if there's pending data at all
 	uint32 pendingDataSize = 0;
 	if (::ioctlsocket(mInternal->mSocket, FIONREAD, (u_long*)(&pendingDataSize)) == 0)
@@ -748,7 +883,8 @@ bool UDPSocket::receiveNonBlocking(ReceiveResult& outReceiveResult)
 			return receiveInternal(outReceiveResult);
 		}
 	}
-
+#elif defined(PLATFORM_PS3)
+	return receiveInternal(outReceiveResult);
 #else
 	if (mInternal->mIsBlockingSocket)
 	{
@@ -758,7 +894,6 @@ bool UDPSocket::receiveNonBlocking(ReceiveResult& outReceiveResult)
 		mInternal->mIsBlockingSocket = false;
 	}
 	receiveInternal(outReceiveResult);
-
 #endif
 
 	// Return true as there was no error
@@ -774,16 +909,23 @@ bool UDPSocket::receiveInternal(ReceiveResult& outReceiveResult)
 		const constexpr size_t CHUNK_SIZE = MAX_DATAGRAM_SIZE;
 		outReceiveResult.mBuffer.resize(bytesRead + CHUNK_SIZE);
 
-		sockaddr_storage& senderAddr = *reinterpret_cast<sockaddr_storage*>(outReceiveResult.mSenderAddress.accessSockAddr());
+		sockaddr& senderAddr = *reinterpret_cast<sockaddr*>(outReceiveResult.mSenderAddress.accessSockAddr());
 		socklen_t senderAddrSize = sizeof(sockaddr);
+#if defined(PLATFORM_PS3)
+		const int result = netRecvFrom(mInternal->mSocket, (char*)&outReceiveResult.mBuffer[bytesRead], CHUNK_SIZE, 0, &senderAddr, &senderAddrSize);
+#else
 		const int result = ::recvfrom(mInternal->mSocket, (char*)&outReceiveResult.mBuffer[bytesRead], CHUNK_SIZE, 0, (sockaddr*)&senderAddr, &senderAddrSize);
+#endif
 		if (result < 0)
 		{
-		#ifdef _WIN32
+		#if defined(_WIN32)
 			const int errorCode = WSAGetLastError();
 			if (errorCode == WSAECONNRESET)		// Ignore this error, see https://stackoverflow.com/questions/30749423/is-winsock-error-10054-wsaeconnreset-normal-with-udp-to-from-localhost
 				return true;
 			RMX_ERROR("recv failed with error: " << errorCode, );
+		#elif defined(PLATFORM_PS3)
+			if (net_errno == NET_EAGAIN) return true;
+			RMX_ERROR("recv failed with error: " << net_errno, );
 		#else
 			// This is only an error for blocking sockets
 			if (mInternal->mIsBlockingSocket)

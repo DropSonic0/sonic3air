@@ -48,6 +48,9 @@
 
 	#include <dirent.h>
 	#include <sys/stat.h>
+#elif defined(PLATFORM_PS3)
+	#include <dirent.h>
+	#include <sys/stat.h>
 #endif
 
 

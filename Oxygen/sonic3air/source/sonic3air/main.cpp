@@ -82,8 +82,18 @@ extern "C"
 }
 #endif
 
+#include <stdio.h>
+
 int main(int argc, char** argv)
 {
+	freopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "w", stdout);
+	freopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "w", stderr);
+	setvbuf(stdout, NULL, _IONBF, 0);
+	printf("DEBUG: main() started. argc = %d\n", argc);
+	if (argc > 0) {
+		printf("DEBUG: argv[0] = %s\n", argv[0]);
+	}
+
 	EngineMain::earlySetup();
 
 #if !defined(PLATFORM_VITA)
@@ -123,7 +133,7 @@ int main(int argc, char** argv)
 
 	argc = 0;
 
-	PlatformFunctions::changeWorkingDirectory(L"ux0:/data/sonic3air");
+	PlatformFunctions::changeWorkingDirectory(L"/dev_hdd0/game/SNC300AIR/USRDIR");
 	ArgumentsReader arguments;
 #endif
 

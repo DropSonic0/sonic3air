@@ -11,8 +11,6 @@
 #include "oxygen/helper/HighResolutionTimer.h"
 #include "oxygen/helper/Logging.h"
 
-#include <thread>
-
 #ifdef PLATFORM_WINDOWS
 	#include <CleanWindowsInclude.h>
 	#include <shlobj.h>		// For "SHGetKnownFolderPath"
@@ -206,7 +204,7 @@ void PlatformFunctions::preciseDelay(double milliseconds)
 					{
 						HighResolutionTimer yieldTimer;
 						yieldTimer.start();
-						std::this_thread::yield();
+						SDL_Delay(0);
 						lastYieldTimeMs = yieldTimer.getSecondsSinceStart();
 					}
 				}
@@ -219,12 +217,12 @@ void PlatformFunctions::preciseDelay(double milliseconds)
 		if (sleepTimeLeft >= 1.0)
 		{
 			// Sleep the thread if above granularity
-			std::this_thread::sleep_for(std::chrono::milliseconds((int)sleepTimeLeft));
+			SDL_Delay((int)sleepTimeLeft);
 		}
 		else
 		{
 			// Yield the thread if below granularity
-			std::this_thread::yield();
+			SDL_Delay(0);
 		}
 	}
 }

@@ -8,6 +8,7 @@
 
 #include "oxygen/pch.h"
 #include "oxygen/download/Downloader.h"
+#include <SDL2/SDL.h>
 
 #if defined(PLATFORM_WINDOWS)
 	#define PLATFORM_SUPPORTS_DOWNLOADER
@@ -57,7 +58,7 @@ void Downloader::setupDownload(std::string_view url, std::wstring_view outputFil
 void Downloader::startDownload()
 {
 	mState = State::RUNNING;
-	mThread = new std::thread(&Downloader::performDownloadStatic, this);
+	mThread = SDL_CreateThread(threadEntry, "Downloader", this);
 }
 
 void Downloader::stopDownload()
@@ -66,8 +67,7 @@ void Downloader::stopDownload()
 	if (nullptr != mThread)
 	{
 		mThreadRunning = false;
-		mThread->join();
-		delete mThread;
+		SDL_WaitThread(mThread, NULL);
 		mThread = nullptr;
 	}
 
@@ -87,6 +87,12 @@ size_t Downloader::writeDataStatic(void* data, size_t size, size_t nmemb, Downlo
 void Downloader::performDownloadStatic(Downloader* downloader)
 {
 	downloader->performDownload();
+}
+
+int Downloader::threadEntry(void* data)
+{
+	performDownloadStatic((Downloader*)data);
+	return 0;
 }
 
 size_t Downloader::writeData(void* data, size_t size, size_t nmemb)
@@ -141,7 +147,7 @@ void Downloader::performDownload()
 	AndroidJavaInterface& javaInterface = AndroidJavaInterface::instance();
 	const uint64 downloadId = javaInterface.startFileDownload(mURL.c_str(), *WString(mOutputFilename).toUTF8());
 
-	// The download runs in its own thread, so we just have to wait here...
+	// The runs in its own thread, so we just have to wait here...
 	mThreadRunning = true;
 	while (true)
 	{
@@ -178,7 +184,7 @@ void Downloader::performDownload()
 			return;
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+		SDL_Delay(250);
 	}
 
 #endif

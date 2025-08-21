@@ -13,6 +13,24 @@
 
 // General includes
 #include <cmath>
+#ifdef __PS3__
+#include <sstream>
+#include <string>
+namespace std {
+	template<typename T>
+	T round(T value) {
+		return floor(value + 0.5);
+	}
+
+	template <typename T>
+	std::string to_string(T value)
+	{
+		std::ostringstream os;
+		os << value;
+		return os.str();
+	}
+}
+#endif
 #include <float.h>
 #ifdef __PS3__
 #include <sys/memory.h>
@@ -33,6 +51,7 @@
 #include <map>
 #include <unordered_map>
 #include <algorithm>
+#include <string_view>
 
 // Libraries
 #include "rmxbase/_jsoncpp/json/json.h"	// Uses its own namespace "Json"

@@ -10,8 +10,8 @@
 
 #include <rmxbase.h>
 #include <atomic>
-#include <thread>
 
+struct SDL_Thread;
 
 class Downloader
 {
@@ -41,13 +41,14 @@ public:
 private:
 	static size_t writeDataStatic(void* data, size_t size, size_t nmemb, Downloader* downloader);
 	static void performDownloadStatic(Downloader* downloader);
+	static int SDLCALL threadEntry(void* data);
 
 	size_t writeData(void* data, size_t size, size_t nmemb);
 	void performDownload();
 
 private:
 	std::string mURL;
-	std::thread* mThread = nullptr;
+	SDL_Thread* mThread = nullptr;
 	State mState = State::NONE;
 	std::wstring mOutputFilename;
 	FileHandle mOutputFile;

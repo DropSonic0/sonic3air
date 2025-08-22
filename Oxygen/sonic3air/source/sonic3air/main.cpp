@@ -82,6 +82,15 @@ extern "C"
 }
 #endif
 
+#if defined(PLATFORM_PS3)
+extern "C"
+{
+	// Set the heap size for the PS3. The PS3 has 256MB of main RAM.
+	// Let's try setting the heap to 192MB.
+	int _newlib_heap_size_user = 192 * 1024 * 1024;
+}
+#endif
+
 #include <stdio.h>
 
 static void LogToFile(const char* message) {

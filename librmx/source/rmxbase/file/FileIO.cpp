@@ -283,7 +283,7 @@ namespace rmx
 	bool FileIO::readFile(std::wstring_view filename, std::vector<uint8>& outData)
 	{
 		// Read from file system
-	#ifdef USE_UTF8_PATHS
+	#if defined(USE_UTF8_PATHS) || defined(PLATFORM_PS3)
 		std::ifstream stream(*WString(filename).toUTF8(), std::ios::binary);
 	#else
 		std::ifstream stream(filename.data(), std::ios::binary);
@@ -312,7 +312,7 @@ namespace rmx
 			createDirectory(filename.substr(0, slashPosition));
 		}
 
-	#ifdef USE_UTF8_PATHS
+	#if defined(USE_UTF8_PATHS) || defined(PLATFORM_PS3)
 		std::ofstream stream(*WString(filename).toUTF8(), std::ios::binary);
 	#else
 		std::ofstream stream(filename.data(), std::ios::binary);

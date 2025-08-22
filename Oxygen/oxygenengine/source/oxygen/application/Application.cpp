@@ -1,4 +1,4 @@
-/*
+ï»¿/*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
 *	Copyright (C) 2017-2024 by Eukaryot
 *
@@ -6,6 +6,8 @@
 *	or https://www.gnu.org/licenses/gpl-3.0.en.html
 */
 
+#include <new>
+#include <cstdio>
 #include "oxygen/pch.h"
 #include "oxygen/application/Application.h"
 #include "oxygen/application/Configuration.h"
@@ -56,8 +58,20 @@ Application::Application() :
 	mGameLoader = new GameLoader();
     LogToFile("DEBUG: Application() - after new GameLoader");
 
-	mSimulation = new Simulation();
-    LogToFile("DEBUG: Application() - after new Simulation");
+	try
+	{
+		LogToFile("DEBUG: Application() - before new Simulation");
+		mSimulation = new Simulation();
+		LogToFile("DEBUG: Application() - after new Simulation");
+	}
+	catch (const std::bad_alloc& e)
+	{
+		LogToFile("FATAL: std::bad_alloc caught when creating Simulation");
+	}
+	catch (...)
+	{
+		LogToFile("FATAL: Unknown exception caught when creating Simulation");
+	}
 
 	mSaveStateMenu = new SaveStateMenu();
     LogToFile("DEBUG: Application() - after new SaveStateMenu");
@@ -99,7 +113,7 @@ Application::~Application()
 
 void Application::initialize()
 {
-    printf("DEBUG: Application::initialize() called\n"); // <-- AÑADE ESTA LÍNEA
+    printf("DEBUG: Application::initialize() called\n"); // <-- AÃ‘ADE ESTA LÃNEA
     GuiBase::initialize();
 
 	if (nullptr == mGameView)

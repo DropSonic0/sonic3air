@@ -14,6 +14,7 @@
 class ResourcesCache : public SingleInstance<ResourcesCache>
 {
 public:
+	ResourcesCache();
 	struct RawData
 	{
 		std::vector<uint8> mContent;

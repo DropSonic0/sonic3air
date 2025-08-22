@@ -14,9 +14,6 @@ include $(PSL1GHT)/ppu_rules
 # BUILD is the directory where object files & intermediate files will be placed
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
-# PKGFILES is directories containing files for pkg
-# ICON0 the image for XMB
-# SFOXML for build PARAM.SFO
 #---------------------------------------------------------------------------------
 TARGET		:=	SNC3
 BUILD		:=	build
@@ -117,109 +114,115 @@ TITLE		:=	Sonic 3 A.I.R
 APPID		:=	SNC300AIR
 CONTENTID	:=	UP0001-$(APPID)_00-SNC3ANGELINSLAND
 
-CFLAGS		=	-mcpu=cell -Wall -D__PS3__ -DPLATFORM_PS3 $(MACHDEP) $(INCLUDE)
+CFLAGS		=	-g3 -MMD -MP -mcpu=cell -Wall -D__PS3__ -DPLATFORM_PS3 $(MACHDEP)
 CXXFLAGS	=	$(CFLAGS) -std=c++17 -Wno-psabi
 
 LDFLAGS		=	$(MACHDEP) -Wl,-Map,$(notdir $@).map
 
-#---------------------------------------------------------------------------------
-# any extra libraries we wish to link with the project
-#---------------------------------------------------------------------------------
 LIBS		+=	$(shell pkg-config --libs sdl2 ogg vorbis theora vorbisfile theoradec zlib minizip) -lnet -lsysutil -lsysmodule -lGL -lEGL -lrsx -lgcm_sys -lio -lrt -llv2
 
-#---------------------------------------------------------------------------------
-# list of directories containing libraries, this must be the top level containing
-# include and lib
-#---------------------------------------------------------------------------------
 LIBDIRS	:=	$(PORTLIBS)
-
-#---------------------------------------------------------------------------------
-# no real need to edit anything past this point unless you need to add additional
-# rules for different file extensions
-#---------------------------------------------------------------------------------
-ifneq ($(BUILD),$(notdir $(CURDIR)))
-#---------------------------------------------------------------------------------
-
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
-
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-
-export DEPSDIR	:=	$(CURDIR)/$(BUILD)
-
-export BUILDDIR	:=	$(CURDIR)/$(BUILD)
 
 #---------------------------------------------------------------------------------
 # automatically build a list of object files for our project
 #---------------------------------------------------------------------------------
-CFILES		:=	$(filter-out iowin32.c miniunz.c minizip.c, $(foreach dir,$(SOURCES),$(notdir $(subst PublicFunctions.c,,${wildcard $(dir)/*.c}))))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(subst xmltest.cpp,,${wildcard $(dir)/*.cpp})))
-sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
+CFILES_W_PATHS		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.c))
+CPPFILES_W_PATHS	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.cpp))
+sFILES_W_PATHS		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.s))
+SFILES_W_PATHS		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.S))
 
+EXCLUDE_C_FILES		:=	%/iowin32.c %/miniunz.c %/minizip.c %/PublicFunctions.c
+EXCLUDE_CPP_FILES	:=	%/xmltest.cpp
+
+CFILES			:=	$(filter-out $(EXCLUDE_C_FILES),$(CFILES_W_PATHS))
+CPPFILES		:=	$(filter-out $(EXCLUDE_CPP_FILES),$(CPPFILES_W_PATHS))
+sFILES			:=	$(sFILES_W_PATHS)
+SFILES			:=	$(SFILES_W_PATHS)
+
+OFILES			:=	$(addprefix $(BUILD)/,$(CFILES:.c=.o)) \
+					$(addprefix $(BUILD)/,$(CPPFILES:.cpp=.o)) \
+					$(addprefix $(BUILD)/,$(sFILES:.s=.o)) \
+					$(addprefix $(BUILD)/,$(SFILES:.S=.o))
+
+DEPENDS			:=	$(OFILES:.o=.d)
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
 #---------------------------------------------------------------------------------
 ifeq ($(strip $(CPPFILES)),)
-	export LD	:=	$(CC)
+	LD	:=	$(CC)
 else
-	export LD	:=	$(CXX)
+	LD	:=	$(CXX)
 endif
-
-export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
-					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
-					$(sFILES:.s=.o) $(SFILES:.S=.o)
 
 #---------------------------------------------------------------------------------
 # build a list of include paths
 #---------------------------------------------------------------------------------
-export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
-					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-					$(LIBPSL1GHT_INC) \
-					-I$(CURDIR)/$(BUILD)
+INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
+			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+			$(LIBPSL1GHT_INC) \
+			-I$(CURDIR)/$(BUILD)
 
 #---------------------------------------------------------------------------------
 # build a list of library paths
 #---------------------------------------------------------------------------------
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
-					$(LIBPSL1GHT_LIB)
+LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+				$(LIBPSL1GHT_LIB)
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
-.PHONY: $(BUILD) clean
+OUTPUT	:=	$(CURDIR)/$(TARGET)
+
+.PHONY: all clean pkg
+
+all: $(OUTPUT).self
+
+$(OUTPUT).self: $(BUILD)/$(TARGET).elf
+	@echo "CEX self ... $(notdir $@)"
+	@mkdir -p $(BUILD)
+	@$(STRIP) $< -o $(BUILD)/$(notdir $<)
+	@$(SPRX) $(BUILD)/$(notdir $<)
+	@$(SELF) $(BUILD)/$(notdir $<) $@
+	@$(FSELF) $(BUILD)/$(notdir $<) $(basename $@).fake.self
+
+$(BUILD)/$(TARGET).elf: $(OFILES)
+	@echo "Linking... $(notdir $@)"
+	@mkdir -p $(dir $@)
+	$(LD) $(LDFLAGS) $(LIBPATHS) -o $@ $(OFILES) $(LIBS)
+
+$(BUILD)/%.o: %.cpp
+	@echo "Compiling... $(notdir $<)"
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+
+$(BUILD)/%.o: %.c
+	@echo "Compiling... $(notdir $<)"
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(BUILD)/%.o: %.s
+	@echo "Assembling... $(notdir $<)"
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(BUILD)/%.o: %.S
+	@echo "Assembling... $(notdir $<)"
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 #---------------------------------------------------------------------------------
-$(BUILD):
-	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+pkg: $(OUTPUT).self
+	@echo "building pkg ... $(notdir $@)"
+	@mkdir -p $(BUILD)/pkg/USRDIR
+	@cp $(ICON0) $(BUILD)/pkg/ICON0.PNG
+	@$(SELF_NPDRM) $(BUILD)/$(basename $(notdir $<)).elf $(BUILD)/pkg/USRDIR/EBOOT.BIN $(CONTENTID) >> /dev/null
+	@$(SFO) --title "$(TITLE)" --appid "$(APPID)" -f $(SFOXML) $(BUILD)/pkg/PARAM.SFO
+	@if [ -n "$(PKGFILES)" -a -d "$(PKGFILES)" ]; then cp -rf $(PKGFILES)/* $(BUILD)/pkg/; fi
+	@$(PKG) --contentid $(CONTENTID) $(BUILD)/pkg/ $@ >> /dev/null
+	@cp $@ $(basename $@).gnpdrm.pkg
+	@$(PACKAGE_FINALIZE) $(basename $@).gnpdrm.pkg
 
 #---------------------------------------------------------------------------------
 clean:
-	@echo clean ...
-	@rm -fr $(BUILD) *.elf *.self *.pkg
-
-#---------------------------------------------------------------------------------
-pkg:	$(BUILD) $(OUTPUT).pkg
-
-#---------------------------------------------------------------------------------
-else
-
-DEPENDS	:=	$(OFILES:.o=.d)
-
-#---------------------------------------------------------------------------------
-# main targets
-#---------------------------------------------------------------------------------
-$(OUTPUT).self: $(OUTPUT).elf
-$(OUTPUT).elf:	$(OFILES)
-
-#---------------------------------------------------------------------------------
-# This rule links in binary data with the .bin extension
-#---------------------------------------------------------------------------------
-%.bin.o	:	%.bin
-#---------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	@$(bin2o)
+	@echo "clean ..."
+	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).self $(TARGET).fake.self $(TARGET).pkg
 
 -include $(DEPENDS)
-#---------------------------------------------------------------------------------
-endif
-#---------------------------------------------------------------------------------

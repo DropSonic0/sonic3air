@@ -21,6 +21,14 @@
 #include <lemon/program/Function.h>
 #include <lemon/runtime/Runtime.h>
 
+static void LogToFile(const char* message) {
+    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "a");
+    if (log_file) {
+        fputs(message, log_file);
+        fputs("\n", log_file);
+        fclose(log_file);
+    }
+}
 
 namespace
 {
@@ -270,6 +278,8 @@ CodeExec::CodeExec() :
 	mLemonScriptRuntime(*new LemonScriptRuntime(mLemonScriptProgram, mEmulatorInterface)),
 	mDebugTracking(*this, mEmulatorInterface, mLemonScriptRuntime)
 {
+	LogToFile("DEBUG: CodeExec() constructor - START");
+
 	mRuntimeEnvironment.mEmulatorInterface = &mEmulatorInterface;
 
 	mIsDeveloperMode = EngineMain::getDelegate().useDeveloperFeatures();
@@ -281,6 +291,8 @@ CodeExec::CodeExec() :
 		mMainCallFrameTracking.mCallStack.reserve(0x40);
 		mDebugTracking.setupForDevMode();
 	}
+
+	LogToFile("DEBUG: CodeExec() constructor - END");
 }
 
 CodeExec::~CodeExec()

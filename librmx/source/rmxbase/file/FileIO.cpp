@@ -51,6 +51,7 @@
 #elif defined(PLATFORM_PS3)
 	#include <dirent.h>
 	#include <sys/stat.h>
+	#include <unistd.h>
 #endif
 
 
@@ -230,8 +231,14 @@ namespace rmx
 		const std_filesystem::path fspath(path.data());
 		return std_filesystem::exists(fspath);
 	#else
-		RMX_ASSERT(false, "Not implemented: FileIO::exists");
-		return false;
+		#if defined(PLATFORM_PS3)
+			const std::string pathUTF8 = *WString(path).toUTF8();
+			struct stat buffer;
+			return (stat(pathUTF8.c_str(), &buffer) == 0);
+		#else
+			RMX_ASSERT(false, "Not implemented: FileIO::exists");
+			return false;
+		#endif
 	#endif
 	}
 
@@ -534,7 +541,15 @@ namespace rmx
 	#ifdef USE_STD_FILESYSTEM
 		return std_filesystem::current_path().wstring();
     #else
-		return L"";
+		#if defined(PLATFORM_PS3)
+			char buffer[1024];
+			if (getcwd(buffer, sizeof(buffer)) != NULL) {
+				return *String(buffer).toWString();
+			}
+			return L""; // Return empty on error
+		#else
+			return L"";
+		#endif
 	#endif
 	}
 
@@ -543,6 +558,11 @@ namespace rmx
 	#ifdef USE_STD_FILESYSTEM
 		const std_filesystem::path fspath(path.data());
 		std_filesystem::current_path(fspath);
+	#else
+		#if defined(PLATFORM_PS3)
+			const std::string pathUTF8 = *WString(path).toUTF8();
+			chdir(pathUTF8.c_str());
+		#endif
 	#endif
 	}
 

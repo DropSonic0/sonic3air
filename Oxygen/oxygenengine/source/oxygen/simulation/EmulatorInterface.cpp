@@ -12,6 +12,11 @@
 #include "oxygen/application/GameProfile.h"
 #include "oxygen/resources/ResourcesCache.h"
 
+uint8 RuntimeMemory::mRom[0x400000];
+uint8 RuntimeMemory::mRam[0x10000];
+uint8 RuntimeMemory::mVRam[0x10000];
+uint16 RuntimeMemory::mVSRam[0x40];
+uint8 RuntimeMemory::mSharedMemory[0x100000];
 
 namespace emulatorinterface
 {

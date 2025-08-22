@@ -35,6 +35,14 @@
 	#include "oxygen/platform/AndroidJavaInterface.h"
 #endif
 
+static void LogToFile(const char* message) {
+    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "a");
+    if (log_file) {
+        fputs(message, log_file);
+        fputs("\n", log_file);
+        fclose(log_file);
+    }
+}
 
 #if !defined(PLATFORM_MAC) && !defined(PLATFORM_ANDROID)	// Maybe other platforms can be excluded as well? Possibly only Windows and Linux need this
 	#define LOAD_APP_ICON_PNG
@@ -338,8 +346,13 @@ void EngineMain::run()
 	RMX_LOG_INFO("--- MAIN LOOP ---");
 	RMX_LOG_INFO("Starting main application loop");
 
+	LogToFile("DEBUG: Before Application constructor");
 	Application application;
+	LogToFile("DEBUG: After Application constructor, before System->run()");
+	
 	FTX::System->run(application);
+	
+	LogToFile("DEBUG: After System->run()");
 }
 
 void EngineMain::shutdown()
@@ -624,6 +637,7 @@ bool EngineMain::createWindow()
 
 	if (useOpenGL)
 	{
+#if !defined(PLATFORM_PS3)
 		// Set SDL OpenGL attributes
 		RMX_LOG_INFO("Setup of OpenGL attributes...");
 	#if !defined(RMX_USE_GLES2)
@@ -659,6 +673,7 @@ bool EngineMain::createWindow()
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
 		}
 	#endif
+#endif
 	}
 
 	// Create window

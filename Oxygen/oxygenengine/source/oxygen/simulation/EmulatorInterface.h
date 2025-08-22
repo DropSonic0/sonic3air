@@ -20,16 +20,16 @@ namespace emulatorinterface
 
 struct RuntimeMemory
 {
-	uint8 mRom[0x400000] = { 0 };			// Up to 4 MB for the ROM
-	uint8 mRam[0x10000] = { 0 };			// 64 KB RAM
-	uint8 mVRam[0x10000] = { 0 };			// 64 KB Video RAM
-	BitArray<0x800> mVRamChangeBits;		// Each bit in there represents 32 bytes of VRAM; a bit is set if the respective part of VRAM got written
-	uint16 mVSRam[0x40] = { 0 };			// Buffer for vertical scroll offsets
-	uint8 mSharedMemory[0x100000] = { 0 };	// 1 MB of additional shared memory between script and C++ (usage similar to RAM, but not used by original code, obviously)
-	uint64 mSharedMemoryUsage = 0;			// Each bit represents 16 KB of shared memory and tells us if anything non-zero is written there at all
-	uint32 mRegisters[16] = { 0 };			// Registers
-	bool mFlagZ = false;					// Zero flag
-	bool mFlagN = false;					// Negative flag
+	static uint8 mRom[0x400000];
+	static uint8 mRam[0x10000];
+	static uint8 mVRam[0x10000];
+	BitArray<0x800> mVRamChangeBits;
+	static uint16 mVSRam[0x40];
+	static uint8 mSharedMemory[0x100000];
+	uint64 mSharedMemoryUsage = 0;
+	uint32 mRegisters[16] = { 0 };
+	bool mFlagZ = false;
+	bool mFlagN = false;
 
 	void clear();
 	void applyRomInjections();

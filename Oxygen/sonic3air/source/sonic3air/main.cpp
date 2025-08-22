@@ -84,14 +84,29 @@ extern "C"
 
 #include <stdio.h>
 
+static void LogToFile(const char* message) {
+    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "a");
+    if (log_file) {
+        fputs(message, log_file);
+        fputs("\n", log_file);
+        fclose(log_file);
+    }
+}
+
 int main(int argc, char** argv)
 {
-	freopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "w", stdout);
-	freopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "w", stderr);
-	setvbuf(stdout, NULL, _IONBF, 0);
-	printf("DEBUG: main() started. argc = %d\n", argc);
+    // Limpiamos el log.txt anterior al iniciar
+    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "w");
+    if (log_file) {
+        fclose(log_file);
+    }
+
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), "DEBUG: main() started. argc = %d", argc);
+    LogToFile(buffer);
 	if (argc > 0) {
-		printf("DEBUG: argv[0] = %s\n", argv[0]);
+		snprintf(buffer, sizeof(buffer), "DEBUG: argv[0] = %s", argv[0]);
+		LogToFile(buffer);
 	}
 
 	EngineMain::earlySetup();

@@ -205,11 +205,18 @@ namespace rmx
 	}
 
 	void FTX_SystemManager::mainLoop()
-	{
-		startTick();
-		checkSDLEvents();
-		update();
-		render();
+{
+	startTick();
+
+	printf("DEBUG: mainLoop - before checkSDLEvents\n");
+	checkSDLEvents();
+	printf("DEBUG: mainLoop - after checkSDLEvents, before update\n");
+
+	update();
+	printf("DEBUG: mainLoop - after update, before render\n");
+
+	render();
+	printf("DEBUG: mainLoop - after render\n");
 
 #ifdef PLATFORM_WEB
 		if (!mRunning)

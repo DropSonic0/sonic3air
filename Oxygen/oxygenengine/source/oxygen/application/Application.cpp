@@ -34,30 +34,60 @@
 #include "oxygen/simulation/LogDisplay.h"
 #include "oxygen/simulation/Simulation.h"
 
+static void LogToFile(const char* message) {
+    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "a");
+    if (log_file) {
+        fputs(message, log_file);
+        fputs("\n", log_file);
+        fclose(log_file);
+    }
+}
 
 static const float MOUSE_HIDE_TIME = 1.0f;	// Seconds until mouse cursor gets hidden after last movement
 
 
 Application::Application() :
-	mGameLoader(new GameLoader()),
-	mSimulation(new Simulation()),
-	mSaveStateMenu(new SaveStateMenu())
+	mGameLoader(nullptr), // Initialize to null
+	mSimulation(nullptr), // Initialize to null
+	mSaveStateMenu(nullptr) // Initialize to null
 {
+    LogToFile("DEBUG: Application() - Start");
+
+	mGameLoader = new GameLoader();
+    LogToFile("DEBUG: Application() - after new GameLoader");
+
+	mSimulation = new Simulation();
+    LogToFile("DEBUG: Application() - after new Simulation");
+
+	mSaveStateMenu = new SaveStateMenu();
+    LogToFile("DEBUG: Application() - after new SaveStateMenu");
+
 	if (hasVirtualGamepad())
 	{
+        LogToFile("DEBUG: Application() - hasVirtualGamepad is true");
 		mTouchControlsOverlay = new TouchControlsOverlay();
+		LogToFile("DEBUG: Application() - after new TouchControlsOverlay");
 		InputManager::instance().enableTouchInput(true);
+		LogToFile("DEBUG: Application() - after enableTouchInput");
 	}
 
 	// Register profiling region IDs
 	Profiling::startup();
+	LogToFile("DEBUG: Application() - after Profiling::startup");
+
 	Profiling::registerRegion(ProfilingRegion::SIMULATION,			 "Simulation",	Color(1.0f, 1.0f, 0.0f));
+	LogToFile("DEBUG: Application() - after registerRegion SIMULATION");
 	Profiling::registerRegion(ProfilingRegion::SIMULATION_USER_CALL, "User Calls",	Color(0.7f, 0.7f, 0.0f));
+	LogToFile("DEBUG: Application() - after registerRegion USER_CALL");
 	Profiling::registerRegion(ProfilingRegion::AUDIO,				 "Audio",		Color::RED);
+	LogToFile("DEBUG: Application() - after registerRegion AUDIO");
 	Profiling::registerRegion(ProfilingRegion::RENDERING,			 "Rendering",	Color::BLUE);
+	LogToFile("DEBUG: Application() - after registerRegion RENDERING");
 	Profiling::registerRegion(ProfilingRegion::FRAMESYNC,			 "Frame Sync",	Color(0.3f, 0.3f, 0.3f));
+    LogToFile("DEBUG: Application() - after registerRegion FRAMESYNC");
 
 	mApplicationTimer.start();
+    LogToFile("DEBUG: Application() - End");
 }
 
 Application::~Application()
@@ -69,7 +99,8 @@ Application::~Application()
 
 void Application::initialize()
 {
-	GuiBase::initialize();
+    printf("DEBUG: Application::initialize() called\n"); // <-- AÑADE ESTA LÍNEA
+    GuiBase::initialize();
 
 	if (nullptr == mGameView)
 	{
@@ -399,6 +430,7 @@ void Application::update(float timeElapsed)
 {
 	if (mIsVeryFirstFrameForLogging)
 	{
+		printf("DEBUG: Application::update() called for the first time\n");
 		RMX_LOG_INFO("Start of first application update call");
 	}
 
@@ -498,7 +530,10 @@ void Application::update(float timeElapsed)
 
 void Application::render()
 {
-	Profiling::pushRegion(ProfilingRegion::RENDERING);
+    if (mIsVeryFirstFrameForLogging) {
+        printf("DEBUG: Application::render() called for the first time\n");
+    }
+    Profiling::pushRegion(ProfilingRegion::RENDERING);
 
 	if (mIsVeryFirstFrameForLogging)
 	{

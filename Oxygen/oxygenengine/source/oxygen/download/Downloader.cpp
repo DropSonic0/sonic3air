@@ -147,7 +147,7 @@ void Downloader::performDownload()
 	AndroidJavaInterface& javaInterface = AndroidJavaInterface::instance();
 	const uint64 downloadId = javaInterface.startFileDownload(mURL.c_str(), *WString(mOutputFilename).toUTF8());
 
-	// The runs in its own thread, so we just have to wait here...
+	// The download runs in its own thread, so we just have to wait here...
 	mThreadRunning = true;
 	while (true)
 	{

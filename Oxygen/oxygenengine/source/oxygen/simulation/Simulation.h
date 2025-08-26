@@ -30,7 +30,7 @@ public:
 	inline bool isRunning() const		  { return mIsRunning; }
 	inline void setRunning(bool running)  { mIsRunning = running; }
 
-	CodeExec& getCodeExec()				  { return *mCodeExec; }
+	CodeExec& getCodeExec()				  { return mCodeExec; }
 	ROMDataAnalyser* getROMDataAnalyser() { return mROMDataAnalyser; }
 	EmulatorInterface& getEmulatorInterface();
 
@@ -68,9 +68,9 @@ public:
 	uint32 saveGameRecording(WString* outFilename = nullptr);
 
 private:
-	CodeExec* mCodeExec;
-	GameRecorder* mGameRecorder;
-	InputRecorder* mInputRecorder;
+	CodeExec& mCodeExec;
+	GameRecorder& mGameRecorder;
+	InputRecorder& mInputRecorder;
 	ROMDataAnalyser* mROMDataAnalyser = nullptr;
 
 	bool	mIsRunning = false;

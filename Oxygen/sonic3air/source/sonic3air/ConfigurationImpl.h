@@ -46,7 +46,7 @@ public:
 	int mActiveSoundtrack = 1;		// 0 = emulated, 1 = remastered
 
 	// Input
-	#if !defined(PLATFORM_VITA)
+	#if !defined(PLATFORM_PS3)
 	int mGamepadVisualStyle = 0;
 	#else
 	int mGamepadVisualStyle = 1;

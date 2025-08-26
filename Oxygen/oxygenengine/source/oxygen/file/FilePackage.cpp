@@ -9,7 +9,6 @@
 #include "oxygen/pch.h"
 #include "oxygen/file/FilePackage.h"
 #include "oxygen/helper/Utils.h"
-#include <SDL2/SDL_endian.h>
 
 
 bool FilePackage::loadPackage(std::wstring_view packageFilename, std::map<std::wstring, PackedFile>& outPackedFiles, InputStream*& inputStream, bool forceLoadAll, bool showErrors)
@@ -57,10 +56,6 @@ bool FilePackage::loadPackage(std::wstring_view packageFilename, std::map<std::w
 		packedFile.mPath = key;
 		packedFile.mPositionInFile = serializer.read<uint32>();
 		packedFile.mSizeInFile = serializer.read<uint32>();
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		packedFile.mPositionInFile = SDL_Swap32(packedFile.mPositionInFile);
-		packedFile.mSizeInFile = SDL_Swap32(packedFile.mSizeInFile);
-#endif
 	}
 
 	if (forceLoadAll)
@@ -198,20 +193,12 @@ bool FilePackage::readPackageHeader(PackageHeader& outHeader, VectorBinarySerial
 		return false;
 
 	outHeader.mFormatVersion = serializer.read<uint32>();
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	outHeader.mFormatVersion = SDL_Swap32(outHeader.mFormatVersion);
-#endif
 	if (outHeader.mFormatVersion != PackageHeader::CURRENT_FORMAT_VERSION)
 		return false;
 
 	outHeader.mContentVersion = serializer.read<uint32>();
 	outHeader.mEntryHeaderSize = serializer.read<uint32>();
 	outHeader.mNumEntries = (size_t)serializer.read<uint32>();
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	outHeader.mContentVersion = SDL_Swap32(outHeader.mContentVersion);
-	outHeader.mEntryHeaderSize = SDL_Swap32(outHeader.mEntryHeaderSize);
-	outHeader.mNumEntries = SDL_Swap32(outHeader.mNumEntries);
-#endif
 
 	RMX_ASSERT(serializer.getReadPosition() == PackageHeader::HEADER_SIZE, "Got wrong package header size");
 	return true;

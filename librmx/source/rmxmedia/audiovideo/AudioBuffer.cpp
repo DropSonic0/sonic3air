@@ -39,7 +39,7 @@ void AudioBuffer::clear(int frequency, int channels)
 {
 	RMX_ASSERT(mMutexLockCounter > 0, "Audio buffer mutex should be locked in 'AudioBuffer::clear' method");
 	clearInternal();
-	mFrequency = clamp(frequency, 22050, 44100);
+	mFrequency = clamp(frequency, 22050, 48000);
 	mChannels = clamp(channels, 1, 2);
 	mCompleted = false;
 }

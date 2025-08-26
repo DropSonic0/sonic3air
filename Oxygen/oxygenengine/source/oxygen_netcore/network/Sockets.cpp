@@ -44,7 +44,7 @@
 
 #endif
 
-#if defined(__vita__) || defined(PLATFORM_PS3)
+#ifdef __PS3__
 	#define SOMAXCONN 4096
 #endif
 
@@ -79,7 +79,7 @@ void Sockets::shutdownSockets()
 
 bool Sockets::resolveToIP(const std::string& hostName, std::string& outIP)
 {
-#if defined(__EMSCRIPTEN__) || defined(__vita__) || defined(PLATFORM_PS3)
+#if defined(__EMSCRIPTEN__) || defined(__PS3__)
 	// Just return the input
 	outIP = hostName;
 	return true;

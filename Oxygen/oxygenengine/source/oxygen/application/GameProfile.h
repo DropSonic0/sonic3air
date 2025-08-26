@@ -14,7 +14,6 @@
 class GameProfile final : public SingleInstance<GameProfile>
 {
 public:
-	GameProfile();
 	struct RomCheck
 	{
 		uint32 mSize = 0;

@@ -11,10 +11,12 @@
 #include "oxygen/helper/HighResolutionTimer.h"
 #include "oxygen/helper/Logging.h"
 
+#include <thread>
+
 #ifdef PLATFORM_WINDOWS
 	#include <CleanWindowsInclude.h>
 	#include <shlobj.h>		// For "SHGetKnownFolderPath"
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_MAC) || defined(PLATFORM_ANDROID) || defined(PLATFORM_SWITCH) || defined(PLATFORM_IOS) || defined(PLATFORM_VITA)
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_MAC) || defined(PLATFORM_ANDROID) || defined(PLATFORM_SWITCH) || defined(PLATFORM_IOS) || defined(PLATFORM_PS3)
 	#include <stdlib.h>
 	#include <unistd.h>
 	#include <sys/types.h>
@@ -204,7 +206,7 @@ void PlatformFunctions::preciseDelay(double milliseconds)
 					{
 						HighResolutionTimer yieldTimer;
 						yieldTimer.start();
-						SDL_Delay(0);
+						std::this_thread::yield();
 						lastYieldTimeMs = yieldTimer.getSecondsSinceStart();
 					}
 				}

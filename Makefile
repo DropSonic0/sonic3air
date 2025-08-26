@@ -114,10 +114,10 @@ TITLE		:=	Sonic 3 A.I.R
 APPID		:=	SNC300AIR
 CONTENTID	:=	UP0001-$(APPID)_00-SNC3ANGELINSLAND
 
-CFLAGS		=	-g3 -MMD -MP -mcpu=cell -Wall -D__PS3__ -DPLATFORM_PS3 $(MACHDEP)
+CFLAGS		=	-g3 -MMD -MP -mcpu=cell -Wall -D__PS3__ -DPLATFORM_PS3 $(MACHDEP) -static
 CXXFLAGS	=	$(CFLAGS) -std=c++17 -Wno-psabi
 
-LDFLAGS		=	$(MACHDEP) -Wl,-Map,$(notdir $@).map
+LDFLAGS		=	$(MACHDEP) -Wl,-Map,$(notdir $@).map -static
 
 LIBS		+=	$(shell pkg-config --libs sdl2 ogg vorbis theora vorbisfile theoradec zlib minizip) -lnet -lsysutil -lsysmodule -lGL -lEGL -lrsx -lgcm_sys -lio -lrt -llv2
 

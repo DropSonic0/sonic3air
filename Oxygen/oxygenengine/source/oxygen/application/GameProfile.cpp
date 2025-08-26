@@ -11,16 +11,6 @@
 #include "oxygen/application/Configuration.h"
 #include "oxygen/helper/JsonHelper.h"
 
-#include <cstdio>
-
-static void LogToFile(const char* message) {
-    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "a");
-    if (log_file) {
-        fputs(message, log_file);
-        fputs("\n", log_file);
-        fclose(log_file);
-    }
-}
 
 bool GameProfile::loadOxygenProjectFromFile(const std::wstring& filename)
 {
@@ -235,9 +225,4 @@ bool GameProfile::loadOxygenProjectFromJson(const Json::Value& jsonRoot)
 	}
 
 	return true;
-}
-
-GameProfile::GameProfile()
-{
-    LogToFile("DEBUG: GameProfile() constructor");
 }

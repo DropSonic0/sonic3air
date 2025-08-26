@@ -113,9 +113,9 @@ public:
 
 	bool executeScriptFunction(const std::string& functionName, bool showErrorOnFail, FunctionExecData* execData = nullptr);
 
-	inline EmulatorInterface& getEmulatorInterface()	{ return *mEmulatorInterface; }
-	inline LemonScriptRuntime& getLemonScriptRuntime()	{ return *mLemonScriptRuntime; }
-	inline LemonScriptProgram& getLemonScriptProgram()	{ return *mLemonScriptProgram; }
+	inline EmulatorInterface& getEmulatorInterface()	{ return mEmulatorInterface; }
+	inline LemonScriptRuntime& getLemonScriptRuntime()	{ return mLemonScriptRuntime; }
+	inline LemonScriptProgram& getLemonScriptProgram()	{ return mLemonScriptProgram; }
 
 	void setupCallFrame(std::string_view functionName, std::string_view labelName = "");
 
@@ -147,9 +147,9 @@ private:
 
 private:
 	// Order of these three instances is important, as we got a clear dependency chain here
-	LemonScriptProgram*	mLemonScriptProgram;
-	EmulatorInterface*	mEmulatorInterface;
-	LemonScriptRuntime*	mLemonScriptRuntime;
+	LemonScriptProgram&	mLemonScriptProgram;	// Move instance to Simulation?
+	EmulatorInterface&	mEmulatorInterface;
+	LemonScriptRuntime&	mLemonScriptRuntime;
 	RuntimeEnvironment	mRuntimeEnvironment;
 	DebugTracking		mDebugTracking;
 

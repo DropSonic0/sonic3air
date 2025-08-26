@@ -40,7 +40,7 @@
 	#include <dirent.h>
 	#include <sys/stat.h>
 
-#elif defined(PLATFORM_ANDROID) || defined(PLATFORM_SWITCH) || defined(PLATFORM_IOS) || defined(PLATFORM_VITA)
+#elif defined(PLATFORM_ANDROID) || defined(PLATFORM_SWITCH) || defined(PLATFORM_IOS) || defined(PLATFORM_PSVITA)
 	// This requires Android NDK 22
 	#include <filesystem>
 	namespace std_filesystem = std::filesystem;
@@ -231,14 +231,8 @@ namespace rmx
 		const std_filesystem::path fspath(path.data());
 		return std_filesystem::exists(fspath);
 	#else
-		#if defined(PLATFORM_PS3)
-			const std::string pathUTF8 = *WString(path).toUTF8();
-			struct stat buffer;
-			return (stat(pathUTF8.c_str(), &buffer) == 0);
-		#else
-			RMX_ASSERT(false, "Not implemented: FileIO::exists");
-			return false;
-		#endif
+		RMX_ASSERT(false, "Not implemented: FileIO::exists");
+		return false;
 	#endif
 	}
 
@@ -283,7 +277,7 @@ namespace rmx
 	bool FileIO::readFile(std::wstring_view filename, std::vector<uint8>& outData)
 	{
 		// Read from file system
-	#if defined(USE_UTF8_PATHS) || defined(PLATFORM_PS3)
+	#ifdef USE_UTF8_PATHS
 		std::ifstream stream(*WString(filename).toUTF8(), std::ios::binary);
 	#else
 		std::ifstream stream(filename.data(), std::ios::binary);
@@ -312,7 +306,7 @@ namespace rmx
 			createDirectory(filename.substr(0, slashPosition));
 		}
 
-	#if defined(USE_UTF8_PATHS) || defined(PLATFORM_PS3)
+	#ifdef USE_UTF8_PATHS
 		std::ofstream stream(*WString(filename).toUTF8(), std::ios::binary);
 	#else
 		std::ofstream stream(filename.data(), std::ios::binary);
@@ -424,10 +418,10 @@ namespace rmx
 		if (path.empty())
 			return path;
 		
-		#ifdef PLATFORM_VITA
+		#ifdef PLATFORM_PS3
 			// Assume that the path is always normal when it begins with ux0:/data
 			const WString t(path);
-			if (t.startsWith(L"ux0:/data/") || t.startsWith(L"ux0:data/")) {
+			if (t.startsWith(L"/dev_hdd0/game/SNC300AIR/") || t.startsWith(L"/dev_hdd0/game/SNC300AIR/")) {
 				return path;
 			}
 		#endif
@@ -541,15 +535,7 @@ namespace rmx
 	#ifdef USE_STD_FILESYSTEM
 		return std_filesystem::current_path().wstring();
     #else
-		#if defined(PLATFORM_PS3)
-			char buffer[1024];
-			if (getcwd(buffer, sizeof(buffer)) != NULL) {
-				return *String(buffer).toWString();
-			}
-			return L""; // Return empty on error
-		#else
-			return L"";
-		#endif
+		return L"";
 	#endif
 	}
 
@@ -558,11 +544,6 @@ namespace rmx
 	#ifdef USE_STD_FILESYSTEM
 		const std_filesystem::path fspath(path.data());
 		std_filesystem::current_path(fspath);
-	#else
-		#if defined(PLATFORM_PS3)
-			const std::string pathUTF8 = *WString(path).toUTF8();
-			chdir(pathUTF8.c_str());
-		#endif
 	#endif
 	}
 

@@ -35,14 +35,6 @@
 	#include "oxygen/platform/AndroidJavaInterface.h"
 #endif
 
-static void LogToFile(const char* message) {
-    FILE* log_file = fopen("/dev_hdd0/game/SNC300AIR/USRDIR/log.txt", "a");
-    if (log_file) {
-        fputs(message, log_file);
-        fputs("\n", log_file);
-        fclose(log_file);
-    }
-}
 
 #if !defined(PLATFORM_MAC) && !defined(PLATFORM_ANDROID)	// Maybe other platforms can be excluded as well? Possibly only Windows and Linux need this
 	#define LOAD_APP_ICON_PNG
@@ -100,7 +92,7 @@ EngineMain::~EngineMain()
 
 void EngineMain::execute(int argc, char** argv)
 {
-	#if !defined(PLATFORM_VITA)
+	#if !defined(PLATFORM_PS3)
 	// Setup arguments
 	mArguments.reserve(argc);
 	for (int i = 0; i < argc; ++i)
@@ -238,7 +230,7 @@ bool EngineMain::startupEngine()
 		return false;
 
 	std::wstring argumentProjectPath;
-#if !defined(PLATFORM_ANDROID) && !defined(PLATFORM_VITA)
+#if !defined(PLATFORM_ANDROID) && !defined(PLATFORM_PS3)
 	// Parse arguments
 	for (size_t i = 1; i < mArguments.size(); ++i)
 	{
@@ -346,13 +338,8 @@ void EngineMain::run()
 	RMX_LOG_INFO("--- MAIN LOOP ---");
 	RMX_LOG_INFO("Starting main application loop");
 
-	LogToFile("DEBUG: Before Application constructor");
 	Application application;
-	LogToFile("DEBUG: After Application constructor, before System->run()");
-	
 	FTX::System->run(application);
-	
-	LogToFile("DEBUG: After System->run()");
 }
 
 void EngineMain::shutdown()
@@ -387,7 +374,7 @@ void EngineMain::initDirectories()
 	const EngineDelegateInterface::AppMetaData& appMetaData = mDelegate.getAppMetaData();
 	Configuration& config = Configuration::instance();
 
-#if !defined(PLATFORM_ANDROID) && !defined(PLATFORM_VITA)
+#if !defined(PLATFORM_ANDROID) && !defined(PLATFORM_PS3)
 	config.mExePath = *String(mArguments[0]).toWString();
 #endif
 
@@ -398,9 +385,9 @@ void EngineMain::initDirectories()
 		// TODO: Use internal storage path as a fallback?
 		WString storagePath = String(SDL_AndroidGetExternalStoragePath()).toWString();
 		config.mAppDataPath = *(storagePath + L'/');
-	#elif defined(PLATFORM_VITA)
+	#elif defined(PLATFORM_PS3)
 		// Vita
-		config.mAppDataPath = L"ux0:data/sonic3air/savedata/";
+		config.mAppDataPath = L"/dev_hdd0/game/SNC300AIR/USRDIR/savedata/";
 	#elif !defined(PLATFORM_IOS)
 		// Choose app data path
 		{
@@ -507,7 +494,7 @@ bool EngineMain::initConfigAndSettings(const std::wstring& argumentProjectPath)
 	if (config.mRenderMethod > Configuration::getHighestSupportedRenderMethod())
 		config.mRenderMethod = Configuration::getHighestSupportedRenderMethod();
 
-#if defined(PLATFORM_ANDROID) || defined(PLATFORM_IOS) || defined(PLATFORM_VITA)
+#if defined(PLATFORM_ANDROID) || defined(PLATFORM_IOS) || defined(PLATFORM_PS3)
 	// Use fullscreen, with no borders please
 	//  -> Note that this doesn't work for the web version, if running in mobile browsers - we rely on a window with fixed size (see config.json) there
 	config.mWindowMode = Configuration::WindowMode::EXCLUSIVE_FULLSCREEN;
@@ -637,7 +624,6 @@ bool EngineMain::createWindow()
 
 	if (useOpenGL)
 	{
-#if !defined(PLATFORM_PS3)
 		// Set SDL OpenGL attributes
 		RMX_LOG_INFO("Setup of OpenGL attributes...");
 	#if !defined(RMX_USE_GLES2)
@@ -673,7 +659,6 @@ bool EngineMain::createWindow()
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
 		}
 	#endif
-#endif
 	}
 
 	// Create window

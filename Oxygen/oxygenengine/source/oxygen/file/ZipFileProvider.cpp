@@ -17,7 +17,7 @@
 	#pragma comment(lib, "minizip.lib")
 #endif
 
-#if defined(PLATFORM_VITA) || defined(PLATFORM_PS3)
+#if defined(PLATFORM_PS3)
 	#include <zlib.h>
 	#include <mz_compat.h>
 #endif
@@ -407,7 +407,7 @@ const ZipFileProvider::ContainedFile* ZipFileProvider::readFile(const std::wstri
 		return containedFile;
 	}
 
-	#if defined(PLATFORM_VITA) || defined(PLATFORM_PS3)
+	#if defined(PLATFORM_PS3)
 		int result = unzLocateFile(mInternal.mZipFile, *WString(fileEntry.mPath + fileEntry.mFilename).toString(), (unzFileNameComparer)1);
 	#else
 		int result = unzLocateFile(mInternal.mZipFile, *WString(fileEntry.mPath + fileEntry.mFilename).toString(), 1);

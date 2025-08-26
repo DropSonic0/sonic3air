@@ -151,7 +151,7 @@ public:
 
 	// Video
 	WindowMode mWindowMode = WindowMode::WINDOWED;
-	#if defined(PLATFORM_VITA)
+	#if defined(PLATFORM_PS3)
 		Vec2i mWindowSize = Vec2i(960, 544);
 	#else
 		Vec2i mWindowSize = Vec2i(1200, 672);

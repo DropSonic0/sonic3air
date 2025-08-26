@@ -106,7 +106,7 @@ void OpenGLRenderer::initialize()
 		mRenderComponentSpriteShader[k].initialize(k == 1);
 	}
 	
-	#if !defined(PLATFORM_VITA)
+	#if !defined(PLATFORM_PS3)
 		mDebugDrawPlaneShader.initialize();
 	#endif
 

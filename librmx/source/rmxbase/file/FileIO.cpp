@@ -40,7 +40,7 @@
 	#include <dirent.h>
 	#include <sys/stat.h>
 
-#elif defined(PLATFORM_ANDROID) || defined(PLATFORM_SWITCH) || defined(PLATFORM_IOS) || defined(PLATFORM_VITA)
+#elif defined(PLATFORM_ANDROID) || defined(PLATFORM_SWITCH) || defined(PLATFORM_IOS) || defined(PLATFORM_PSVITA)
 	// This requires Android NDK 22
 	#include <filesystem>
 	namespace std_filesystem = std::filesystem;
@@ -92,9 +92,30 @@ namespace rmx
 			#endif
 			}
 		#else
-			// TODO
-			RMX_ASSERT(false, "Not implemented: createDir (in FileIO.cpp)");
-			return false;
+			// Fallback for platforms without std::filesystem
+			if (recursive)
+			{
+				WString subpath;
+				subpath.expand(path.length() + 1);
+				int pos = 0;
+				while (pos < path.length())
+				{
+					pos = path.findChars(L"/\\", pos + 1, +1);
+					if (pos == 0) continue; // Skip root slash
+					subpath.makeSubString(path, 0, pos);
+					if (!FileIO::exists(*subpath))
+					{
+						if (!createDir(subpath, false))
+							return false;
+					}
+				}
+				return true;
+			}
+			else
+			{
+				const std::string pathUTF8 = *WString(path).toUTF8();
+				return (mkdir(pathUTF8.c_str(), 0777) == 0);
+			}
 		#endif
 		}
 
@@ -231,14 +252,15 @@ namespace rmx
 		const std_filesystem::path fspath(path.data());
 		return std_filesystem::exists(fspath);
 	#else
-		#if defined(PLATFORM_PS3)
-			const std::string pathUTF8 = *WString(path).toUTF8();
-			struct stat buffer;
-			return (stat(pathUTF8.c_str(), &buffer) == 0);
-		#else
-			RMX_ASSERT(false, "Not implemented: FileIO::exists");
-			return false;
-		#endif
+		// Fallback for platforms without std::filesystem
+		// Use a C-style fopen check.
+		const std::string pathUTF8 = *WString(path).toUTF8();
+		FILE* f = fopen(pathUTF8.c_str(), "r");
+		if (f) {
+			fclose(f);
+			return true;
+		}
+		return false;
 	#endif
 	}
 
@@ -424,10 +446,10 @@ namespace rmx
 		if (path.empty())
 			return path;
 		
-		#ifdef PLATFORM_VITA
+		#ifdef PLATFORM_PS3
 			// Assume that the path is always normal when it begins with ux0:/data
 			const WString t(path);
-			if (t.startsWith(L"ux0:/data/") || t.startsWith(L"ux0:data/")) {
+			if (t.startsWith(L"/dev_hdd0/game/SNC300AIR/") || t.startsWith(L"/dev_hdd0/game/SNC300AIR/")) {
 				return path;
 			}
 		#endif
@@ -538,31 +560,27 @@ namespace rmx
 
 	std::wstring FileIO::getCurrentDirectory()
 	{
-	#ifdef USE_STD_FILESYSTEM
+	#if defined(USE_STD_FILESYSTEM)
 		return std_filesystem::current_path().wstring();
+	#elif defined(PLATFORM_PS3)
+		char cwd[1024];
+		if (getcwd(cwd, sizeof(cwd)) != NULL) {
+			return WString(cwd).toStdWString();
+		}
+		return L"";
     #else
-		#if defined(PLATFORM_PS3)
-			char buffer[1024];
-			if (getcwd(buffer, sizeof(buffer)) != NULL) {
-				return *String(buffer).toWString();
-			}
-			return L""; // Return empty on error
-		#else
-			return L"";
-		#endif
+		return L"";
 	#endif
 	}
 
 	void FileIO::setCurrentDirectory(std::wstring_view path)
 	{
-	#ifdef USE_STD_FILESYSTEM
+	#if defined(USE_STD_FILESYSTEM)
 		const std_filesystem::path fspath(path.data());
 		std_filesystem::current_path(fspath);
-	#else
-		#if defined(PLATFORM_PS3)
-			const std::string pathUTF8 = *WString(path).toUTF8();
-			chdir(pathUTF8.c_str());
-		#endif
+	#elif defined(PLATFORM_PS3)
+		const std::string pathUTF8 = *WString(path).toUTF8();
+		chdir(pathUTF8.c_str());
 	#endif
 	}
 

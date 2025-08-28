@@ -12,8 +12,48 @@
 	#include <psp2/kernel/clib.h>
 #endif
 
+// Endianness detection
+#if (defined(__powerpc__) || defined(__ppc__)) && (defined(__GNUC__) || defined(__xlC__))
+    #define RMX_BIG_ENDIAN 1
+#else
+    #define RMX_LITTLE_ENDIAN 1
+#endif
+
 namespace
 {
+	// Helper for byte swapping
+	#ifdef RMX_BIG_ENDIAN
+		uint16_t swap_uint16( uint16_t val ) 
+		{
+    		return (val << 8) | (val >> 8 );
+		}
+
+		int16_t swap_int16( int16_t val ) 
+		{
+    		return (val << 8) | ((val >> 8) & 0xFF);
+		}
+
+		uint32_t swap_uint32( uint32_t val )
+		{
+    		return __builtin_bswap32(val);
+		}
+
+		int32_t swap_int32( int32_t val )
+		{
+    		return __builtin_bswap32(val);
+		}
+
+		uint64_t swap_uint64( uint64_t val )
+		{
+    		return __builtin_bswap64(val);
+		}
+
+		int64_t swap_int64( int64_t val )
+		{
+    		return __builtin_bswap64(val);
+		}
+	#endif
+
 	template<typename T>
 	FORCE_INLINE bool serializePrimitiveDataType(T& value, bool reading, std::vector<uint8>& buffer, size_t& readPosition)
 	{
@@ -22,19 +62,14 @@ namespace
 			if (readPosition + sizeof(T) > buffer.size())
 				return false;
 			
-			value = rmx::readMemoryUnaligned<T>(&buffer[readPosition]);
+			memcpy(&value, &buffer[readPosition], sizeof(T));
 			readPosition += sizeof(T);
 		}
 		else
 		{
 			const size_t oldSize = buffer.size();
 			buffer.resize(oldSize + sizeof(T));
-			#if !defined(PLATFORM_VITA)
-				*(T*)&buffer[oldSize] = value;
-			#else
-				// Use memcpy to avoid issues with unaligned memory access
-				sceClibMemcpy(&buffer[oldSize], &value, sizeof(T));
-			#endif
+			memcpy(&buffer[oldSize], &value, sizeof(T));
 		}
 		return true;
 	}
@@ -47,12 +82,7 @@ namespace
 			if (readPosition >= buffer.size())
 				return false;
 				
-			#if !defined(PLATFORM_VITA)
-				value = *(bool*)&buffer[readPosition];
-			#else
-				// Use memcpy to avoid issues with unaligned memory access
-				sceClibMemcpy(&value, &buffer[readPosition], sizeof(bool));
-			#endif
+			value = buffer[readPosition] != 0;
 			++readPosition;
 		}
 		else
@@ -122,41 +152,67 @@ void VectorBinarySerializer::serialize(int8& value)
 void VectorBinarySerializer::serialize(uint16& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		value = swap_uint16(value);
+	#endif
 }
 
 void VectorBinarySerializer::serialize(int16& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		value = swap_int16(value);
+	#endif
 }
 
 void VectorBinarySerializer::serialize(uint32& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		value = swap_uint32(value);
+	#endif
 }
 
 void VectorBinarySerializer::serialize(int32& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		value = swap_int32(value);
+	#endif
 }
 
 void VectorBinarySerializer::serialize(uint64& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		value = swap_uint64(value);
+	#endif
 }
 
 void VectorBinarySerializer::serialize(int64& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		value = swap_int64(value);
+	#endif
 }
 
 void VectorBinarySerializer::serialize(float& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		uint32_t as_int = swap_uint32(*(uint32_t*)&value);
+		value = *(float*)&as_int;
+	#endif
 }
 
 void VectorBinarySerializer::serialize(double& value)
 {
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
+	#ifdef RMX_BIG_ENDIAN
+		uint64_t as_int = swap_uint64(*(uint64_t*)&value);
+		value = *(double*)&as_int;
+	#endif
 }
 
 void VectorBinarySerializer::serialize(std::string& value, size_t stringLengthLimit)

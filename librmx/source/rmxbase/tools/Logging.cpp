@@ -66,7 +66,7 @@ namespace rmx
 
 	void StdCoutLogger::log(LogLevel logLevel, const std::string& string)
 	{
-	#if !defined(PLATFORM_PS3)		
+	#if !defined(PLATFORM_VITA)		
 		// Write to std::cout
 		if (mAddTimestamp)
 		{

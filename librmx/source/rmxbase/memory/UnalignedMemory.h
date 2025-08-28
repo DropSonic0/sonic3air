@@ -39,7 +39,7 @@ namespace rmx
     }
 #endif
 
-#if defined(__arm__) && !defined(__PS3__)
+#if defined(__arm__) && !defined(__vita__)
 	template<> uint16 readMemoryUnaligned(const void* pointer);
 	template<> uint32 readMemoryUnaligned(const void* pointer);
 	template<> uint64 readMemoryUnaligned(const void* pointer);

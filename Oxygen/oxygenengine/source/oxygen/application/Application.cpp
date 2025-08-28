@@ -1,4 +1,4 @@
-/*
+﻿/*
 *	Part of the Oxygen Engine / Sonic 3 A.I.R. software distribution.
 *	Copyright (C) 2017-2024 by Eukaryot
 *

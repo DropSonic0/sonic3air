@@ -498,6 +498,9 @@ bool EngineMain::initConfigAndSettings(const std::wstring& argumentProjectPath)
 	// Use fullscreen, with no borders please
 	//  -> Note that this doesn't work for the web version, if running in mobile browsers - we rely on a window with fixed size (see config.json) there
 	config.mWindowMode = Configuration::WindowMode::EXCLUSIVE_FULLSCREEN;
+	#if defined(PLATFORM_PS3)
+		config.mRenderMethod = Configuration::RenderMethod::SOFTWARE;
+	#endif
 #endif
 
 	config.evaluateGameRecording();

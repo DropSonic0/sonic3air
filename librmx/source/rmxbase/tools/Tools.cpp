@@ -71,39 +71,26 @@ namespace rmx
 		const int r = 47;
 		uint64 h = (uint64)bytes * m;
 
-		const uint64* data64 = (const uint64_t*)data;
+		const uint64* data64 = (const uint64*)data;
 		const uint64* end = data64 + (bytes / 8);
 
-	#if defined(__arm__) || defined(__PS3__)
-		const bool isAligned64 = ((size_t)data & 7) == 0;
-		if (!isAligned64)
+		while (data64 < end)
 		{
 			uint64 k;
-			while (data64 != end)
-			{
-				// Do not access memory directly, but byte-wise to avoid "SIGBUS illegal alignment" issues (this happened on Android Release builds, but not in Debug for some reason)
-				//  -> This somewhat defeats the purpose of the whole optimization by using Murmur2...
-				k = rmx::readMemoryUnaligned<uint64>(data64);
-				++data64;
-				k *= m;
-				k ^= k >> r;
-				k *= m;
-				h ^= k;
-				h *= m;
-			}
-		}
-		else
-	#endif
-		{
-			while (data64 != end)
-			{
-				uint64 k = *data64++;
-				k *= m;
-				k ^= k >> r;
-				k *= m;
-				h ^= k;
-				h *= m;
-			}
+#if defined(PLATFORM_PS3)
+			// PS3 is big-endian, so we need to byte-swap to get the same hash as the little-endian reference
+			k = rmx::readMemoryUnalignedSwapped<uint64>(data64);
+#else
+			// Other platforms are assumed to be little-endian or the hash doesn't need to match
+			k = rmx::readMemoryUnaligned<uint64>(data64);
+#endif
+			data64++;
+
+			k *= m;
+			k ^= k >> r;
+			k *= m;
+			h ^= k;
+			h *= m;
 		}
 
 		const uint8* data8 = (const uint8*)data64;

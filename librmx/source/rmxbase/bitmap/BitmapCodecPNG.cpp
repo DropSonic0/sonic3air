@@ -33,7 +33,7 @@ namespace
 #define PNG_IEND 0x49454e44
 #define PNG_PLTE 0x504c5445
 
-const uint32 PNGSignature[2] = { 0x474e5089, 0x0a1a0a0d };
+const uint8 PNGSignature[8] = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
 
 // PNG header
 struct PNGHeader
@@ -76,6 +76,7 @@ bool BitmapCodecPNG::decode(Bitmap& bitmap, InputStream& stream, Bitmap::LoadRes
 	const uint8* end = mstream.getCursor() + mstream.getRemaining();
 	if (memcmp(mem, PNGSignature, 8) != 0)
 		RETURN(Bitmap::LoadResult::Error::INVALID_FILE);
+
 	mem += 8;
 
 	// Read header

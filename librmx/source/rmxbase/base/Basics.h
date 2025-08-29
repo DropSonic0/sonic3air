@@ -21,7 +21,9 @@
 // Conversion Little Endian <-> Big Endian
 FORCE_INLINE static uint16 swapBytes16(uint16 value)
 {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if (defined(__powerpc__) || defined(__ppc__)) && (defined(__GNUC__) || defined(__xlC__))
+	return value;
+#else
 #ifdef _MSC_VER
 	return _byteswap_ushort(value);
 #elif defined(__GNUC__) || defined(__clang__)
@@ -29,14 +31,14 @@ FORCE_INLINE static uint16 swapBytes16(uint16 value)
 #else
 	return (value << 8) | (value >> 8);
 #endif
-#else
-	return value;
 #endif
 }
 
 FORCE_INLINE static uint32 swapBytes32(uint32 value)
 {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if (defined(__powerpc__) || defined(__ppc__)) && (defined(__GNUC__) || defined(__xlC__))
+	return value;
+#else
 #ifdef _MSC_VER
 	return _byteswap_ulong(value);
 #elif defined(__GNUC__) || defined(__clang__)
@@ -44,14 +46,14 @@ FORCE_INLINE static uint32 swapBytes32(uint32 value)
 #else
 	return (value << 24) | ((value & 0x0000ff00) << 8) | ((value & 0x00ff0000) >> 8) | (value >> 24);
 #endif
-#else
-	return value;
 #endif
 }
 
 FORCE_INLINE static uint64 swapBytes64(uint64 value)
 {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if (defined(__powerpc__) || defined(__ppc__)) && (defined(__GNUC__) || defined(__xlC__))
+	return value;
+#else
 #ifdef _MSC_VER
 	return _byteswap_uint64(value);
 #elif defined(__GNUC__) || defined(__clang__)
@@ -61,8 +63,6 @@ FORCE_INLINE static uint64 swapBytes64(uint64 value)
 	value = ((value >> 16) & 0x0000ffff0000ffffULL) | ((value << 16) & 0xffff0000ffff0000ULL);
 	return ((value >> 32) & 0x00000000ffffffffULL) | ((value << 32) & 0xffffffff00000000ULL);
 #endif
-#else
-	return value;
 #endif
 }
 

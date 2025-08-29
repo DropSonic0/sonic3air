@@ -79,7 +79,8 @@ namespace rmx
 			uint64 k;
 #if defined(PLATFORM_PS3)
 			// PS3 is big-endian, so we need to byte-swap to get the same hash as the little-endian reference
-			k = rmx::readMemoryUnalignedSwapped<uint64>(data64);
+			uint64 temp = rmx::readMemoryUnaligned<uint64>(data64);
+			k = __builtin_bswap64(temp);
 #else
 			// Other platforms are assumed to be little-endian or the hash doesn't need to match
 			k = rmx::readMemoryUnaligned<uint64>(data64);

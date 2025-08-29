@@ -33,6 +33,19 @@ namespace
 		uint32 importantColors;
 	};
 	#pragma pack()
+
+	#ifdef PLATFORM_PS3
+	inline uint16_t endian_swap_u16(uint16_t val)
+	{
+		return (val << 8) | (val >> 8);
+	}
+
+	inline uint32_t endian_swap_u32(uint32_t val)
+	{
+		val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0x00FF00FF);
+		return (val << 16) | (val >> 16);
+	}
+	#endif
 }
 
 
@@ -166,6 +179,23 @@ bool PaletteBitmap::loadBMP(const std::vector<uint8>& bmpContent, Color* outPale
 	// Read header
 	BmpHeader header;
 	serializer.read(&header, sizeof(header));
+
+	#ifdef PLATFORM_PS3
+	header.fileSize = endian_swap_u32(header.fileSize);
+	header.headerSize = endian_swap_u32(header.headerSize);
+	header.dibHeaderSize = endian_swap_u32(header.dibHeaderSize);
+	header.width = endian_swap_u32(header.width);
+	header.height = endian_swap_u32(header.height);
+	header.numPlanes = endian_swap_u16(header.numPlanes);
+	header.bpp = endian_swap_u16(header.bpp);
+	header.compression = endian_swap_u32(header.compression);
+	header.dataSize = endian_swap_u32(header.dataSize);
+	header.resolutionX = endian_swap_u32(header.resolutionX);
+	header.resolutionY = endian_swap_u32(header.resolutionY);
+	header.numColors = endian_swap_u32(header.numColors);
+	header.importantColors = endian_swap_u32(header.importantColors);
+	#endif
+
 	if (memcmp(header.signature, "BM", 2) != 0)
 		return false;
 
@@ -195,6 +225,14 @@ bool PaletteBitmap::loadBMP(const std::vector<uint8>& bmpContent, Color* outPale
 	// Read palette
 	uint32 palette[256];
 	serializer.read(palette, pal_size * 4);
+
+	#ifdef PLATFORM_PS3
+	for (int i = 0; i < pal_size; ++i)
+	{
+		palette[i] = endian_swap_u32(palette[i]);
+	}
+	#endif
+
 	if (nullptr != outPalette)
 	{
 		for (int i = 0; i < pal_size; ++i)

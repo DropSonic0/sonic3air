@@ -35,14 +35,11 @@ public:
 	};
 
 public:
-	~FontCollection();
-
 	Font* getFontByKey(uint64 keyHash);
 	Font* createFontByKey(std::string_view key);
 
 	bool registerManagedFont(Font& font, std::string_view key);
 
-	void clear();
 	void reloadAll();
 	void collectFromMods();
 

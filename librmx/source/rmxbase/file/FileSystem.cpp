@@ -21,17 +21,14 @@
 	}
 #endif
 
+
 namespace rmx
 {
 
 	FileSystem::FileSystem()
 	{
 		// By default, add a real file provider with mounted at root
-		#if !defined(PLATFORM_PS3)
-			addMountPoint(mDefaultRealFileProvider, L"", L"", 0);
-		#else
-			addMountPoint(mDefaultRealFileProvider, L"/dev_hdd0/game/SNC300AIR/USRDIR/", L"/dev_hdd0/game/SNC300AIR/USRDIR/", 0);
-		#endif
+		addMountPoint(mDefaultRealFileProvider, L"/dev_hdd0/game/SNC300AIR/USRDIR/", L"/dev_hdd0/game/SNC300AIR/USRDIR/", 0);
 	}
 
 	FileSystem::~FileSystem()

@@ -33,7 +33,7 @@ namespace
 #define PNG_IEND 0x49454e44
 #define PNG_PLTE 0x504c5445
 
-const uint8 PNGSignature[8] = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+const uint32 PNGSignature[2] = { 0x89504e47, 0x0d0a1a0a };
 
 // PNG header
 struct PNGHeader
@@ -76,7 +76,6 @@ bool BitmapCodecPNG::decode(Bitmap& bitmap, InputStream& stream, Bitmap::LoadRes
 	const uint8* end = mstream.getCursor() + mstream.getRemaining();
 	if (memcmp(mem, PNGSignature, 8) != 0)
 		RETURN(Bitmap::LoadResult::Error::INVALID_FILE);
-
 	mem += 8;
 
 	// Read header
@@ -319,7 +318,7 @@ bool BitmapCodecPNG::decode(Bitmap& bitmap, InputStream& stream, Bitmap::LoadRes
 				// 24-bit RGB
 				case 2:
 					for (int i = 0; i < width; ++i)
-						dst[i] = 0xff000000 + (readUint32LE(&src[i*3]) & 0x00ffffff);
+						dst[i] = 0xff000000 + (*(uint32*)(&src[i*3]) & 0x00ffffff);
 					break;
 
 				// Palette image

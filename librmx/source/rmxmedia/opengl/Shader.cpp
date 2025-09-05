@@ -110,16 +110,7 @@ void Shader::setTexture(const char* name, GLuint handle, GLenum target)
 	int number = mTextureCount;
 	glActiveTexture(GL_TEXTURE0 + number);
 	glBindTexture(target, handle);
-	#if defined(PLATFORM_PS3)
-		// In cg shaders, "Texture" is a reserved name so we use "tex" instead
-		if(strcmp(name, "Texture") == 0) {
-			glUniform1i(getUniformLocation("tex"), number);
-		} else {
-			glUniform1i(getUniformLocation(name), number);
-		}
-	#else
-		glUniform1i(getUniformLocation(name), number);
-	#endif
+	glUniform1i(getUniformLocation(name), number);
 	++mTextureCount;
 }
 
@@ -572,7 +563,7 @@ void ShaderEffect::preprocessSource(String& source, Shader::ShaderType shaderTyp
 		}
 	}
 
-#if defined(RMX_USE_GLES2) && !defined(PLATFORM_PS3)
+#ifdef RMX_USE_GLES2
 	// GLSL ES 2.0 translation
 	String newSource;
 	for (int pos = 0; pos < source.length(); )

@@ -17,9 +17,6 @@
 #include "oxygen/drawing/DrawerTexture.h"
 #include "oxygen/drawing/software/BlitterHelper.h"
 
-#if defined(PLATFORM_VITA)
-	#include <psp2/kernel/clib.h>
-#endif
 
 namespace detail
 {
@@ -71,13 +68,7 @@ namespace detail
 			const PatternManager::CacheItem::Pattern& pattern = mPatternCache[patternIndex & 0x07ff].mFlipVariation[(patternIndex >> 11) & 3];
 			uint64* dst = (uint64*)&mContent[mPosition + x];
 			const uint64* srcPatternPixels = (uint64*)&pattern.mPixels[mPatternPixelOffset];
-			
-			#if !defined(PLATFORM_VITA)
-				*dst = *srcPatternPixels;
-			#else
-				// This fixes a crash
-				sceClibMemcpy(dst, srcPatternPixels, sizeof(*dst));
-			#endif
+			*dst = *srcPatternPixels;
 
 			const uint16 patternBits = (patternIndex & 0xe000);		// Includes priority bit and atex
 			if (mLastPatternBits != patternBits)

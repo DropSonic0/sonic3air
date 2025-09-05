@@ -53,8 +53,6 @@ namespace lemon
 		mScriptFunctionPool.clear();
 
 		// Variables
-		for (Variable* var : mGlobalVariables)
-			delete var;
 		mGlobalVariables.clear();
 
 		// Constants

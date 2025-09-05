@@ -407,11 +407,7 @@ const ZipFileProvider::ContainedFile* ZipFileProvider::readFile(const std::wstri
 		return containedFile;
 	}
 
-	#if defined(PLATFORM_PS3)
-		int result = unzLocateFile(mInternal.mZipFile, *WString(fileEntry.mPath + fileEntry.mFilename).toString(), (unzFileNameComparer)1);
-	#else
-		int result = unzLocateFile(mInternal.mZipFile, *WString(fileEntry.mPath + fileEntry.mFilename).toString(), 1);
-	#endif
+	int result = unzLocateFile(mInternal.mZipFile, *WString(fileEntry.mPath + fileEntry.mFilename).toString(), NULL);
 	if (result != UNZ_OK)
 		return nullptr;
 

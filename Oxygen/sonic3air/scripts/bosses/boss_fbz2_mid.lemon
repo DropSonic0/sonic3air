@@ -525,10 +525,10 @@ function void fn070220()
 	}
 
 	A2 = 0xffffb000
-	if (u8[A2 + 0x05] != base_state.HURT)
+	if (u8[A2 + 0x05] != 0x04)
 	{
 		A2 = 0xffffb04a
-		if (u8[A2 + 0x05] == base_state.HURT)
+		if (u8[A2 + 0x05] == 0x04)
 		{
 			objA0.flags2a |= 0x40
 		}

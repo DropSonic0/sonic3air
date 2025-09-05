@@ -6,7 +6,7 @@ pushd ..\..
 
 set destDir=..\_MASTER
 set outputDir=%destDir%\sonic3air_game
-call ../../../../framework/external/get_msbuild_path.bat
+set msbuildPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe"
 
 
 

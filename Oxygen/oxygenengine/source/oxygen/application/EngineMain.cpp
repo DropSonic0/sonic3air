@@ -92,14 +92,12 @@ EngineMain::~EngineMain()
 
 void EngineMain::execute(int argc, char** argv)
 {
-	#if !defined(PLATFORM_PS3)
 	// Setup arguments
 	mArguments.reserve(argc);
 	for (int i = 0; i < argc; ++i)
 	{
 		mArguments.emplace_back(argv[i]);
 	}
-	#endif
 
 	// Startup the Oxygen engine part that is independent from the application / project
 	if (startupEngine())
@@ -230,7 +228,7 @@ bool EngineMain::startupEngine()
 		return false;
 
 	std::wstring argumentProjectPath;
-#if !defined(PLATFORM_ANDROID) && !defined(PLATFORM_PS3)
+#ifndef PLATFORM_ANDROID
 	// Parse arguments
 	for (size_t i = 1; i < mArguments.size(); ++i)
 	{
@@ -374,7 +372,7 @@ void EngineMain::initDirectories()
 	const EngineDelegateInterface::AppMetaData& appMetaData = mDelegate.getAppMetaData();
 	Configuration& config = Configuration::instance();
 
-#if !defined(PLATFORM_ANDROID) && !defined(PLATFORM_PS3)
+#if !defined(PLATFORM_ANDROID)
 	config.mExePath = *String(mArguments[0]).toWString();
 #endif
 
@@ -386,7 +384,7 @@ void EngineMain::initDirectories()
 		WString storagePath = String(SDL_AndroidGetExternalStoragePath()).toWString();
 		config.mAppDataPath = *(storagePath + L'/');
 	#elif defined(PLATFORM_PS3)
-		// Vita
+		// PS3
 		config.mAppDataPath = L"/dev_hdd0/game/SNC300AIR/USRDIR/savedata/";
 	#elif !defined(PLATFORM_IOS)
 		// Choose app data path
@@ -429,6 +427,7 @@ void EngineMain::initDirectories()
 	}
 
 	config.mSaveStatesDirLocal = config.mAppDataPath + L"savestates/";
+	config.mSRamFilename = config.mAppDataPath + L"sram.bin";
 	config.mPersistentDataFilename = config.mAppDataPath + L"persistentdata.bin";
 }
 
@@ -494,13 +493,10 @@ bool EngineMain::initConfigAndSettings(const std::wstring& argumentProjectPath)
 	if (config.mRenderMethod > Configuration::getHighestSupportedRenderMethod())
 		config.mRenderMethod = Configuration::getHighestSupportedRenderMethod();
 
-#if defined(PLATFORM_ANDROID) || defined(PLATFORM_IOS) || defined(PLATFORM_PS3)
+#if defined(PLATFORM_ANDROID) || defined(PLATFORM_IOS)
 	// Use fullscreen, with no borders please
 	//  -> Note that this doesn't work for the web version, if running in mobile browsers - we rely on a window with fixed size (see config.json) there
 	config.mWindowMode = Configuration::WindowMode::EXCLUSIVE_FULLSCREEN;
-	#if defined(PLATFORM_PS3)
-		config.mRenderMethod = Configuration::RenderMethod::SOFTWARE;
-	#endif
 #endif
 
 	config.evaluateGameRecording();

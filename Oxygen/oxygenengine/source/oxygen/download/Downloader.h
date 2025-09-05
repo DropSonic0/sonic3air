@@ -10,6 +10,7 @@
 
 #include <rmxbase.h>
 #include <atomic>
+#include <thread>
 
 struct SDL_Thread;
 

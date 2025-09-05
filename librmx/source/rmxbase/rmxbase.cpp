@@ -17,10 +17,8 @@ namespace FTX
 }
 
 
-#include <stdio.h>
 void rmxbase::initialize()
 {
-	printf("DEBUG: rmxbase::initialize() called\n");
 	// Checks for data types with fixed sizes
 	assert(sizeof(int8) == 1);
 	assert(sizeof(uint8) == 1);

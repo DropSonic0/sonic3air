@@ -151,22 +151,6 @@ namespace
 
 
 
-void SpriteCache::ROMSpriteData::serialize(VectorBinarySerializer& serializer)
-{
-	serializer.serialize(mPatternsBaseAddress);
-	serializer.serialize(mTableAddress);
-	serializer.serialize(mMappingOffset);
-	serializer.serialize(mAnimationSprite);
-	serializer.serializeAs<uint8>(mEncoding);
-	serializer.serialize(mIndexOffset);
-}
-
-uint64 SpriteCache::ROMSpriteData::getKey() const
-{
-	return (((uint64)mPatternsBaseAddress) << 42) ^ (((uint64)mTableAddress) << 25) ^ (((uint64)mMappingOffset) << 8) ^ (uint64)mAnimationSprite;
-}
-
-
 SpriteCache::SpriteCache()
 {
 }
@@ -271,29 +255,28 @@ SpriteCache::CacheItem& SpriteCache::getOrCreateComponentSprite(uint64 key)
 	return *item;
 }
 
-SpriteCache::CacheItem& SpriteCache::setupSpriteFromROM(EmulatorInterface& emulatorInterface, const ROMSpriteData& romSpriteData, uint8 atex)
+uint64 SpriteCache::setupSpriteFromROM(EmulatorInterface& emulatorInterface, uint32 patternsBaseAddress, uint32 tableAddress, uint32 mappingOffset, uint8 animationSprite, uint8 atex, ROMSpriteEncoding encoding, int16 indexOffset)
 {
-	const uint64 key = romSpriteData.getKey();
+	const uint64 key = (((uint64)patternsBaseAddress) << 42) ^ (((uint64)tableAddress) << 25) ^ (((uint64)mappingOffset) << 8) ^ (uint64)animationSprite;
+
 	CacheItem* item = mapFind(mCachedSprites, key);
 	if (nullptr == item)
 	{
 		item = &getOrCreatePaletteSprite(key);
-		item->mSourceInfo.mType = SourceInfo::Type::ROM_DATA;
-		item->mSourceInfo.mROMSpriteData = romSpriteData;
-
 		PaletteSprite& paletteSprite = *static_cast<PaletteSprite*>(item->mSprite);
-		createPaletteSpriteFromROM(emulatorInterface, paletteSprite, romSpriteData.mPatternsBaseAddress, romSpriteData.mTableAddress, romSpriteData.mMappingOffset, romSpriteData.mAnimationSprite, romSpriteData.mEncoding, romSpriteData.mIndexOffset);
+		createPaletteSpriteFromROM(emulatorInterface, paletteSprite, patternsBaseAddress, tableAddress, mappingOffset, animationSprite, encoding, indexOffset);
 
 	#ifdef CREATE_SPRITEDUMP
-		if (romSpriteData.mAnimationSprite != 0)	// TODO: Do this only for characters
+		if (animationSprite != 0)	// TODO: Do this only for characters
 		{
-			String categoryKey(0, "%06x_%06x_%06x", romSpriteData.mPatternsBaseAddress, romSpriteData.mTableAddress, romSpriteData.mMappingOffset);
-			getSpriteDump().addSpriteWithTranslation(paletteSprite, *categoryKey, romSpriteData.mAnimationSprite, atex);
+			String categoryKey(0, "%06x_%06x_%06x", patternsBaseAddress, tableAddress, mappingOffset);
+			getSpriteDump().addSpriteWithTranslation(paletteSprite, *categoryKey, animationSprite, atex);
 			item.mGotDumped = true;
 		}
 	#endif
 	}
-	return *item;
+
+	return key;
 }
 
 void SpriteCache::clearRedirect(uint64 sourceKey)
@@ -450,9 +433,6 @@ void SpriteCache::loadSpriteDefinitions(const std::wstring& path)
 				}
 
 				CacheItem& item = createCacheItem(key);
-			#ifdef DEBUG
-				item.mSourceInfo.mSourceIdentifier = *identifier;
-			#endif
 				const std::wstring fullpath = fileEntry.mPath + filename;
 
 				// Palette or RGBA?

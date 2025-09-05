@@ -136,11 +136,7 @@ namespace
 				outAutoDetect = (renderMethodString == "auto");
 				if (outAutoDetect)
 				{
-					#if !defined(PLATFORM_PS3)
-						outRenderMethod = Configuration::RenderMethod::OPENGL_FULL;
-					#else
-						outRenderMethod = Configuration::RenderMethod::OPENGL_SOFT;
-					#endif
+					outRenderMethod = Configuration::RenderMethod::OPENGL_FULL;
 				}
 			}
 		}
@@ -236,7 +232,7 @@ Configuration* Configuration::mSingleInstance = nullptr;
 
 Configuration::RenderMethod Configuration::getHighestSupportedRenderMethod()
 {
-#if defined(PLATFORM_WEB) || (defined(PLATFORM_MAC) && defined(__arm64__)) || defined(PLATFORM_PS3)
+#if defined(PLATFORM_WEB) || (defined(PLATFORM_MAC) && defined(__arm64__))
 	return RenderMethod::OPENGL_SOFT;
 #else
 	// Default is OpenGL Hardware render method (as it's the highest one), but this can be lowered as needed, e.g. for individual platforms or depending on the execution environment

@@ -13,8 +13,6 @@
 	#include <CleanWindowsInclude.h>
 #elif defined(PLATFORM_ANDROID)
 	#include <android/log.h>
-#elif defined(PLATFORM_VITA)
-	#include <psp2/kernel/clib.h>
 #endif
 
 #include <chrono>
@@ -66,7 +64,6 @@ namespace rmx
 
 	void StdCoutLogger::log(LogLevel logLevel, const std::string& string)
 	{
-	#if !defined(PLATFORM_VITA)		
 		// Write to std::cout
 		if (mAddTimestamp)
 		{
@@ -74,7 +71,6 @@ namespace rmx
 		}
 		std::cout << string << "\r\n";
 		std::cout << std::flush;
-	#endif
 
 		// Write to debug output, depending on platform
 	#if defined(PLATFORM_WINDOWS)
@@ -85,10 +81,6 @@ namespace rmx
 	#elif defined(PLATFORM_ANDROID)
 		{
 			__android_log_print(ANDROID_LOG_INFO, "rmx", "%s", string.c_str());
-		}
-	#elif defined(PLATFORM_VITA)
-		{
-			sceClibPrintf("[rmx] %s\n", string.c_str());
 		}
 	#endif
 	}

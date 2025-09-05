@@ -221,6 +221,17 @@ namespace
 		}
 	}
 
+	uint32 SRAM_load(uint32 address, uint16 offset, uint16 bytes)
+	{
+		return (uint32)getEmulatorInterface().loadSRAM(address, (size_t)offset, (size_t)bytes);
+	}
+
+	void SRAM_save(uint32 address, uint16 offset, uint16 bytes)
+	{
+		getEmulatorInterface().saveSRAM(address, (size_t)offset, (size_t)bytes);
+	}
+
+
 	bool System_callFunctionByName(lemon::StringRef functionName)
 	{
 		if (!functionName.isValid())
@@ -694,8 +705,19 @@ namespace
 
 			if (filename.isValid())
 			{
+				std::wstring outputFilename = String(filename.getString()).toStdWString();
+				if (outputFilename.find('/') != std::wstring::npos || outputFilename.find('\\') != std::wstring::npos)
+				{
+					RMX_ERROR("The file name passed to debugDumpToFile was '" << filename.getString() << "', which contains a file path. This is not allowed, please use a file name only!", );
+					return;
+				}
+
+				outputFilename = Configuration::instance().mAppDataPath + L"output/" + outputFilename;
+
 				const uint8* src = emulatorInterface.getMemoryPointer(startAddress, false, bytes);
-				FTX::FileSystem->saveFile(filename.getString(), src, (size_t)bytes);
+				FTX::FileSystem->saveFile(outputFilename, src, (size_t)bytes);
+
+				LogDisplay::instance().setLogDisplay("Dumped " + std::to_string(bytes) + " bytes of data into file: " + WString(outputFilename).toStdString(), 10.0f);
 			}
 		}
 	}
@@ -919,6 +941,18 @@ void LemonScriptBindings::registerBindings(lemon::Module& module)
 		module.addNativeFunction("System.savePersistentData", lemon::wrap(&System_savePersistentData), defaultFlags)
 			.setParameterInfo(0, "sourceAddress")
 			.setParameterInfo(1, "key")
+			.setParameterInfo(2, "bytes");
+
+
+		// SRAM
+		module.addNativeFunction("SRAM.load", lemon::wrap(&SRAM_load), defaultFlags)
+			.setParameterInfo(0, "address")
+			.setParameterInfo(1, "offset")
+			.setParameterInfo(2, "bytes");
+
+		module.addNativeFunction("SRAM.save", lemon::wrap(&SRAM_save), defaultFlags)
+			.setParameterInfo(0, "address")
+			.setParameterInfo(1, "offset")
 			.setParameterInfo(2, "bytes");
 
 

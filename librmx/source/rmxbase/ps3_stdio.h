@@ -1,4 +1,4 @@
-#if defined(PLATFORM_PS3)
+#if defined(__PS3__)
 #include <stdio.h>
 #include <stdarg.h>
 

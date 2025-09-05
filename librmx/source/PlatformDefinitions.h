@@ -17,7 +17,6 @@
 //  - PLATFORM_IOS		-> iOS
 //  - PLATFORM_WEB		-> Web version (via emscripten)
 //  - PLATFORM_SWITCH	-> Nintendo Switch (homebrew)
-//  - PLATFORM_VITA	-> Playstation Vita (homebrew)
 //  - PLATFORM_PS3		-> Playstation PS3 (homebrew)
 
 
@@ -53,10 +52,6 @@
 	#define PLATFORM_SWITCH
 	#define USE_UTF8_PATHS
 
-#elif __vita__
-	#define PLATFORM_VITA
-	#define USE_UTF8_PATHS
-	
 #elif __PS3__
 	#define PLATFORM_PS3
 	#define USE_UTF8_PATHS

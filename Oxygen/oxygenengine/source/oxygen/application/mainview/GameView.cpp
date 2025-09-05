@@ -375,6 +375,11 @@ void GameView::keyboard(const rmx::KeyboardEvent& ev)
 							setGameSpeed(FTX::keyState(SDLK_LCTRL) ? 0.01f : 0.05f);
 							break;
 
+						case SDLK_KP_PERIOD:
+							// Supporting both Shift and Ctrl, as the Shift + Peroid combination does not seem to work for all keyboards
+							mSimulation.setNextSingleStep(true, FTX::keyState(SDLK_LSHIFT) || FTX::keyState(SDLK_LCTRL));
+							break;
+
 						case SDLK_F7:
 						{
 							mSimulation.reloadLastState();
@@ -417,10 +422,7 @@ void GameView::keyboard(const rmx::KeyboardEvent& ev)
 					case SDLK_KP_PERIOD:
 					{
 						// Supporting both Shift and Ctrl, as the Shift + Peroid combination does not seem to work for all keyboards
-						const bool continueToDebugEvent = FTX::keyState(SDLK_LSHIFT) || FTX::keyState(SDLK_LCTRL);
-						mSimulation.setNextSingleStep(true, continueToDebugEvent);
-						if (!continueToDebugEvent)
-							setLogDisplay(String(0, "Single step | Frame: %d", mSimulation.getFrameNumber() + 1));
+						mSimulation.setNextSingleStep(true, FTX::keyState(SDLK_LSHIFT) || FTX::keyState(SDLK_LCTRL));
 						break;
 					}
 				}
@@ -481,7 +483,7 @@ void GameView::update(float timeElapsed)
 		}
 	}
 
-	if (EngineMain::getDelegate().useDeveloperFeatures() && FTX::keyState(SDLK_KP_9) && mSimulation.getFrameNumber() > 0)
+	if (FTX::keyState(SDLK_KP_9) && mSimulation.getFrameNumber() > 0)
 	{
 		int rewindSteps = 0;
 		if (mRewindCounter == 0)
@@ -491,8 +493,8 @@ void GameView::update(float timeElapsed)
 		}
 		else
 		{
-			mRewindTimer += (SDL_GetModState() & KMOD_SHIFT) ? (timeElapsed * 3.0f) : timeElapsed;
-			const float speed = (mRewindCounter == 1) ? 5 : (float)std::min(10 + mRewindCounter / 3, 120);
+			mRewindTimer += timeElapsed;
+			const float speed = (mRewindCounter == 1) ? 5 : (float)std::min(10 + mRewindCounter / 2, 180);
 			const float delay = 1.0f / speed;
 			if (mRewindTimer >= delay)
 			{
@@ -503,7 +505,7 @@ void GameView::update(float timeElapsed)
 
 		if (rewindSteps > 0)
 		{
-			setLogDisplay(String(0, "  Rewinding | Frame: %d", mSimulation.getFrameNumber() - rewindSteps));
+			setLogDisplay(String(0, "Rewinding (current frame: %d)", mSimulation.getFrameNumber()));
 			mSimulation.setRewind(rewindSteps);
 			++mRewindCounter;
 		}

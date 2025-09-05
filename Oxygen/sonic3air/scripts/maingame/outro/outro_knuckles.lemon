@@ -320,8 +320,10 @@ function void fn05ebc6()
 function void fn05ebe4()
 {
 	MoveWithParent()
-	Child.DrawSprite()
+	fn084920()
 }
+
+
 
 
 //# address-hook(0x05ebf0) end(0x05ebfa)

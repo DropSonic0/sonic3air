@@ -200,7 +200,7 @@ function void fn0916cc()
 	MoveAndFlipWithParent()
 	D1.u16 = objA1.velocity.y
 	objA0.animation.sprite = (D1.s16 < 0) ? 6 : (D1.u16 >= 0x20) ? 4 : 5
-	Child.DrawSprite()
+	fn084920()
 }
 
 
@@ -230,7 +230,7 @@ function void fn091712()
 		// "spawnChildObjectsInDir(0x0919de)" replaced by:
 		spawnChildObjectInDir(0x091756, 0x00, 11, -4)		// Laser gun shot
 	}
-	Child.DrawSprite()
+	fn084920()
 }
 
 
@@ -244,7 +244,7 @@ function void fn09173a()
 		A1 = 0xffff0000 + u16[A0 + 0x46]
 		u8[A1 + 0x38] &= ~0x02
 	}
-	Child.DrawSprite()
+	fn084920()
 }
 
 
@@ -272,7 +272,7 @@ function void fn09176c()
 		objA0.velocity.x = (objA0.render_flags & render_flag.FLIP_X) ? 0x800 : -0x800
 		playSound(0x5e)
 	}
-	Child.DrawSprite_DynObj()
+	fn084934()
 }
 
 

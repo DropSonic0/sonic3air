@@ -21,8 +21,7 @@ namespace
 	//  - 2 and lower: See serialization code for changes
 	//  - 3: Using shared memory access flags
 	//  - 4: Added more rendering data (scroll offsets, sprites, etc.)
-	//  - 5: Added data for ROM based sprites
-	static const constexpr uint8 OXYGEN_SAVESTATE_FORMATVERSION = 5;
+	static const constexpr uint8 STANDALONE_SAVESTATE_FORMATVERSION = 4;
 }
 
 
@@ -66,7 +65,7 @@ bool SaveStateSerializer::saveState(std::vector<uint8>& output)
 {
 	// Save state
 	VectorBinarySerializer serializer(false, output);
-	StateType stateType = StateType::OXYGEN;	// This is actually ignored
+	StateType stateType = StateType::STANDALONE;	// This is actually ignored
 	return serializeState(serializer, stateType);
 }
 
@@ -95,13 +94,13 @@ bool SaveStateSerializer::serializeState(VectorBinarySerializer& serializer, Sta
 			stateType = StateType::GENSX;
 			readGensxState(serializer);
 		}
-		else if (memcmp(signature, "AIR Standalone", 15) == 0)	// Deprecated since end of 2019
+		else if (memcmp(signature, "AIR Standalone", 15) == 0)
 		{
-			stateType = StateType::OXYGEN;
+			stateType = StateType::STANDALONE;
 		}
 		else if (memcmp(signature, "Oxygen_State__", 15) == 0)
 		{
-			stateType = StateType::OXYGEN;
+			stateType = StateType::STANDALONE;
 		}
 		else
 		{
@@ -110,15 +109,15 @@ bool SaveStateSerializer::serializeState(VectorBinarySerializer& serializer, Sta
 	}
 	else
 	{
-		stateType = StateType::OXYGEN;
+		stateType = StateType::STANDALONE;
 
 		memcpy(signature, "Oxygen_State__", 15);
-		signature[15] = OXYGEN_SAVESTATE_FORMATVERSION;
+		signature[15] = STANDALONE_SAVESTATE_FORMATVERSION;
 
 		serializer.serialize(signature, 16);
 	}
 
-	if (stateType == StateType::OXYGEN)
+	if (stateType == StateType::STANDALONE)
 	{
 		const uint8 formatVersion = signature[15];
 

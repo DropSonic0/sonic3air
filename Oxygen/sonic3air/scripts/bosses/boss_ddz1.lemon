@@ -480,11 +480,11 @@ function void fn081f6a()
 	fn082c86()
 	if ((global.framecounter.low & 0x02) == 0)
 	{
-		Child.DrawSprite()
+		fn084920()
 	}
 	else
 	{
-		Child.CheckParent()
+		fn08494e()
 	}
 }
 

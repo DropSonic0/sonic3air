@@ -309,7 +309,7 @@ function void fn067704()
 	level.palettefx.state = 0xff
 
 	A1 = 0xffffb000
-	u8[A1 + 0x05] = base_state.HURT
+	u8[A1 + 0x05] = 0x04
 	objA1.velocity.y = -0x400
 	objA1.velocity.x = -0x200
 	objA1.groundspeed = 0
@@ -410,7 +410,7 @@ function void fn06784a()
 {
 	Object.animationProgress(0x067a8f)
 	MoveWithParent()
-	Child.DrawSprite()
+	fn084920()
 }
 
 
@@ -432,7 +432,7 @@ function void fn067888()
 {
 	Object.animationProgress(0x067a97)
 	MoveWithParent()
-	Child.DrawSprite()
+	fn084920()
 }
 
 
@@ -752,7 +752,7 @@ function void fn061f10()
 
 	level.palettefx.state = 0
 	player1.control_override = 0
-	AfterBoss_Cleanup()
+	fn083c06()
 	fn0851e4()
 
 	if (allocDynamicObjectStd())

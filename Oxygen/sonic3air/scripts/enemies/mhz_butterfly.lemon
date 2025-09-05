@@ -54,7 +54,7 @@ function void fn08e0da()
 
 	D0.u16 = 0x0100
 	D1.u16 = 4
-	Enemy.ChaseObject()
+	fn085436()
 
 	UpdateMovementStraightSimple()
 	Object.AnimationProgressByLocalA1()

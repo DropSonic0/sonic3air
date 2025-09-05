@@ -33,19 +33,6 @@ namespace
 		uint32 importantColors;
 	};
 	#pragma pack()
-
-	#ifdef PLATFORM_PS3
-	inline uint16_t endian_swap_u16(uint16_t val)
-	{
-		return (val << 8) | (val >> 8);
-	}
-
-	inline uint32_t endian_swap_u32(uint32_t val)
-	{
-		val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0x00FF00FF);
-		return (val << 16) | (val >> 16);
-	}
-	#endif
 }
 
 
@@ -179,25 +166,26 @@ bool PaletteBitmap::loadBMP(const std::vector<uint8>& bmpContent, Color* outPale
 	// Read header
 	BmpHeader header;
 	serializer.read(&header, sizeof(header));
-
-	#ifdef PLATFORM_PS3
-	header.fileSize = endian_swap_u32(header.fileSize);
-	header.headerSize = endian_swap_u32(header.headerSize);
-	header.dibHeaderSize = endian_swap_u32(header.dibHeaderSize);
-	header.width = endian_swap_u32(header.width);
-	header.height = endian_swap_u32(header.height);
-	header.numPlanes = endian_swap_u16(header.numPlanes);
-	header.bpp = endian_swap_u16(header.bpp);
-	header.compression = endian_swap_u32(header.compression);
-	header.dataSize = endian_swap_u32(header.dataSize);
-	header.resolutionX = endian_swap_u32(header.resolutionX);
-	header.resolutionY = endian_swap_u32(header.resolutionY);
-	header.numColors = endian_swap_u32(header.numColors);
-	header.importantColors = endian_swap_u32(header.importantColors);
-	#endif
-
 	if (memcmp(header.signature, "BM", 2) != 0)
 		return false;
+
+#if defined(PLATFORM_PS3)
+	header.fileSize = __builtin_bswap32(header.fileSize);
+	header.creator1 = __builtin_bswap16(header.creator1);
+	header.creator2 = __builtin_bswap16(header.creator2);
+	header.headerSize = __builtin_bswap32(header.headerSize);
+	header.dibHeaderSize = __builtin_bswap32(header.dibHeaderSize);
+	header.width = __builtin_bswap32(header.width);
+	header.height = __builtin_bswap32(header.height);
+	header.numPlanes = __builtin_bswap16(header.numPlanes);
+	header.bpp = __builtin_bswap16(header.bpp);
+	header.compression = __builtin_bswap32(header.compression);
+	header.dataSize = __builtin_bswap32(header.dataSize);
+	header.resolutionX = __builtin_bswap32(header.resolutionX);
+	header.resolutionY = __builtin_bswap32(header.resolutionY);
+	header.numColors = __builtin_bswap32(header.numColors);
+	header.importantColors = __builtin_bswap32(header.importantColors);
+#endif
 
 	// Size
 	const int width = header.width;
@@ -225,14 +213,12 @@ bool PaletteBitmap::loadBMP(const std::vector<uint8>& bmpContent, Color* outPale
 	// Read palette
 	uint32 palette[256];
 	serializer.read(palette, pal_size * 4);
-
-	#ifdef PLATFORM_PS3
+#if defined(PLATFORM_PS3)
 	for (int i = 0; i < pal_size; ++i)
 	{
-		palette[i] = endian_swap_u32(palette[i]);
+		palette[i] = __builtin_bswap32(palette[i]);
 	}
-	#endif
-
+#endif
 	if (nullptr != outPalette)
 	{
 		for (int i = 0; i < pal_size; ++i)
@@ -300,12 +286,35 @@ bool PaletteBitmap::saveBMP(std::vector<uint8>& bmpContent, const Color* palette
 	header.resolutionY = 3828;
 	header.numColors = 256;
 	header.importantColors = 256;
+
+#if defined(PLATFORM_PS3)
+	header.fileSize = __builtin_bswap32(header.fileSize);
+	header.creator1 = __builtin_bswap16(header.creator1);
+	header.creator2 = __builtin_bswap16(header.creator2);
+	header.headerSize = __builtin_bswap32(header.headerSize);
+	header.dibHeaderSize = __builtin_bswap32(header.dibHeaderSize);
+	header.width = __builtin_bswap32(header.width);
+	header.height = __builtin_bswap32(header.height);
+	header.numPlanes = __builtin_bswap16(header.numPlanes);
+	header.bpp = __builtin_bswap16(header.bpp);
+	header.compression = __builtin_bswap32(header.compression);
+	header.dataSize = __builtin_bswap32(header.dataSize);
+	header.resolutionX = __builtin_bswap32(header.resolutionX);
+	header.resolutionY = __builtin_bswap32(header.resolutionY);
+	header.numColors = __builtin_bswap32(header.numColors);
+	header.importantColors = __builtin_bswap32(header.importantColors);
+#endif
+
 	serializer.write(&header, sizeof(BmpHeader));
 
 	for (int i = 0; i < 256; ++i)
 	{
 		const Color color(palette[i].b, palette[i].g, palette[i].r, 1.0f);
-		serializer.write(color.getABGR32());
+		uint32 abgr = color.getABGR32();
+#if defined(PLATFORM_PS3)
+		abgr = __builtin_bswap32(abgr);
+#endif
+		serializer.write(abgr);
 	}
 
 	for (uint32 line = 0; line < mHeight; ++line)

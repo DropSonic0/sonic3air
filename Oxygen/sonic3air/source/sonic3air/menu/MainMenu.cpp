@@ -156,7 +156,7 @@ void MainMenu::update(float timeElapsed)
 						break;
 
 					case mainmenu::ACT_SELECT:
-						triggerStartActSelect();
+						openActSelectMenu();
 						break;
 
 					case mainmenu::TIME_ATTACK:
@@ -220,10 +220,6 @@ void MainMenu::update(float timeElapsed)
 
 				case State::FADE_TO_DATASELECT:
 					startNormalGame();
-					break;
-
-				case State::FADE_TO_ACTSELECT:
-					openActSelectMenu();
 					break;
 
 				case State::FADE_TO_EXIT:
@@ -312,13 +308,6 @@ void MainMenu::triggerStartNormalGame()
 	GameApp::instance().getGameView().startFadingOut();
 }
 
-void MainMenu::triggerStartActSelect()
-{
-	playMenuSound(0x63);
-	mState = State::FADE_TO_ACTSELECT;
-	GameApp::instance().getGameView().startFadingOut();
-}
-
 void MainMenu::startNormalGame()
 {
 	// Init simulation
@@ -329,10 +318,9 @@ void MainMenu::startNormalGame()
 
 void MainMenu::openActSelectMenu()
 {
-	// Init simulation
-	Game::instance().startIntoActSelect();
-	GameApp::instance().onStartGame();
-	mMenuBackground->setGameStartedMenu();
+	playMenuSound(0x63);
+	mMenuBackground->openActSelectMenu();
+	mState = State::FADE_TO_SUBMENU;
 }
 
 void MainMenu::openTimeAttack()

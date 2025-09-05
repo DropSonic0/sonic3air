@@ -51,7 +51,6 @@ namespace std {
 #include <map>
 #include <unordered_map>
 #include <algorithm>
-#include <string_view>
 
 // Libraries
 #include "rmxbase/_jsoncpp/json/json.h"	// Uses its own namespace "Json"

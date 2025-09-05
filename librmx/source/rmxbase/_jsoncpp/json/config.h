@@ -55,7 +55,7 @@
     "ERROR:  Visual Studio 12 (2013) with _MSC_VER=1800 is the oldest supported compiler with sufficient C++11 capabilities"
 #endif
 
-#if defined(PLATFORM_PS3)
+#if defined(__PS3__)
 #include "rmxbase/ps3_stdio.h"
 #define jsoncpp_snprintf ::snprintf
 #elif defined(_MSC_VER) && _MSC_VER < 1900

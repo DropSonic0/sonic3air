@@ -228,9 +228,7 @@ namespace rmx
 		int sourceSamplePositionFraction = 0;
 		while (numOutputSamplesNeeded > 0)
 		{
-			#if !defined(PLATFORM_PS3)
 			RMX_ASSERT(audioInstance.mPosition <= audioBuffer.getLength(), "Audio instance position " << audioInstance.mPosition << " exceeding audio buffer length " << audioBuffer.getLength());
-			#endif
 			short* instanceData[2];
 			int numAvailableInputSamples = audioBuffer.getData(instanceData, audioInstance.mPosition);
 			if (numAvailableInputSamples <= 0)

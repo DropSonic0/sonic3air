@@ -35,7 +35,7 @@
 		#include <SDL/SDL.h>
 	#endif
 #else
-	#include <SDL2/SDL.h>
+	#include <SDL.h>
 #endif
 
 
@@ -80,10 +80,6 @@
 	#include <glad/glad.h>  // glad library (OpenGL loader)
 	#define RMX_USE_GLAD
 	#define GL_LUMINANCE GL_RED
-	
-#elif defined(PLATFORM_VITA)
-	#include <vitaGL.h>
-	#define RMX_USE_GLES2
 
 #elif defined(PLATFORM_PS3)
 	#define GL3_PROTOTYPES
@@ -102,13 +98,11 @@
 
 #if defined(RMX_USE_GLES2) && !defined(__EMSCRIPTEN__)
 	#if !defined(PLATFORM_LINUX)
-		#if !defined(__vita__)
-			#define GL_RGB8				 GL_RGB
-			#define GL_RGBA8			 GL_RGBA
-			#define glGenVertexArrays	 glGenVertexArraysOES
-			#define glDeleteVertexArrays 	 glDeleteVertexArraysOES
-			#define glBindVertexArray	 glBindVertexArrayOES
-		#endif
+		#define GL_RGB8				 GL_RGB
+		#define GL_RGBA8			 GL_RGBA
+		#define glGenVertexArrays	 glGenVertexArraysOES
+		#define glDeleteVertexArrays glDeleteVertexArraysOES
+		#define glBindVertexArray	 glBindVertexArrayOES
 	#endif
 	#define glClearDepth glClearDepthf
 	#define glDepthRange glDepthRangef

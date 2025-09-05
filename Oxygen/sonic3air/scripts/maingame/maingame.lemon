@@ -295,7 +295,7 @@ function void UpdateGamePause()
 		else
 		{
 			global.game.paused = true
-			bool canRestart = !global.pause_disabled && (global.game_mode == 0x0c && global.stage_type == 0 && u8[0xffffb000 + 0x05] <= base_state.HURT) && !competition_mode.active
+			bool canRestart = !global.pause_disabled && (global.game_mode == 0x0c && global.stage_type == 0 && u8[0xffffb000 + 0x05] <= 0x04) && !competition_mode.active
 			Game.onGamePause(canRestart)
 
 			global.frame_state = 0x10
@@ -709,7 +709,7 @@ function void initializeMainGame()
 	global.level_started = 0
 	if (level.water_present && global.zone == 0x01)
 	{
-		u32[0xffffcf82] = 0x01f202								// HCZ waves effect
+		u32[0xffffcf82] = 0x01f202
 		u32[0xffffb172] = addressof(RunOnWaterHandler.Init)		// HCZ run-on-water handler
 		u8[0xffffb172 + 0x2c] = 1
 	}
@@ -1756,7 +1756,7 @@ function void ResetOscillatingNumbers()
 //# address-hook(0x00773c) end(0x007790)
 function void UpdateOscillatingNumbers()
 {
-	if (competition_mode.active == 0 && u8[0xffffb000 + 0x05] >= base_state.DIED)
+	if (competition_mode.active == 0 && u8[0xffffb000 + 0x05] >= 0x06)
 		return
 
 	A1 = 0xfffffe6e
@@ -2307,7 +2307,7 @@ function void fn0075d2()
 function void UpdateSpecialScrolling()
 {
 	// Update of auto-scrolling (and similar)
-	if (u8[0xffffb000 + 0x05] < base_state.DIED)
+	if (u8[0xffffb000 + 0x05] < 0x06)
 	{
 		// Call targets:
 		//  - 0x04f366	-> level.special_scrolling == 0x00	-> Default, does nothing at all

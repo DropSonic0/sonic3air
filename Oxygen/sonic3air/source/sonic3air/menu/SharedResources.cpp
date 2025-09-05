@@ -38,11 +38,13 @@ namespace global
 	DrawerTexture mDataSelectBackground;
 	DrawerTexture mDataSelectAltBackground;
 	DrawerTexture mLevelSelectBackground;
+	DrawerTexture mPreviewBorder;
 	DrawerTexture mOptionsTopBar;
+	DrawerTexture mCharSelectionBox;
 	DrawerTexture mAchievementsFrame;
 	DrawerTexture mTimeAttackResultsBG;
 
-	std::map<ZoneActPreviewKey, uint64> mZoneActPreviewSpriteKeys;
+	std::map<ZoneActPreviewKey, DrawerTexture> mZoneActPreview;
 	std::map<uint32, DrawerTexture> mAchievementImage;
 	std::map<uint32, DrawerTexture> mSecretImage;
 
@@ -118,7 +120,9 @@ namespace global
 		FileHelper::loadTexture(mDataSelectBackground, L"data/images/menu/dataselect_bg.png");
 		FileHelper::loadTexture(mDataSelectAltBackground, L"data/images/menu/dataselect_dark_bg.png");
 		FileHelper::loadTexture(mLevelSelectBackground, L"data/images/menu/levelselect_bg.png");
+		FileHelper::loadTexture(mPreviewBorder, L"data/images/menu/preview_border.png");
 		FileHelper::loadTexture(mOptionsTopBar, L"data/images/menu/options_topbar_bg.png");
+		FileHelper::loadTexture(mCharSelectionBox, L"data/images/menu/charselectionbox.png");
 		FileHelper::loadTexture(mAchievementsFrame, L"data/images/menu/achievements_frame.png");
 		FileHelper::loadTexture(mTimeAttackResultsBG, L"data/images/menu/timeattack_results_screen.png");
 
@@ -137,7 +141,8 @@ namespace global
 				for (uint8 image = 0; image < 2; ++image)
 				{
 					key.mImage = image;
-					mZoneActPreviewSpriteKeys[key] = rmx::getMurmur2_64(String(0, "%s_act%d%c", zone.mShortName.substr(0, 6).c_str(), act + 1, 'a' + image));
+					const String filename(0, "data/images/zone_preview/%s_act%d%c.png", zone.mShortName.substr(0, 6).c_str(), act + 1, 'a' + image);
+					FileHelper::loadTexture(mZoneActPreview[key], *filename.toWString());
 				}
 			}
 		}

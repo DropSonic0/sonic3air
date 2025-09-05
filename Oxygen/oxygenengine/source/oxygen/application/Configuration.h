@@ -132,6 +132,7 @@ public:
 	std::wstring mSaveStatesDir;
 	std::wstring mSaveStatesDirLocal;
 	std::wstring mAnalysisDir;
+	std::wstring mSRamFilename;
 	std::wstring mPersistentDataFilename;
 
 	// General
@@ -151,11 +152,7 @@ public:
 
 	// Video
 	WindowMode mWindowMode = WindowMode::WINDOWED;
-	#if defined(PLATFORM_PS3)
-		Vec2i mWindowSize = Vec2i(960, 544);
-	#else
-		Vec2i mWindowSize = Vec2i(1200, 672);
-	#endif
+	Vec2i mWindowSize = Vec2i(1200, 672);
 	Vec2i mGameScreen = Vec2i(400, 224);
 	int   mDisplayIndex = 0;
 	RenderMethod mRenderMethod = RenderMethod::UNDEFINED;

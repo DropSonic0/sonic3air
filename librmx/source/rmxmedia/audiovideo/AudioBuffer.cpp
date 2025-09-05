@@ -13,19 +13,6 @@
 AudioBuffer::LoadCallbackList AudioBuffer::mStaticLoadCallbacks;
 
 
-AudioBuffer::AudioFrame::AudioFrame(int channels)
-{
-	mBuffer = new short[channels * MAX_FRAME_LENGTH];
-	for (int i = 0; i < channels; ++i)
-		mData[i] = &mBuffer[i * MAX_FRAME_LENGTH];
-}
-
-AudioBuffer::AudioFrame::~AudioFrame()
-{
-	delete[] mBuffer;
-}
-
-
 AudioBuffer::AudioBuffer()
 {
 }
@@ -124,10 +111,10 @@ void AudioBuffer::markPurgeableSamples(int purgePosition)
 	if (difference >= 32)
 	{
 		const int framesRemaining = (int)mFrames.size() - difference;
-		for (int i = 0; i < difference; ++i)
-			delete mFrames[i];
 		for (int i = 0; i < framesRemaining; ++i)
+		{
 			mFrames[i] = mFrames[i + difference];
+		}
 		mFrames.resize(framesRemaining);
 		mPurgedFrames = numFramesToPurge;
 	}
@@ -211,7 +198,10 @@ void AudioBuffer::clearInternal()
 {
 	// Clear all frames
 	for (int i = 0; i < (int)mFrames.size(); ++i)
+	{
+		delete[] mFrames[i]->mBuffer;
 		delete mFrames[i];
+	}
 	mFrames.clear();
 	mPurgedFrames = 0;
 	mLength = 0;
@@ -222,7 +212,11 @@ AudioBuffer::AudioFrame& AudioBuffer::getWorkingFrame()
 	AudioFrame* workingFrame = mFrames.empty() ? nullptr : mFrames[mFrames.size()-1];
 	if (nullptr == workingFrame || workingFrame->mLength >= MAX_FRAME_LENGTH)
 	{
-		workingFrame = new AudioFrame(mChannels);
+		workingFrame = new AudioFrame();
+		workingFrame->mBuffer = new short[mChannels * MAX_FRAME_LENGTH];
+		for (int i = 0; i < mChannels; ++i)
+			workingFrame->mData[i] = &workingFrame->mBuffer[i * MAX_FRAME_LENGTH];
+		workingFrame->mLength = 0;
 		mFrames.push_back(workingFrame);
 	}
 	return *workingFrame;

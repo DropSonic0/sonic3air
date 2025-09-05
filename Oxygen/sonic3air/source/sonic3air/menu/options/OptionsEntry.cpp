@@ -8,7 +8,6 @@
 
 #include "sonic3air/pch.h"
 #include "sonic3air/menu/options/OptionsEntry.h"
-#include "sonic3air/menu/GameMenuBase.h"
 #include "sonic3air/Game.h"
 #include "oxygen/application/modding/Mod.h"
 

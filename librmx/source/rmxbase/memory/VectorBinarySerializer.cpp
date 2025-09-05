@@ -8,10 +8,6 @@
 
 #include "rmxbase.h"
 
-#if defined(PLATFORM_VITA)
-	#include <psp2/kernel/clib.h>
-#endif
-
 // Endianness detection
 #if (defined(__powerpc__) || defined(__ppc__)) && (defined(__GNUC__) || defined(__xlC__))
     #define RMX_BIG_ENDIAN 1
@@ -151,6 +147,9 @@ void VectorBinarySerializer::serialize(int8& value)
 
 void VectorBinarySerializer::serialize(uint16& value)
 {
+	#ifdef RMX_BIG_ENDIAN
+		if (!mReading) value = swap_uint16(value);
+	#endif
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
 	#ifdef RMX_BIG_ENDIAN
 		value = swap_uint16(value);
@@ -159,6 +158,9 @@ void VectorBinarySerializer::serialize(uint16& value)
 
 void VectorBinarySerializer::serialize(int16& value)
 {
+	#ifdef RMX_BIG_ENDIAN
+		if (!mReading) value = swap_int16(value);
+	#endif
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
 	#ifdef RMX_BIG_ENDIAN
 		value = swap_int16(value);
@@ -167,6 +169,9 @@ void VectorBinarySerializer::serialize(int16& value)
 
 void VectorBinarySerializer::serialize(uint32& value)
 {
+	#ifdef RMX_BIG_ENDIAN
+		if (!mReading) value = swap_uint32(value);
+	#endif
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
 	#ifdef RMX_BIG_ENDIAN
 		value = swap_uint32(value);
@@ -175,6 +180,9 @@ void VectorBinarySerializer::serialize(uint32& value)
 
 void VectorBinarySerializer::serialize(int32& value)
 {
+	#ifdef RMX_BIG_ENDIAN
+		if (!mReading) value = swap_int32(value);
+	#endif
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
 	#ifdef RMX_BIG_ENDIAN
 		value = swap_int32(value);
@@ -183,6 +191,9 @@ void VectorBinarySerializer::serialize(int32& value)
 
 void VectorBinarySerializer::serialize(uint64& value)
 {
+	#ifdef RMX_BIG_ENDIAN
+		if (!mReading) value = swap_uint64(value);
+	#endif
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
 	#ifdef RMX_BIG_ENDIAN
 		value = swap_uint64(value);
@@ -191,6 +202,9 @@ void VectorBinarySerializer::serialize(uint64& value)
 
 void VectorBinarySerializer::serialize(int64& value)
 {
+	#ifdef RMX_BIG_ENDIAN
+		if (!mReading) value = swap_int64(value);
+	#endif
 	mHasError = (mHasError || !serializePrimitiveDataType(value, mReading, mBuffer, mReadPosition));
 	#ifdef RMX_BIG_ENDIAN
 		value = swap_int64(value);

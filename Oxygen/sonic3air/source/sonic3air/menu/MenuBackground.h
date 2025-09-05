@@ -81,7 +81,7 @@ private:
 	// Background
 	struct PreviewImage
 	{
-		uint64 mSpriteKey = 0;
+		DrawerTexture* mTexture = nullptr;
 		int mSubIndex = 0;
 		float mOffset = 0.0f;
 		float mVisibility = 0.0f;

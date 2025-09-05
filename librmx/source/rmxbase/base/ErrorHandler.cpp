@@ -28,9 +28,6 @@
 	#endif
 #endif
 
-#ifdef PLATFORM_VITA
-	#include <psp2/kernel/clib.h>
-#endif
 
 namespace
 {
@@ -177,14 +174,10 @@ namespace rmx
 
 	void ErrorHandling::printToLog(ErrorSeverity errorSeverity, const std::string& message)
 	{
-		#if !defined(PLATFORM_VITA)
-			if (nullptr != mLogger)
-			{
-				mLogger->logMessage(errorSeverity, message);
-			}
-		#else
-			sceClibPrintf("[ERROR] %s\n", message.c_str());
-		#endif
+		if (nullptr != mLogger)
+		{
+			mLogger->logMessage(errorSeverity, message);
+		}
 	}
 
 	bool ErrorHandling::handleAssertBreak(ErrorSeverity errorSeverity, const std::string& message, const char* filename, int line)

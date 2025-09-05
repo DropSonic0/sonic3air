@@ -839,30 +839,15 @@ function void UpdateTailsFlight_innerB()
 		// Swimming
 		if (tails.flight_countdown == 0)
 		{
-			// Tired
-		#if STANDALONE
-			// Use proper animation when both exhausted and carrying Sonic at the same time underwater, #contributed by mrgrassman14
-			if (tails.carrying)
-			{
-				char.state = char.state.TAILS_SWIMCARRY
-			}
-			else
-		#endif
-			{
-				char.state = char.state.TAILS_SWIMTIRED
-			}
+			char.state = char.state.TAILS_SWIMTIRED
+		}
+		else if (tails.carrying)
+		{
+			char.state = char.state.TAILS_SWIMCARRY
 		}
 		else
 		{
-			// Not tired
-			if (tails.carrying)
-			{
-				char.state = char.state.TAILS_SWIMCARRY
-			}
-			else
-			{
-				char.state = (char.velocity.y < 0) ? char.state.TAILS_SWIMUP : char.state.TAILS_SWIMDOWN
-			}
+			char.state = (char.velocity.y < 0) ? char.state.TAILS_SWIMUP : char.state.TAILS_SWIMDOWN
 		}
 	}
 	else
@@ -917,7 +902,7 @@ function void Tails.UpdateCarrySonic()
 		return
 	}
 
-	if (u8[A1 + 0x05] < base_state.HURT)
+	if (u8[A1 + 0x05] < 0x04)
 	{
 		if ((objA1.flags2a & char.flag.IN_AIR) && (objA1.velocity.x == tails.carried_velocity_x))
 		{
@@ -1066,7 +1051,7 @@ function void Tails.CheckCatchSonic()
 	u16 dy = objA1.position.y.u16 - char.position.y.u16 + 0x08 + ((global.inv_gravity) ? 0x28 : -0x28)
 	if (dx < 0x20 && dy < 0x10)
 	{
-		if (u8[A1 + 0x05] < base_state.HURT && u8[A1 + 0x2e] == 0 && u8[A1 + 0x3d] == 0 && debug_mode.state == 0)
+		if (u8[A1 + 0x05] < 0x04 && u8[A1 + 0x2e] == 0 && u8[A1 + 0x3d] == 0 && debug_mode.state == 0)
 		{
 			fn01459e()
 			playSound(SFX_GRAB)

@@ -105,10 +105,7 @@ void OpenGLRenderer::initialize()
 		mRenderPaletteSpriteShader[k].initialize(k == 1);
 		mRenderComponentSpriteShader[k].initialize(k == 1);
 	}
-	
-	#if !defined(PLATFORM_PS3)
-		mDebugDrawPlaneShader.initialize();
-	#endif
+	mDebugDrawPlaneShader.initialize();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClearDepth(0.0f);		// Corresponds to -1.0f inside the depth range [-1.0f, 1.0f]
@@ -128,7 +125,7 @@ void OpenGLRenderer::setGameResolution(const Vec2i& gameResolution)
 		mGameResolution = gameResolution;
 
 		mGameScreenBuffer.setSize(mGameResolution.x, mGameResolution.y);
-		mGameScreenDepth.create(rmx::OpenGLHelper::FORMAT_DEPTH, mGameResolution.x, mGameResolution.y);
+		mGameScreenDepth.create(GL_DEPTH_COMPONENT, mGameResolution.x, mGameResolution.y);
 
 		mProcessingBuffer.setSize(mGameResolution.x, mGameResolution.y);
 		mProcessingTexture.setup(mGameResolution, rmx::OpenGLHelper::FORMAT_RGB);

@@ -82,17 +82,14 @@ function void OnGameplaySettingsChange()
 //# pre-update-hook
 function void PreFrameUpdate()
 {
-	if (System.getPlatformFlags() != 0)
+	if (enableCustomPlaneReset)
 	{
-		if (enableCustomPlaneReset)
-		{
-			Renderer.resetCustomPlaneConfigurations()
-		}
-		else
-		{
-			// This has to get set explicitly once in each frame if used
-			enableCustomPlaneReset = true
-		}
+		Renderer.resetCustomPlaneConfigurations()
+	}
+	else
+	{
+		// This has to get set explicitly once in each frame if used
+		enableCustomPlaneReset = true
 	}
 }
 
